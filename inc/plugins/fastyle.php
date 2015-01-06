@@ -45,7 +45,7 @@ $(document).ready(function() {
 	        switch (String.fromCharCode(event.which).toLowerCase()) {
 	        case \'s\':
 	            event.preventDefault();
-	            $(form).submit();
+	            button.click();
 	            break;
 	        }
 	    }
@@ -127,10 +127,10 @@ function fastyle_templates_edit()
 	$page->extra_header .= $fastyle['header'] . '
 	
 	form = "#edit_template";
+		
+	button = $(\'.submit_button[name="continue"]\');
 
 	$(form).submit(function(e) {
-		
-		button = $(\'.submit_button[name="continue"]\');
 	
 ' . $fastyle['footer'];
 	
@@ -219,10 +219,10 @@ function fastyle_themes_edit_advanced()
 	$page->extra_header .= $fastyle['header'] . '
 	
 	form = "#edit_stylesheet";
+		
+	button = $(\'.submit_button[name="save"]\');
 
 	$(form).submit(function(e) {
-		
-		button = $(\'.submit_button[name="save"]\');
 	
 ' . $fastyle['footer'];
 
@@ -282,10 +282,10 @@ function fastyle_themes_edit_simple()
 	$page->extra_header .= $fastyle['header'] . '
 
 	form = \'form[action*="edit_stylesheet"]\';
+		
+	button = $(\'.submit_button[name="save"]\');
 
 	$(document).on(\'submit\', form, function(e) {
-		
-		button = $(\'.submit_button[name="save"]\');
 	
 ' . $fastyle['footer'];
 
