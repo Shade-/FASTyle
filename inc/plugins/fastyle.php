@@ -9,12 +9,55 @@
  * @version 1.1
  */
 
+$GLOBALS['fastyle'] = array(
+	'header' => '<script type="text/javascript">
+
+$(document).ready(function() {
+',
+	'footer' => '
+		button_container = button.parent();
+		button_container_html = button_container.html();
+		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
+	
+		e.preventDefault();
+		
+	    url = $(this).attr(\'action\') + \'&ajax=1\';
+	    
+	    // Go, spinner!
+	    button.replaceWith(spinner);
+	
+	    $.ajax({
+	           type: "POST",
+	           url: url,
+	           data: $(this).serialize(),
+	           complete: function(data)
+	           {
+	               button_container.html(button_container_html);
+	               $.jGrowl(data.responseText);
+	           }
+	         });
+	
+	    return false;
+	});
+	
+	$(window).bind(\'keydown\', function(event) {
+	    if (event.ctrlKey || event.metaKey) {
+	        switch (String.fromCharCode(event.which).toLowerCase()) {
+	        case \'s\':
+	            event.preventDefault();
+	            $(form).submit();
+	            break;
+	        }
+	    }
+	});
+
+});
+
+</script>
+');
+
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
-}
-
-if (!defined("PLUGINLIBRARY")) {
-	define("PLUGINLIBRARY", MYBB_ROOT . "inc/plugins/pluginlibrary.php");
 }
 
 function fastyle_info()
@@ -79,52 +122,17 @@ if (defined('IN_ADMINCP')) {
 
 function fastyle_templates_edit()
 {
-	global $mybb, $db, $sid, $page, $lang, $errors;
+	global $mybb, $db, $sid, $page, $lang, $errors, $fastyle;
 	
-	$page->extra_header .= <<<HTML
-<script type="text/javascript">
+	$page->extra_header .= $fastyle['header'] . '
+	
+	form = "#edit_template";
 
-$(document).ready(function() {
-
-	$("#edit_template").submit(function() {
+	$(form).submit(function(e) {
 		
-		button = $(document.activeElement);
-		button_container = button.parent();
-		button_container_html = button_container.html();
-		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
-		button_name = '';
+		button = $(\'.submit_button[name="continue"]\');
 	
-	    if (button.length && $(this).has(button) && button.is('input[type="submit"]') && button.is('[name]')) {
-	        button_name = button.attr('name');
-	    }
-		
-		if (button_name == 'close') {
-			return;
-		}
-		
-	    url = $(this).attr('action') + '&ajax=1';
-	    
-	    // Go, spinner!
-	    button.replaceWith(spinner);
-	
-	    $.ajax({
-	           type: "POST",
-	           url: url,
-	           data: $(this).serialize(),
-	           complete: function(data)
-	           {
-	               button_container.html(button_container_html);
-	               $.jGrowl(data.responseText);
-	           }
-	         });
-	
-	    return false;
-	});
-
-});
-
-</script>
-HTML;
+' . $fastyle['footer'];
 	
 	if ($mybb->request_method == 'post' and $mybb->input['ajax']) {
 	
@@ -206,52 +214,17 @@ HTML;
 
 function fastyle_themes_edit_advanced()
 {
-	global $mybb, $db, $theme, $lang, $page;
+	global $mybb, $db, $theme, $lang, $page, $fastyle;
 	
-	$page->extra_header .= <<<HTML
-<script type="text/javascript">
+	$page->extra_header .= $fastyle['header'] . '
+	
+	form = "#edit_stylesheet";
 
-$(document).ready(function() {
-
-	$("#edit_stylesheet").submit(function(e) {
+	$(form).submit(function(e) {
 		
-		button = $(document.activeElement);
-		button_container = button.parent();
-		button_container_html = button_container.html();
-		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
-		button_name = '';
+		button = $(\'.submit_button[name="save"]\');
 	
-	    if (button.length && $(this).has(button) && button.is('input[type="submit"]') && button.is('[name]')) {
-	        button_name = button.attr('name');
-	    }
-		
-		if (button_name == 'save_close') {
-			return;
-		}
-	
-		e.preventDefault();
-		
-	    url = $(this).attr('action') + '&ajax=1';
-	    
-	    // Go, spinner!
-	    button.replaceWith(spinner);
-	
-	    $.ajax({
-	           type: "POST",
-	           url: url,
-	           data: $(this).serialize(),
-	           complete: function(data)
-	           {
-	               button_container.html(button_container_html);
-	               $.jGrowl(data.responseText);
-	           }
-	         });
-	});
-
-});
-
-</script>
-HTML;
+' . $fastyle['footer'];
 
 	if($mybb->request_method == "post" and $mybb->input['ajax']) {
 
@@ -304,52 +277,17 @@ HTML;
 
 function fastyle_themes_edit_simple()
 {
-	global $page;
+	global $page, $fastyle;
 	
-	$page->extra_header .= <<<HTML
-<script type="text/javascript">
+	$page->extra_header .= $fastyle['header'] . '
 
-$(document).ready(function() {
+	form = \'form[action*="edit_stylesheet"]\';
 
-	$(document).on('submit', 'form[action*="edit_stylesheet"]', function(e) {
+	$(document).on(\'submit\', form, function(e) {
 		
-		button = $(document.activeElement);
-		button_container = button.parent();
-		button_container_html = button_container.html();
-		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
-		button_name = '';
+		button = $(\'.submit_button[name="save"]\');
 	
-	    if (button.length && $(this).has(button) && button.is('input[type="submit"]') && button.is('[name]')) {
-	        button_name = button.attr('name');
-	    }
-		
-		if (button_name == 'save_close') {
-			return;
-		}
-	
-		e.preventDefault();
-		
-	    url = $(this).attr('action') + '&ajax=1';
-	    
-	    // Go, spinner!
-	    button.replaceWith(spinner);
-	
-	    $.ajax({
-	           type: "POST",
-	           url: url,
-	           data: $(this).serialize(),
-	           complete: function(data)
-	           {
-	               button_container.html(button_container_html);
-	               $.jGrowl(data.responseText);
-	           }
-	         });
-	});
-
-});
-
-</script>
-HTML;
+' . $fastyle['footer'];
 
 }
 
