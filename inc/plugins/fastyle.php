@@ -6,7 +6,7 @@
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.0
+ * @version 1.1
  */
 
 if (!defined('IN_MYBB')) {
@@ -23,7 +23,7 @@ function fastyle_info()
 		'name' => 'FASTyle',
 		'description' => 'Save templates and themes on the fly using the power of AJAX.',
 		'author' => 'Shade',
-		'version' => '1.0',
+		'version' => '1.1',
 		'compatibility' => '18*'
 	);
 }
@@ -71,7 +71,9 @@ function fastyle_uninstall()
 if (defined('IN_ADMINCP')) {
 	
 	$plugins->add_hook("admin_style_templates_edit_template", "fastyle_templates_edit");
-	$plugins->add_hook("admin_style_themes_edit_stylesheet_advanced", "fastyle_themes_edit");
+	$plugins->add_hook("admin_style_themes_edit_stylesheet_advanced", "fastyle_themes_edit_advanced");
+	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple", "fastyle_themes_edit_simple");
+	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple_commit", "fastyle_themes_edit_simple_commit");
 	
 }
 
@@ -87,6 +89,9 @@ $(document).ready(function() {
 	$("#edit_template").submit(function() {
 		
 		button = $(document.activeElement);
+		button_container = button.parent();
+		button_container_html = button_container.html();
+		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
 		button_name = '';
 	
 	    if (button.length && $(this).has(button) && button.is('input[type="submit"]') && button.is('[name]')) {
@@ -98,14 +103,18 @@ $(document).ready(function() {
 		}
 		
 	    url = $(this).attr('action') + '&ajax=1';
+	    
+	    // Go, spinner!
+	    button.replaceWith(spinner);
 	
 	    $.ajax({
 	           type: "POST",
 	           url: url,
 	           data: $(this).serialize(),
-	           success: function(data)
+	           complete: function(data)
 	           {
-	               $.jGrowl(data);
+	               button_container.html(button_container_html);
+	               $.jGrowl(data.responseText);
 	           }
 	         });
 	
@@ -117,21 +126,19 @@ $(document).ready(function() {
 </script>
 HTML;
 	
-	if ($mybb->request_method == 'post' && $mybb->input['ajax']) {
+	if ($mybb->request_method == 'post' and $mybb->input['ajax']) {
 	
-		if(empty($mybb->input['title']))
-		{
+		if (empty($mybb->input['title'])) {
 			$errors[] = $lang->error_missing_title;
 		}
 	
 		// Are we trying to do malicious things in our template?
-		if(check_template($mybb->input['template']))
-		{
+		if (check_template($mybb->input['template'])) {
 			$errors[] = $lang->error_security_problem;
 		}
 	
-		if(!$errors)
-		{
+		if (!$errors) {
+		
 			$query = $db->simple_select("templates", "*", "tid='{$mybb->input['tid']}'");
 			$template = $db->fetch_array($query);
 	
@@ -148,24 +155,22 @@ HTML;
 			$query = $db->simple_select("templates", "tid", "title='".$db->escape_string($template['title'])."' AND (sid = '-2' OR sid = '{$template['sid']}')", array('order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1));
 			$template['tid'] = $db->fetch_field($query, "tid");
 	
-			if($sid > 0)
-			{
+			if ($sid > 0) {
+			
 				// Check to see if it's never been edited before (i.e. master) or if this a new template (i.e. we've renamed it)  or if it's a custom template
 				$query = $db->simple_select("templates", "sid", "title='".$db->escape_string($mybb->input['title'])."' AND (sid = '-2' OR sid = '{$sid}' OR sid='{$template['sid']}')", array('order_by' => 'sid', 'order_dir' => 'desc'));
 				$existing_sid = $db->fetch_field($query, "sid");
 				$existing_rows = $db->num_rows($query);
-	
-				if(($existing_sid == -2 && $existing_rows == 1) || $existing_rows == 0)
-				{
+				
+				if (($existing_sid == -2 and $existing_rows == 1) or $existing_rows == 0) {
 					$template['tid'] = $db->insert_query("templates", $template_array);
 				}
-				else
-				{
+				else {
 					$db->update_query("templates", $template_array, "tid='{$template['tid']}' AND sid != '-2'");
 				}
+				
 			}
-			else
-			{
+			else {
 				// Global template set
 				$db->update_query("templates", $template_array, "tid='{$template['tid']}' AND sid != '-2'");
 			}
@@ -179,26 +184,27 @@ HTML;
 			$query = $db->simple_select("templategroups", "gid", "prefix = '".$db->escape_string($prefix)."'");
 			$group = $db->fetch_field($query, "gid");
 	
-			if(!$group)
-			{
+			if (!$group) {
 				$group = "-1";
 			}
 	
 			// Log admin action
 			log_admin_action($template['tid'], $mybb->input['title'], $mybb->input['sid'], $set['title']);
 			
-			echo $lang->success_template_saved;
+			fastyle_message($lang->success_template_saved);
 			
-			exit;
-	
 		}
-	}
+		else {
+			fastyle_message($errors);
+		}
 		
-	return;
+		exit;
+		
+	}
 	
 }
 
-function fastyle_themes_edit()
+function fastyle_themes_edit_advanced()
 {
 	global $mybb, $db, $theme, $lang, $page;
 	
@@ -210,6 +216,9 @@ $(document).ready(function() {
 	$("#edit_stylesheet").submit(function(e) {
 		
 		button = $(document.activeElement);
+		button_container = button.parent();
+		button_container_html = button_container.html();
+		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
 		button_name = '';
 	
 	    if (button.length && $(this).has(button) && button.is('input[type="submit"]') && button.is('[name]')) {
@@ -223,14 +232,18 @@ $(document).ready(function() {
 		e.preventDefault();
 		
 	    url = $(this).attr('action') + '&ajax=1';
+	    
+	    // Go, spinner!
+	    button.replaceWith(spinner);
 	
 	    $.ajax({
 	           type: "POST",
 	           url: url,
 	           data: $(this).serialize(),
-	           success: function(data)
+	           complete: function(data)
 	           {
-	               $.jGrowl(data);
+	               button_container.html(button_container_html);
+	               $.jGrowl(data.responseText);
 	           }
 	         });
 	});
@@ -240,13 +253,12 @@ $(document).ready(function() {
 </script>
 HTML;
 
-	if($mybb->request_method == "post" && $mybb->input['ajax'])
-	{
+	if($mybb->request_method == "post" and $mybb->input['ajax']) {
 
 		$parent_list = make_parent_theme_list($theme['tid']);
 		$parent_list = implode(',', $parent_list);
-		if(!$parent_list)
-		{
+		
+		if (!$parent_list) {
 			$parent_list = 1;
 		}
 	
@@ -254,17 +266,14 @@ HTML;
 		$stylesheet = $db->fetch_array($query);
 	
 		// Does the theme not exist?
-		if(!$stylesheet['sid'])
-		{
-			echo $lang->error_invalid_stylesheet;
-			exit;			
+		if(!$stylesheet['sid']) {
+			fastyle_message($lang->error_invalid_stylesheet, true);
 		}
 		
 		$sid = $stylesheet['sid'];
 
 		// Theme & stylesheet theme ID do not match, editing inherited - we copy to local theme
-		if($theme['tid'] != $stylesheet['tid'])
-		{
+		if($theme['tid'] != $stylesheet['tid']) {
 			$sid = copy_stylesheet_to_theme($stylesheet, $theme['tid']);
 		}
 
@@ -277,8 +286,7 @@ HTML;
 		$db->update_query("themestylesheets", $updated_stylesheet, "sid='{$sid}'");
 
 		// Cache the stylesheet to the file
-		if(!cache_stylesheet($theme['tid'], $stylesheet['name'], $mybb->input['stylesheet']))
-		{
+		if(!cache_stylesheet($theme['tid'], $stylesheet['name'], $mybb->input['stylesheet'])) {
 			$db->update_query("themestylesheets", array('cachefile' => "css.php?stylesheet={$sid}"), "sid='{$sid}'", 1);
 		}
 
@@ -288,10 +296,102 @@ HTML;
 		// Log admin action
 		log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
 
-		echo $lang->success_stylesheet_updated;
-		
-		exit;
+		fastyle_message($lang->success_stylesheet_updated, true);
 		
 	}
+
+}
+
+function fastyle_themes_edit_simple()
+{
+	global $page;
+	
+	$page->extra_header .= <<<HTML
+<script type="text/javascript">
+
+$(document).ready(function() {
+
+	$(document).on('submit', 'form[action*="edit_stylesheet"]', function(e) {
+		
+		button = $(document.activeElement);
+		button_container = button.parent();
+		button_container_html = button_container.html();
+		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
+		button_name = '';
+	
+	    if (button.length && $(this).has(button) && button.is('input[type="submit"]') && button.is('[name]')) {
+	        button_name = button.attr('name');
+	    }
+		
+		if (button_name == 'save_close') {
+			return;
+		}
+	
+		e.preventDefault();
+		
+	    url = $(this).attr('action') + '&ajax=1';
+	    
+	    // Go, spinner!
+	    button.replaceWith(spinner);
+	
+	    $.ajax({
+	           type: "POST",
+	           url: url,
+	           data: $(this).serialize(),
+	           complete: function(data)
+	           {
+	               button_container.html(button_container_html);
+	               $.jGrowl(data.responseText);
+	           }
+	         });
+	});
+
+});
+
+</script>
+HTML;
+
+}
+
+function fastyle_themes_edit_simple_commit()
+{
+	global $mybb, $lang, $theme, $stylesheet;
+	
+	// Log admin action
+	log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
+	
+	if ($mybb->input['ajax']) {
+		fastyle_message($lang->success_stylesheet_updated, true);
+	}
+
+}
+
+function fastyle_message($messages, $exit = false)
+{
+
+	if (!is_array($messages) or count($messages) == 1) {
+		
+		if (is_array($messages)) {
+			echo $messages[0];
+		}
+		else {
+			echo $messages;
+		}
+		
+	}
+	else {
+	
+		foreach($messages as $message)
+		{
+			echo "<li>{$message}</li>\n";
+		}
+		
+	}
+	
+	if ($exit) {
+		exit;
+	}
+	
+	return;
 
 }
