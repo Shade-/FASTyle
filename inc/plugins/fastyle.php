@@ -6,7 +6,7 @@
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.1
+ * @version 1.1.1
  */
 
 $GLOBALS['fastyle'] = array(
@@ -15,6 +15,7 @@ $GLOBALS['fastyle'] = array(
 $(document).ready(function() {
 ',
 	'footer' => '
+		button = $(\'.submit_button[name="continue"], .submit_button[name="save"]\');
 		button_container = button.parent();
 		button_container_html = button_container.html();
 		spinner = "<img src=\"../images/spinner.gif\" style=\"vertical-align: middle;\" alt=\"\" /> ";
@@ -45,7 +46,7 @@ $(document).ready(function() {
 	        switch (String.fromCharCode(event.which).toLowerCase()) {
 	        case \'s\':
 	            event.preventDefault();
-	            button.click();
+	            $(\'.submit_button[name="continue"], .submit_button[name="save"]\').click();
 	            break;
 	        }
 	    }
@@ -66,7 +67,7 @@ function fastyle_info()
 		'name' => 'FASTyle',
 		'description' => 'Save templates and themes on the fly using the power of AJAX.',
 		'author' => 'Shade',
-		'version' => '1.1',
+		'version' => '1.1.1',
 		'compatibility' => '18*'
 	);
 }
@@ -127,8 +128,6 @@ function fastyle_templates_edit()
 	$page->extra_header .= $fastyle['header'] . '
 	
 	form = "#edit_template";
-		
-	button = $(\'.submit_button[name="continue"]\');
 
 	$(form).submit(function(e) {
 	
@@ -219,8 +218,6 @@ function fastyle_themes_edit_advanced()
 	$page->extra_header .= $fastyle['header'] . '
 	
 	form = "#edit_stylesheet";
-		
-	button = $(\'.submit_button[name="save"]\');
 
 	$(form).submit(function(e) {
 	
@@ -282,8 +279,6 @@ function fastyle_themes_edit_simple()
 	$page->extra_header .= $fastyle['header'] . '
 
 	form = \'form[action*="edit_stylesheet"]\';
-		
-	button = $(\'.submit_button[name="save"]\');
 
 	$(document).on(\'submit\', form, function(e) {
 	
