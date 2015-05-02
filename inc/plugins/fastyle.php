@@ -131,6 +131,10 @@ function fastyle_templates_edit()
 
 	$(form).submit(function(e) {
 	
+		pressed = $(this).find("input[type=submit]:focus").attr("name");
+		
+		if (pressed == "close") return;
+	
 ' . $fastyle['footer'];
 	
 	if ($mybb->request_method == 'post' and $mybb->input['ajax']) {
