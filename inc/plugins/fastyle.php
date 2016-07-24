@@ -6,10 +6,54 @@
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.2
+ * @version 1.3
  */
 
 $GLOBALS['fastyle'] = array(
+	'spinner_css' => '
+<style type="text/css">
+
+@-webkit-keyframes dancing-dots-jump {
+  0% { top: 0; }
+  55% { top: 0; }
+  60% { top: -7px; }
+  80% { top: 3px; }
+  90% { top: -2px; }
+  95% { top: 1px; }
+  100% { top: 0; }
+}
+.loading {
+	position: absolute;
+	left: 50%;
+	top: 50%
+}
+.loading span {
+  -webkit-animation-duration: 1300ms;
+          animation-duration: 1300ms;
+  -webkit-animation-iteration-count: infinite;
+          animation-iteration-count: infinite;
+  -webkit-animation-name: dancing-dots-jump;
+          animation-name: dancing-dots-jump;
+  -webkit-animation-delay: -700ms;
+          animation-delay: -700ms;
+  position: relative;
+  font-size: 30px;
+  color: #FF5050;
+  line-height: 0
+}
+.loading span:nth-child(2) {
+  -webkit-animation-delay: -600ms;
+          animation-delay: -600ms;
+  color: #FFAD53;
+}
+.loading span:nth-child(3) {
+  -webkit-animation-delay: -400ms;
+          animation-delay: -400ms;
+  color: #FBFF74;
+}
+
+</style>
+',
 	'header' => '<script type="text/javascript">
 
 var fastyle_deferred;
@@ -84,51 +128,14 @@ $(document).ready(function() {
 });
 
 </script>
-<style type="text/css">
-
-@-webkit-keyframes dancing-dots-jump {
-  0% { top: 0; }
-  55% { top: 0; }
-  60% { top: -7px; }
-  80% { top: 3px; }
-  90% { top: -2px; }
-  95% { top: 1px; }
-  100% { top: 0; }
-}
-.loading {
-	position: absolute;
-	left: 50%;
-	top: 50%
-}
-.loading span {
-  -webkit-animation-duration: 1300ms;
-          animation-duration: 1300ms;
-  -webkit-animation-iteration-count: infinite;
-          animation-iteration-count: infinite;
-  -webkit-animation-name: dancing-dots-jump;
-          animation-name: dancing-dots-jump;
-  -webkit-animation-delay: -700ms;
-          animation-delay: -700ms;
-  position: relative;
-  font-size: 30px;
-  color: #FF5050;
-}
-.loading span:nth-child(2) {
-  -webkit-animation-delay: -600ms;
-          animation-delay: -600ms;
-  color: #FFAD53;
-}
-.loading span:nth-child(3) {
-  -webkit-animation-delay: -400ms;
-          animation-delay: -400ms;
-  color: #FBFF74;
-}
-
-</style>
-');
+' . $GLOBALS['fastyle']['spinner_css']);
 
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
+}
+
+if (!defined("PLUGINLIBRARY")) {
+	define("PLUGINLIBRARY", MYBB_ROOT . "inc/plugins/pluginlibrary.php");
 }
 
 function fastyle_info()
@@ -137,7 +144,7 @@ function fastyle_info()
 		'name' => 'FASTyle',
 		'description' => 'Save templates and themes on the fly using the power of AJAX.',
 		'author' => 'Shade',
-		'version' => '1.2',
+		'version' => '1.3',
 		'compatibility' => '18*'
 	);
 }
@@ -155,7 +162,16 @@ function fastyle_is_installed()
 
 function fastyle_install()
 {
-	global $cache;
+	global $cache, $PL;
+	
+	$PL or require_once PLUGINLIBRARY;
+	
+	$PL->edit_core('fastyle', 'admin/modules/style/templates.php', array(
+		array(
+			'search' => '$form_container->output_row($lang->template_set, $lang->template_set_desc, $form->generate_select_box(\'sid\', $template_sets, $sid));',
+			'before' => '$plugins->run_hooks("admin_style_templates_edit_template_fastyle");'
+		)
+	), true);
 	
 	// Create cache
 	$info                        = fastyle_info();
@@ -171,7 +187,11 @@ function fastyle_install()
 
 function fastyle_uninstall()
 {
-	global $cache;
+	global $cache, $PL;
+	
+	$PL or require_once PLUGINLIBRARY;
+	
+	$PL->edit_core('fastyle', 'admin/modules/style/templates.php', array(), true);
 	
 	// Delete the plugin from cache
 	$info         = fastyle_info();
@@ -189,6 +209,9 @@ if (defined('IN_ADMINCP')) {
 	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple", "fastyle_themes_edit_simple");
 	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple_commit", "fastyle_themes_edit_simple_commit");
 	$plugins->add_hook("admin_config_settings_change", "fastyle_admin_config_settings_change");
+	$plugins->add_hook("admin_style_templates_set", "fastyle_admin_style_templates_set");
+	$plugins->add_hook("admin_load", "fastyle_get_templates");
+	$plugins->add_hook("admin_style_templates_edit_template_fastyle", "fastyle_quick_templates_jump");
 	
 }
 
@@ -527,6 +550,221 @@ function fastyle_admin_config_settings_change()
 		exit;
 		
 	}
+}
+
+function fastyle_admin_style_templates_set()
+{
+	global $page;
+	
+	$page->extra_header .= <<<HTML
+	
+<script type="text/javascript">
+	
+	$(document).ready(function() {
+		
+		getUrlParameter = function getUrlParameter(sParam) {
+		    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		        sURLVariables = sPageURL.split('&'),
+		        sParameterName,
+		        i;
+		
+		    for (i = 0; i < sURLVariables.length; i++) {
+		        sParameterName = sURLVariables[i].split('=');
+		
+		        if (sParameterName[0] === sParam) {
+		            return sParameterName[1] === undefined ? true : sParameterName[1];
+		        }
+		    }
+		};
+		
+		$('body').on('click', 'tr[id*="group_"] .first a', function(e) {
+			
+			e.preventDefault();
+			
+			var a = $(this);
+			var url = a.attr('href');
+			var string = '#group_';
+			var gid = Number(url.substring(url.indexOf(string) + string.length));
+			
+			if (a.data('expanded') != true) {
+				
+				var items = $('.group' + gid);
+				
+				if (items.length) {
+					items.show();
+				}
+				else {
+			
+					var dots = $('<span style="position: relative; left: 10px" class="spinner' + gid + '"><span class="loading"><span>•</span><span>•</span><span>•</span></span></span>');
+				    
+				    // Launch the spinner
+				    a.after(dots);
+				    
+					$.ajax({
+			    		type: 'GET',
+			    		url: 'index.php?action=get_templates',
+			    		data: {
+				    		'gid': gid,
+				    		'sid': Number(getUrlParameter('sid'))
+				    	},
+				    	success: function(data) {
+					    	
+					    	// Delete the spinner
+					    	$('.spinner' + gid).remove();
+					    	
+					    	var html = $.parseJSON(data);
+					    	
+					    	a.parents('tr').after(html);
+					    		
+					    }	
+			    	});
+			    }
+		    	
+		    	a.data('expanded', true);
+		    	
+		    }
+		    else {
+				a.data('expanded', false).parents('tr').siblings('.group' + gid).hide();
+			}
+			
+		});
+		
+	});
+	
+</script>
+{$GLOBALS['fastyle']['spinner_css']}
+HTML;
+	
+}
+
+function fastyle_get_templates()
+{
+	global $mybb, $db, $lang;
+	
+	if ($mybb->input['action'] != 'get_templates') {
+		return false;
+	}
+	
+	$gid = (int) $mybb->input['gid'];
+	$sid = (int) $mybb->input['sid'];
+	
+	$prefixes = array();
+	
+	$where_sql = ($gid != -1) ? "gid = '$gid'" : '';
+	
+	$query = $db->simple_select("templategroups", "prefix", $where_sql);
+	while ($prefix = $db->fetch_field($query, 'prefix')) {
+		$prefixes[] = $prefix;
+	}
+	
+	$where_sql = '';
+	$multiple_prefixes = (count($prefixes) == 1);
+	if ($prefixes) {
+		$where_sql = ($multiple_prefixes) ? "LIKE '{$prefixes[0]}%'" : "NOT LIKE '" . implode("_%' AND title NOT LIKE '", $prefixes) . "_%'";
+	}
+	
+	$html = array();
+	
+	$query = $db->simple_select("templates", "*", "(sid='{$sid}' OR sid='-2') AND title {$where_sql}", array('order_by' => 'sid DESC, title', 'order_dir' => 'ASC'));
+	while ($template = $db->fetch_array($query)) {
+		
+		$templates[$template['sid']][$template['title']] = $template;
+		
+		$temp_templates[] = $template;
+		
+	}
+	
+	$lang->load('style_templates', false, true);
+	$alt = ' alt_row';
+	
+	foreach ($temp_templates as $template) {
+		
+		if (($html[$template['title']] and $template['sid'] == -2) or (in_array($template['title'], $prefixes) and !$multiple_prefixes)) {
+			continue;
+		}
+		
+		$template_title = urlencode($template['title']);
+		
+		$popup = new PopupMenu("template_{$template['tid']}", $lang->options);
+		$popup->add_item($lang->full_edit, "index.php?module=style-templates&amp;action=edit_template&amp;title={$template_title}&amp;sid={$sid}");
+		
+		// Not modified
+		$title = $template['title'];
+		
+		// Modified
+		if ($templates['sid'] != -2 and $templates[-2][$template['title']] and $templates[-2][$template['title']]['template'] != $template['template']) {
+			
+			$title = '<span style="color: green">' . $template['title'] . '</span>';
+			
+			// Add diff/revert options
+			$popup->add_item($lang->diff_report, "index.php?module=style-templates&amp;action=diff_report&amp;title={$template_title}&amp;sid2={$sid}");
+			$popup->add_item($lang->revert_to_orig, "index.php?module=style-templates&amp;action=revert&amp;title={$template_title}&amp;sid={$sid}&amp;my_post_key={$mybb->post_code}", "return AdminCP.deleteConfirmation(this, '{$lang->confirm_template_revertion}')");
+			
+		}
+		// Not present in masters
+		else if (!$templates[-2][$template['title']]) {
+			$title = '<span style="color: blue">' . $title . '</span>';
+		}
+		
+		$alt = ($alt == '') ? ' alt_row' : '';
+		
+		$html[$template['title']] = <<<HTML
+<tr class="group{$gid}{$alt}">
+	<td class="first"><span style="padding: 20px"><a href="index.php?module=style-templates&amp;action=edit_template&amp;title={$template_title}&amp;sid={$sid}">{$title}</a></span></td>
+	<td class="align_center last alt_col">{$popup->fetch()}</td>
+</tr>
+HTML;
+
+	}
+	
+	ksort($html);
+
+	echo json_encode(implode("\n", $html));
+	
+	exit;
+	
+}
+
+function fastyle_quick_templates_jump()
+{
+	global $db, $lang, $form_container, $form, $template_sets, $sid;
+	
+	$templates = array('' => 'Select a template');
+	
+	$query = $db->simple_select('templates', 'title', "sid = '-2' OR sid = '{$sid}'");
+	while ($title = $db->fetch_field($query, 'title')) {
+		
+		if ($templates[$title]) {
+			continue;
+		}
+		
+		$templates[$title] = $title;
+		
+	}
+	
+	ksort($templates);
+	
+	$script = <<<HTML
+<script type="text/javascript">
+
+	$(document).ready(function() {
+		
+		$('body').on('change', 'select[name="quickjump"]', function(e) {
+			
+			var sid = '{$sid}';
+			var template = this.value;
+			
+			if (template.length) {
+				window.location.href = window.location.href.replace(/(title=)[^\&]+/, '$1' + template);
+			}
+			
+		});
+		
+	});
+</script>
+HTML;
+	
+	return $form_container->output_row('Quick jump', 'Search and select a template to quickly jump to it.', $script . $form->generate_select_box('quickjump', $templates));
 }
 
 function fastyle_message($messages, $exit = false)
