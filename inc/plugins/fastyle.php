@@ -9,8 +9,6 @@
  * @version 1.5
  */
 
-$GLOBALS['fastyle']['footer'] .= $GLOBALS['fastyle']['spinner_css'];
-
 if (!defined('IN_MYBB')) {
 	die('Direct initialization of this file is not allowed.<br /><br />Please make sure IN_MYBB is defined.');
 }
@@ -131,15 +129,9 @@ function fastyle_templates_edit()
 {
 	global $page, $mybb, $lang, $db, $sid;
 	
-	// Wasting a query, but it's necessary to get the tid
-	$query = $db->simple_select("templates", "tid", "title='".$db->escape_string($mybb->input['title'])."' AND (sid='-2' OR sid='{$sid}')", array('order_by' => 'sid', 'order_dir' => 'DESC', 'limit' => 1));
-	$tid = (int) $db->fetch_field($query, 'tid');
-	
 	$page->extra_header .= fastyle_build_header_template(<<<HTML
 
 	$("#edit_template").submit(function(e) {
-		
-		var tid = $tid;
 	
 HTML
 );
@@ -156,7 +148,6 @@ HTML
 		
 		if ($errors) {
 			fastyle_message($errors);
-			exit;
 		}
 		
 	}
@@ -171,9 +162,17 @@ function fastyle_templates_edit_commit()
 	
 		log_admin_action($template['tid'], $mybb->input['title'], $mybb->input['sid'], $set['title']);
 		
-		fastyle_message($lang->success_template_saved);
+		$data = [
+			'message' => $lang->success_template_saved
+		];
 		
-		exit;
+		// Check if the tid coming from the browser matches the one returned from the db. If it doesn't = new template,
+		// pass the tid to the client which will update its own tid
+		if ($template['tid'] != $mybb->input['tid']) {
+			$data['tid'] = $template['tid'];
+		}
+		
+		fastyle_message($data);
 				
 	}
 	
@@ -204,7 +203,7 @@ HTML
 	
 		// Does the theme not exist?
 		if (!$stylesheet['sid']) {
-			fastyle_message($lang->error_invalid_stylesheet, true);
+			fastyle_message($lang->error_invalid_stylesheet);
 		}
 		
 		$sid = $stylesheet['sid'];
@@ -235,7 +234,7 @@ HTML
 		// Log admin action
 		log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
 
-		fastyle_message($lang->success_stylesheet_updated, true);
+		fastyle_message($lang->success_stylesheet_updated);
 		
 	}
 }
@@ -261,7 +260,7 @@ function fastyle_themes_edit_simple_commit()
 	log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
 	
 	if ($mybb->input['ajax']) {
-		fastyle_message($lang->success_stylesheet_updated, true);
+		fastyle_message($lang->success_stylesheet_updated);
 	}
 }
 
@@ -301,8 +300,6 @@ function fastyle_admin_config_settings_change_commit()
 		else {
 			fastyle_message($errors);
 		}
-		
-		exit;
 		
 	}
 }
@@ -484,7 +481,6 @@ function fastyle_admin_style_templates_set()
 	});
 	
 </script>
-{$GLOBALS['fastyle']['spinner_css']}
 HTML;
 	
 }
@@ -699,10 +695,6 @@ function fastyle_build_header_template($extraHeader = '')
 			}
 			
 			var data = $(this).serialize();
-			
-			if (typeof tid !== 'undefined') {
-				data.tid = tid;
-			}
 		    
 			fastyle_deferred = $.ajax({
 	    		type: "POST",
@@ -720,8 +712,15 @@ function fastyle_build_header_template($extraHeader = '')
 				// Restore the button
 				button_container.html(button_container_html);
 				
+				var response = JSON.parse(response.responseText);
+				
 				// Notify the user
-				$.jGrowl(response.responseText);
+				$.jGrowl(response.message);
+				
+				// Eventually handle the updated tid
+				if (response.tid) {
+					$('input[name="tid"]').val(response.tid);
+				}
 				
 			});
 		
@@ -748,32 +747,13 @@ HTML;
 	
 }
 
-function fastyle_message($messages, $exit = false)
+function fastyle_message($data)
 {
-
-	if (!is_array($messages) or count($messages) == 1) {
-		
-		if (is_array($messages)) {
-			echo implode("\n", $messages);
-		}
-		else {
-			echo $messages;
-		}
-		
-	}
-	else {
-	
-		foreach($messages as $message)
-		{
-			echo "<li>{$message}</li>\n";
-		}
-		
+	if (!is_array($data)) {
+		$data = ['message' => $data];
 	}
 	
-	if ($exit) {
-		exit;
-	}
+	echo json_encode($data);
 	
-	return;
-
+	exit;
 }
