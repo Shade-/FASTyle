@@ -637,7 +637,7 @@ function fastyle_quick_templates_jump()
 			tid = $('input[name="tid"]'),
 			title = $('input[name="title"]'),
 			textarea = $('textarea[name="template"]'),
-			sid = '{$sid}';
+			switching = false;
 			
 		var use_editor = (typeof editor !== 'undefined') ? true : false;
 		
@@ -691,6 +691,8 @@ function fastyle_quick_templates_jump()
 			
 		function switch_to_template(name, template, id) {
 			
+			switching = true;
+			
 			load_button(name, true);
 			
 			switcher.find(':not(.' + name + ')').removeClass('active');
@@ -698,15 +700,10 @@ function fastyle_quick_templates_jump()
 			title.val(name);
 			tid.val(parseInt(id));
 			
-			if (use_editor) {
-				editor.setValue(template);
-			}
-			else {
-				textarea.val(template);
-			}
-			
 			// Wipe history and load the appropriate one
 			if (use_editor) {
+				
+				editor.setValue(template);
 				
 				editor.clearHistory();
 				
@@ -715,9 +712,11 @@ function fastyle_quick_templates_jump()
 				}
 				
 				editor.focus();
+				editor.changeGeneration();
 				
 			}
 			else {
+				textarea.val(template);
 				textarea.focus();
 			}
 			
@@ -915,15 +914,29 @@ function fastyle_quick_templates_jump()
 		});
 		
 		// Mark tabs as not saved when edited
-		var target = (use_editor) ? editor : textarea;
-		
-		target.on('keypress', function(e) {
+		if (use_editor) {
 			
-			if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-				switcher.find('.' + title.val()).addClass('not_saved');
-			}	
+			editor.on('changes', function(a, b, event) {
+				
+				if (!switching) {
+					switcher.find('.' + title.val()).addClass('not_saved');
+				}
+				else {
+					switching = false;
+				}
+				
+			});
 			
-		});
+		}
+		else {
+			
+			textarea.on('keydown', function(e) {
+				if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+					switcher.find('.' + title.val()).addClass('not_saved');
+				}
+			});
+			
+		}
 		
 		$('body').on('click', '#fastyle_switcher a', function(e) {
 			
@@ -1071,15 +1084,54 @@ function fastyle_build_header_template($extraHeader = '')
 		    return false;
 		});
 		
+		// Add shortcuts
 		$(window).bind('keydown', function(event) {
+			
+			// CTRL/CMD
 		    if (event.ctrlKey || event.metaKey) {
+			    
 		        switch (String.fromCharCode(event.which).toLowerCase()) {
-		        case 's':
-		            event.preventDefault();
-		            $('.submit_button[name="continue"], .submit_button[name="save"]').click();
-		            break;
+			        
+			        // + S = save
+			        case 's':
+			            var submitButton = $('.submit_button[name="continue"], .submit_button[name="save"]');
+			            if (submitButton.length) {
+			            	event.preventDefault();
+							submitButton.click();
+						}
+			            break;
+			            
+			        // + F = search template
+			        case 'f':
+			            var quickjump = $('select[name="quickjump"]');
+			            if (quickjump.length) {
+			            	event.preventDefault();
+			            	quickjump.select2('open');
+			            }
+			            break;
+			            
 		        }
+		        
 		    }
+		    
+		    // ALT
+		    if (event.altKey) {
+			    
+			    switch (String.fromCharCode(event.which).toLowerCase()) {
+				    
+			        // + W = close tab
+			        case 'w':
+			        	var closeButton = $('#fastyle_switcher a.active .close');
+			        	if (closeButton.length) {
+				            event.preventDefault();
+				            closeButton.click();
+				        }
+			            break;
+			            
+		        }
+		        
+			}
+		    
 		});
 	
 	});
