@@ -901,7 +901,16 @@ function fastyle_quick_templates_jump()
 			
 			e.stopImmediatePropagation();
 			
-			unload_template($(this).parent('a').clone().children().remove().end().text());
+			var _this = $(this);
+			var d = true;
+			
+			if (_this.parent('a').hasClass('not_saved')) {
+				d = confirm('You have unsaved changes in this tab. Would you like to close it anyway?');
+			}
+			
+			if (d) {
+				unload_template(_this.parent('a').clone().children().remove().end().text());
+			}
 			
 		});
 		
