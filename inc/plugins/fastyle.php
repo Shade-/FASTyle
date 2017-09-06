@@ -6,7 +6,7 @@
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.6
+ * @version 1.6.1
  */
 
 if (!defined('IN_MYBB')) {
@@ -24,7 +24,7 @@ function fastyle_info()
 		'description' => 'Save templates, themes and settings on the fly using the power of AJAX.',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.mybboost.com',
-		'version' => '1.6',
+		'version' => '1.6.1',
 		'compatibility' => '18*'
 	];
 }
@@ -375,11 +375,19 @@ function fastyle_admin_style_templates_set()
 		var expand_list = (typeof getUrlParameter('expand') !== 'undefined') ? getUrlParameter('expand').split('|') : [];
 		
 		var updateUrls = function (gid) {
+			
+			var expanded_string = expand_list.join('|');
 	    	
 	    	// Update the url of every link
 	    	$('.group' + gid + ' a:not([class])').each(function(k, v) {
-		    	return ($(this).attr('href').indexOf('javascript:;') === -1) ? $(this).attr('href', replaceUrlParameter($(this).attr('href'), 'expand', expand_list.join('|'))) : false;
+		    	return ($(this).attr('href').indexOf('javascript:;') === -1) ? $(this).attr('href', replaceUrlParameter($(this).attr('href'), 'expand', expanded_string)) : false;
 		    });
+		    
+		    // Update the current page url
+			var currentExpand = getUrlParameter('expand');
+			if (currentExpand != expanded_string) {
+				history.pushState(null, '', replaceUrlParameter(window.location.href, 'expand', expanded_string));
+			}
 			
 		}
 		
@@ -483,7 +491,8 @@ function fastyle_admin_style_templates_set()
 			    
 				a.data('expanded', false).parents('tr').siblings('.group' + gid).hide();
 				
-				removeItem(expand_list, gid); 
+				removeItem(expand_list, gid);
+				updateUrls(gid);
 				
 			}
 			
@@ -639,8 +648,46 @@ function fastyle_quick_templates_jump()
 		
 		// Load the current tab into the switcher
 		load_button(title.val(), true);
+		
+		if ($('select[name="quickjump"]').length) {
+			
+			title.parents('form').prepend(title.clone().attr('type', 'hidden'));
+			
+			title.parents('tr').remove();
+			
+			title = $('input[name="title"]');
+			
+		}
 			
 		FASTyle.templates = {};
+		
+		function getUrlParameter(sParam) {
+		    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		        sURLVariables = sPageURL.split('&'),
+		        sParameterName,
+		        i;
+		
+		    for (i = 0; i < sURLVariables.length; i++) {
+		        sParameterName = sURLVariables[i].split('=');
+		
+		        if (sParameterName[0] === sParam) {
+		            return sParameterName[1] === undefined ? true : sParameterName[1];
+		        }
+		    }
+		};
+		
+		function replaceUrlParameter(url, paramName, paramValue) {
+		    if (paramValue == null)
+		        paramValue = '';
+		        
+		    var pattern = new RegExp('('+paramName+'=).*?(&|$)');
+		    
+		    if (url.search(pattern) >= 0) {
+		        return url.replace(pattern, '$1' + paramValue + '$2');
+		    }
+		    
+		    return url + (url.indexOf('?') > 0 ? '&' : '?') + paramName + '=' + paramValue;
+		}
 			
 		function switch_to_template(name, template, id) {
 			
@@ -674,7 +721,14 @@ function fastyle_quick_templates_jump()
 				textarea.focus();
 			}
 			
+			// Stop the spinner
 			FASTyle.templates_spinner.stop();
+			
+			// Update the URL
+			var currentTitle = getUrlParameter('title');
+			if (currentTitle != name) {
+				history.pushState(null, '', replaceUrlParameter(window.location.href, 'title', name));
+			}
 			
 			return save_template(name, template, id);
 			
@@ -854,8 +908,12 @@ function fastyle_quick_templates_jump()
 		// Mark tabs as not saved when edited
 		var target = (use_editor) ? editor : textarea;
 		
-		target.on('keydown', function() {
-			switcher.find('.' + title.val()).addClass('not_saved');
+		target.on('keypress', function(e) {
+			
+			if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+				switcher.find('.' + title.val()).addClass('not_saved');
+			}	
+			
 		});
 		
 		$('body').on('click', '#fastyle_switcher a', function(e) {
@@ -892,7 +950,7 @@ function fastyle_quick_templates_jump()
 </script>
 HTML;
 	
-	return $form_container->output_row('Quick jump', 'Search and select a template to quickly jump to it.', $script . $form->generate_select_box('quickjump', $templates));
+	return $form_container->output_row('Template name', 'Search and select a template to load it into this browser tab.', $script . $form->generate_select_box('quickjump', $templates));
 }
 
 function fastyle_build_header_template($extraHeader = '')
@@ -1036,6 +1094,10 @@ function fastyle_build_header_template($extraHeader = '')
 
 #fastyle_switcher .not_saved:before {
 	content: "*"
+}
+
+#fastyle_switcher li:only-child span.close {
+	display: none
 }
 
 #fastyle_switcher li span.close:after {
