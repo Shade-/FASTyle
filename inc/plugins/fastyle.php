@@ -386,7 +386,7 @@ function fastyle_admin_style_templates_set()
 		    // Update the current page url
 			var currentExpand = getUrlParameter('expand');
 			if (currentExpand != expanded_string) {
-				history.pushState(null, '', replaceUrlParameter(window.location.href, 'expand', expanded_string));
+				history.replaceState(null, '', replaceUrlParameter(window.location.href, 'expand', expanded_string));
 			}
 			
 		}
@@ -631,7 +631,7 @@ function fastyle_quick_templates_jump()
 
 	$(document).ready(function() {
 		
-		$('select[name="quickjump"]').select2({width: 'auto'});
+		$('select[name="quickjump"]').select2({width: '400px'});
 		
 		var FASTyle = {},
 			tid = $('input[name="tid"]'),
@@ -727,7 +727,7 @@ function fastyle_quick_templates_jump()
 			// Update the URL
 			var currentTitle = getUrlParameter('title');
 			if (currentTitle != name) {
-				history.pushState(null, '', replaceUrlParameter(window.location.href, 'title', name));
+				history.replaceState(null, '', replaceUrlParameter(window.location.href, 'title', name));
 			}
 			
 			return save_template(name, template, id);
