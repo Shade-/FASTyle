@@ -513,19 +513,24 @@ function fastyle_get_templates()
 	
 	$query = $db->simple_select("templategroups", "prefix", $where_sql);
 	while ($prefix = $db->fetch_field($query, 'prefix')) {
-		$prefixes[] = $prefix;
-	}
-	
-	$where_sql = '';
-	$multiple_prefixes = (count($prefixes) == 1);
-	if ($prefixes) {
-		$where_sql = ($multiple_prefixes) ? "LIKE '{$prefixes[0]}%'" : "NOT LIKE '" . implode("_%' AND title NOT LIKE '", $prefixes) . "_%'";
+		$prefixes[$prefix] = 1;
 	}
 	
 	$html = $temp_templates = [];
 	
-	$query = $db->simple_select("templates", "*", "(sid='{$sid}' OR sid='-2') AND title {$where_sql}", ['order_by' => 'sid DESC, title', 'order_dir' => 'ASC']);
+	$ungrouped = (count($prefixes) > 1) ? true : false;
+	
+	$query = $db->simple_select("templates", "*", "sid='{$sid}' OR sid='-2'", ['order_by' => 'sid DESC, title', 'order_dir' => 'ASC']);
 	while ($template = $db->fetch_array($query)) {
+		
+		$exploded = explode("_", $template['title'], 2);
+
+		// Set the prefix to lowercase for case insensitive comparison.
+		$exploded[0] = strtolower($exploded[0]);
+		
+		if ((!$ungrouped and !$prefixes[$exploded[0]]) or ($ungrouped and $prefixes[$exploded[0]])) {
+			continue;
+		}
 		
 		$templates[$template['sid']][$template['title']] = $template;
 		
