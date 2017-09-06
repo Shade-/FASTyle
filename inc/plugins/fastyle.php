@@ -6,7 +6,7 @@
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.5
+ * @version 1.6
  */
 
 if (!defined('IN_MYBB')) {
@@ -24,7 +24,7 @@ function fastyle_info()
 		'description' => 'Save templates, themes and settings on the fly using the power of AJAX.',
 		'author' => 'Shade',
 		'authorsite' => 'http://www.mybboost.com',
-		'version' => '1.5',
+		'version' => '1.6',
 		'compatibility' => '18*'
 	];
 }
@@ -129,6 +129,17 @@ function fastyle_templates_edit()
 {
 	global $page, $mybb, $lang, $db, $sid;
 	
+	if ($mybb->input['get_template_ajax']) {
+		
+		$query = $db->simple_select('templates', 'template, tid',
+			'title = \'' . $db->escape_string($mybb->input['title']) . '\' AND (sid = -2 OR sid = ' . (int) $sid . ')',
+			['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
+		$template = $db->fetch_array($query);
+		
+		fastyle_message(['template' => $template['template'], 'tid' => $template['tid']]);
+		
+	}
+	
 	$page->extra_header .= fastyle_build_header_template(<<<HTML
 
 	$("#edit_template").submit(function(e) {
@@ -163,7 +174,7 @@ function fastyle_templates_edit_commit()
 		log_admin_action($template['tid'], $mybb->input['title'], $mybb->input['sid'], $set['title']);
 		
 		$data = [
-			'message' => $lang->success_template_saved
+			'message' => "{$template['title']} has been updated successfully."
 		];
 		
 		// Check if the tid coming from the browser matches the one returned from the db. If it doesn't = new template,
@@ -608,13 +619,266 @@ function fastyle_quick_templates_jump()
 		
 		$('select[name="quickjump"]').select2({width: 'auto'});
 		
+		var FASTyle = {},
+			tid = $('input[name="tid"]'),
+			title = $('input[name="title"]'),
+			textarea = $('textarea[name="template"]'),
+			sid = '{$sid}';
+			
+		var use_editor = (typeof editor !== 'undefined') ? true : false;
+		
+		// Load switcher
+		textarea.before('<div id="tabs-wrapper"><ul id="fastyle_switcher" class="tabs"></ul></div>');
+		
+		var switcher = $('#fastyle_switcher');
+		
+		// Load the current tab into the switcher
+		load_button(title.val(), true);
+			
+		FASTyle.templates = {};
+			
+		function switch_to_template(name, template, id) {
+			
+			load_button(name, true);
+			
+			switcher.find(':not(.' + name + ')').removeClass('active');
+			
+			title.val(name);
+			tid.val(parseInt(id));
+			
+			if (use_editor) {
+				editor.setValue(template);
+			}
+			else {
+				textarea.val(template);
+			}
+			
+			// Wipe history and load the appropriate one
+			if (use_editor) {
+				
+				editor.clearHistory();
+				
+				if (typeof FASTyle.templates[name] !== 'undefined' && FASTyle.templates[name].history) {
+					editor.setHistory(FASTyle.templates[name].history);
+				}
+				
+				editor.focus();
+				
+			}
+			else {
+				textarea.focus();
+			}
+			
+			FASTyle.templates_spinner.stop();
+			
+			return save_template(name, template, id);
+			
+		}
+		
+		function load_button(name, active) {
+			
+			// Load the button in the switcher
+			var tab = $('#fastyle_switcher .' + name);
+			
+			var className = (active) ? ' active' : '';
+			
+			if (!tab.length) {
+				switcher.append('<li><a class="' + name + className + '">' + name + ' <span class="close"></span></a></li>');
+			}
+			else if (className) {
+				tab.addClass(className);
+			}
+			
+		}
+		
+		function remove_button(name) {
+			
+			var tab = $('#fastyle_switcher .' + name);
+			
+			if (tab.length) {
+				
+				if (tab.parent('li').is(':only-child')) {
+					return false;
+				}
+				
+				var load_new = (tab.hasClass('active')) ? true : false;
+				
+				tab.closest('li').remove();
+				
+				// Switch to the first item if this is the active tab
+				if (load_new) {
+					load_template($('#fastyle_switcher li:first a').text());
+				}
+				
+				return true;
+				
+			}
+			
+			return false;
+			
+		}
+		
+		function save_current_template() {
+			
+			var current_template = (use_editor) ? editor.getValue() : textarea.val();
+			
+			return save_template(title.val(), current_template, tid.val());
+			
+		}
+		
+		function save_template(name, template, tid) {
+			
+			FASTyle.templates[name] = {
+				'tid': parseInt(tid),
+				'template': template
+			};
+			
+			if (use_editor) {
+				FASTyle.templates[name].history = editor.getHistory();
+			}
+			
+			// Add this template in the opened tabs cache
+			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
+			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : [name];
+			
+			if (newCookie.indexOf(name) == -1) {
+				newCookie.push(name);
+			}
+			
+			Cookie.set('fastyle_tabs_opened', newCookie.join('|'));
+			
+		}
+		
+		function unload_template(name) {
+			
+			name = name.trim();
+			
+			if (!remove_button(name)) {
+				return false;
+			}
+			
+			delete FASTyle.templates[name];
+			
+			// Delete this template from the opened tabs cache
+			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
+			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : '';
+			
+			var index = newCookie.indexOf(name);
+			
+			if (index > -1) {
+				newCookie.splice(index, 1);
+			}
+			
+			Cookie.set('fastyle_tabs_opened', newCookie.join('|'));
+			
+		}
+		
+		function load_template(name) {
+			
+			name = name.trim();
+			
+			var t = FASTyle.templates[name];
+					
+			var opts = {
+				  lines: 9 // The number of lines to draw
+				, length: 20 // The length of each line
+				, width: 9 // The line thickness
+				, radius: 19 // The radius of the inner circle
+				, scale: 0.25 // Scales overall size of the spinner
+				, corners: 1 // Corner roundness (0..1)
+				, color: '#000' // #rgb or #rrggbb or array of colors
+				, opacity: 0.25 // Opacity of the lines
+				, rotate: 0 // The rotation offset
+				, direction: 1 // 1: clockwise, -1: counterclockwise
+				, speed: 1 // Rounds per second
+				, trail: 60 // Afterglow percentage
+				, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+				, zIndex: 2e9 // The z-index (defaults to 2000000000)
+				, className: 'spinner' // The CSS class to assign to the spinner
+				, top: '-13px' // Top position relative to parent
+				, left: '-30px' // Left position relative to parent
+				, shadow: false // Whether to render a shadow
+				, hwaccel: false // Whether to use hardware acceleration
+				, position: 'relative' // Element positioning
+			}
+			
+			FASTyle.templates_spinner = new Spinner(opts).spin();
+		    
+		    // Launch the spinner
+		    $('select[name="quickjump"]').after(FASTyle.templates_spinner.el);
+			
+			if (typeof t !== 'undefined') {
+				switch_to_template(name, t.template, t.tid);
+			}
+			else {
+				
+				$.get('index.php?module=style-templates&action=edit_template&sid={$sid}&get_template_ajax=1&title=' + name, function(data) {
+					
+					data = JSON.parse(data);
+					
+					switch_to_template(name, data.template, data.tid);
+					
+				});
+			
+			}
+			
+		}
+		
+		save_current_template();
+		
+		// Load the previously opened tabs
+		var currentlyOpen = Cookie.get('fastyle_tabs_opened');
+		if (typeof currentlyOpen !== 'undefined') {
+			
+			currentlyOpen = currentlyOpen.split('|');
+			$.each(currentlyOpen, function(k, v) {
+				load_button(v);
+			});
+			
+		}
+		
+		// Close tab
+		$('body').on('click', '#fastyle_switcher span.close', function(e) {
+			
+			e.stopImmediatePropagation();
+			
+			unload_template($(this).parent('a').clone().children().remove().end().text());
+			
+		});
+		
+		// Mark tabs as not saved when edited
+		var target = (use_editor) ? editor : textarea;
+		
+		target.on('keydown', function() {
+			switcher.find('.' + title.val()).addClass('not_saved');
+		});
+		
+		$('body').on('click', '#fastyle_switcher a', function(e) {
+			
+			e.preventDefault();
+			
+			var name = $(this).text();
+			
+			save_current_template();
+			
+			if (name != title.val()) {
+				load_template(name);	
+			}
+			
+			return false;
+			
+		});
+		
 		$('body').on('change', 'select[name="quickjump"]', function(e) {
 			
-			var sid = '{$sid}';
-			var template = this.value;
+			var name = this.value;
 			
-			if (template.length) {
-				window.location.href = window.location.href.replace(/(title=)[^\&]+/, '$1' + template);
+			if (name.length) {
+				
+				save_current_template();
+				
+				load_template(name);
+				
 			}
 			
 		});
@@ -638,6 +902,10 @@ function fastyle_build_header_template($extraHeader = '')
 	var fastyle_deferred;
 	
 	$(document).ready(function() {
+		
+		var switcher = $('#fastyle_switcher'),
+			tid_input = $('input[name="tid"]'),
+			title_input = $('input[name="title"]');
 		
 		$extraHeader
 	
@@ -695,6 +963,7 @@ function fastyle_build_header_template($extraHeader = '')
 			}
 			
 			var data = $(this).serialize();
+			var old_name = title_input.val();
 		    
 			fastyle_deferred = $.ajax({
 	    		type: "POST",
@@ -709,6 +978,9 @@ function fastyle_build_header_template($extraHeader = '')
 				// Stop the spinner
 				spinner.stop();
 				
+				// Remove the not_saved marker
+				$('#fastyle_switcher .' + old_name).removeClass('not_saved');
+				
 				// Restore the button
 				button_container.html(button_container_html);
 				
@@ -719,7 +991,7 @@ function fastyle_build_header_template($extraHeader = '')
 				
 				// Eventually handle the updated tid
 				if (response.tid) {
-					$('input[name="tid"]').val(response.tid);
+					tid_input.val(response.tid);
 				}
 				
 			});
@@ -743,6 +1015,31 @@ function fastyle_build_header_template($extraHeader = '')
 })();
 
 </script>
+<style type="text/css">
+
+#fastyle_switcher {
+	margin: 10px 0
+}
+
+#fastyle_switcher a {
+	cursor: pointer
+}
+
+#fastyle_switcher .not_saved {
+	border-bottom: 2px solid yellow
+}
+
+#fastyle_switcher .not_saved:before {
+	content: "*"
+}
+
+#fastyle_switcher li span.close:after {
+	content: "×";
+	color: red;
+	cursor: pointer
+}
+
+</style>
 HTML;
 	
 }
