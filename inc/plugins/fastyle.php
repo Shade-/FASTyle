@@ -140,12 +140,7 @@ function fastyle_templates_edit()
 		
 	}
 	
-	$page->extra_header .= fastyle_build_header_template(<<<HTML
-
-	$("#edit_template").submit(function(e) {
-	
-HTML
-);
+	$page->extra_header .= fastyle_load_javascript();
 
 	if ($mybb->input['ajax']) {
 		
@@ -193,12 +188,7 @@ function fastyle_themes_edit_advanced()
 {
 	global $mybb, $db, $theme, $lang, $page, $plugins, $stylesheet;
 	
-	$page->extra_header .= fastyle_build_header_template(<<<HTML
-
-	$("#edit_stylesheet").submit(function(e) {
-	
-HTML
-);
+	$page->extra_header .= fastyle_load_javascript();
 
 	if ($mybb->request_method == "post" and $mybb->input['ajax']) {
 
@@ -254,12 +244,7 @@ function fastyle_themes_edit_simple()
 {
 	global $page;
 	
-	$page->extra_header .= fastyle_build_header_template(<<<HTML
-
-	$(document).on('submit', 'form[action*="edit_stylesheet"]', function(e) {
-
-HTML
-);
+	$page->extra_header .= fastyle_load_javascript();
 
 }
 
@@ -279,12 +264,7 @@ function fastyle_admin_config_settings_change()
 {
 	global $page;
 	
-	$page->extra_header .= fastyle_build_header_template(<<<HTML
-
-	$("#change").submit(function(e) {
-	
-HTML
-);
+	$page->extra_header .= fastyle_load_javascript();
 
 }
 
@@ -295,12 +275,6 @@ function fastyle_admin_config_settings_change_commit()
 	if ($mybb->request_method == "post" and $mybb->input['ajax']) {
 		
 		if (!$errors) {
-			
-			// If we have changed our report reasons recache them
-			if(isset($mybb->input['upsetting']['reportreasons']))
-			{
-				$cache->update_reportedposts();
-			}
 	
 			// Log admin action
 			log_admin_action();
@@ -321,184 +295,12 @@ function fastyle_admin_style_templates_set()
 	
 	$page->extra_header .= <<<HTML
 <script type="text/javascript" src="jscripts/FASTyle/spin.js"></script>
+<script type="text/javascript" src="jscripts/FASTyle/main.js"></script>
 <script type="text/javascript">
-	
-	$(document).ready(function() {
-		
-		var getUrlParameter = function (sParam) {
-		    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-		        sURLVariables = sPageURL.split('&'),
-		        sParameterName,
-		        i;
-		
-		    for (i = 0; i < sURLVariables.length; i++) {
-		        sParameterName = sURLVariables[i].split('=');
-		
-		        if (sParameterName[0] === sParam) {
-		            return sParameterName[1] === undefined ? true : sParameterName[1];
-		        }
-		    }
-		};
-		
-		var replaceUrlParameter = function (url, paramName, paramValue) {
-		    if (paramValue == null)
-		        paramValue = '';
-		        
-		    var pattern = new RegExp('('+paramName+'=).*?(&|$)');
-		    
-		    if (url.search(pattern) >= 0) {
-		        return url.replace(pattern, '$1' + paramValue + '$2');
-		    }
-		    
-		    return url + (url.indexOf('?') > 0 ? '&' : '?') + paramName + '=' + paramValue;
-		}
-		
-		var removeItem = function (array, value) {
-		    if(Array.isArray(value)) {  // For multi remove
-		        for(var i = array.length - 1; i >= 0; i--) {
-		            for(var j = value.length - 1; j >= 0; j--) {
-		                if(array[i] == value[j]) {
-		                    array.splice(i, 1);
-		                };
-		            }
-		        }
-		    }
-		    else { // For single remove
-		        for(var i = array.length - 1; i >= 0; i--) {
-		            if(array[i] == value) {
-		                array.splice(i, 1);
-		            }
-		        }
-		    }
-		}
-		
-		var expand_list = (typeof getUrlParameter('expand') !== 'undefined') ? getUrlParameter('expand').split('|') : [];
-		
-		var updateUrls = function (gid) {
-			
-			var expanded_string = expand_list.join('|');
-	    	
-	    	// Update the url of every link
-	    	$('.group' + gid + ' a:not([class])').each(function(k, v) {
-		    	return ($(this).attr('href').indexOf('javascript:;') === -1) ? $(this).attr('href', replaceUrlParameter($(this).attr('href'), 'expand', expanded_string)) : false;
-		    });
-		    
-		    // Update the current page url
-			var currentExpand = getUrlParameter('expand');
-			if (currentExpand != expanded_string) {
-				history.replaceState(null, '', replaceUrlParameter(window.location.href, 'expand', expanded_string));
-			}
-			
-		}
-		
-		$('body').on('click', 'tr[id*="group_"] .first a', function(e) {
-			
-			e.preventDefault();
-			
-			var a = $(this);
-			var url = a.attr('href'),
-				string = '#group_';
-				
-			var gid = Number(url.substring(url.indexOf(string) + string.length));
-			
-			if (!gid || typeof gid == 'undefined') {
-				return false
-			}
-			
-			// Check if there are rows already open
-			var visible_rows = a.parents('tr').nextUntil('tr[id*="group_"]');
-			
-			if (visible_rows.length > 0 && !visible_rows.hasClass('group' + gid)) {
-				
-				visible_rows.addClass('group' + gid);
-				a.data('expanded', true);
-				
-			}
-			
-			// Open
-			if (a.data('expanded') != true) {
-				
-				var items = $('.group' + gid);
-		    	
-		    	expand_list.push(gid);
-				
-				if (items.length) {
-					
-					items.show();
-		    	
-					a.data('expanded', true);
-			    	updateUrls(gid);
-			    	
-				}
-				else {
-					
-					var opts = {
-						  lines: 9 // The number of lines to draw
-						, length: 20 // The length of each line
-						, width: 9 // The line thickness
-						, radius: 19 // The radius of the inner circle
-						, scale: 0.25 // Scales overall size of the spinner
-						, corners: 1 // Corner roundness (0..1)
-						, color: '#000' // #rgb or #rrggbb or array of colors
-						, opacity: 0.25 // Opacity of the lines
-						, rotate: 0 // The rotation offset
-						, direction: 1 // 1: clockwise, -1: counterclockwise
-						, speed: 1 // Rounds per second
-						, trail: 60 // Afterglow percentage
-						, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-						, zIndex: 2e9 // The z-index (defaults to 2000000000)
-						, className: 'spinner' + gid // The CSS class to assign to the spinner
-						, top: '50%' // Top position relative to parent
-						, left: '120%' // Left position relative to parent
-						, shadow: false // Whether to render a shadow
-						, hwaccel: false // Whether to use hardware acceleration
-						, position: 'absolute' // Element positioning
-					}
-					
-					var spinner = new Spinner(opts).spin();
-				    
-				    // Launch the spinner
-				    a.css('position', 'relative').append(spinner.el);
-				    
-					$.ajax({
-			    		type: 'GET',
-			    		url: 'index.php?action=get_templates',
-			    		data: {
-				    		'gid': gid,
-				    		'sid': Number(getUrlParameter('sid'))
-				    	},
-				    	success: function(data) {
-					    	
-					    	// Delete the spinner
-					    	spinner.stop();
-					    	
-					    	var html = $.parseJSON(data);
-					    	
-					    	a.parents('tr').after(html);
-		    	
-							a.data('expanded', true);
-					    	
-					    	updateUrls(gid);
-					    		
-					    }	
-			    	});
-			    	
-			    }
-		    	
-		    }
-		    // Close
-		    else {
-			    
-				a.data('expanded', false).parents('tr').siblings('.group' + gid).hide();
-				
-				removeItem(expand_list, gid);
-				updateUrls(gid);
-				
-			}
-			
-		});
-		
-	});
+
+$(document).ready(function() {
+	FASTyle.init('templatelist');
+});
 	
 </script>
 HTML;
@@ -629,514 +431,11 @@ function fastyle_quick_templates_jump()
 <script type="text/javascript" src="../jscripts/select2/select2.min.js"></script>
 <script type="text/javascript">
 
-	$(document).ready(function() {
-		
-		$('select[name="quickjump"]').select2({width: '400px'});
-		
-		var FASTyle = {},
-			tid = $('input[name="tid"]'),
-			title = $('input[name="title"]'),
-			textarea = $('textarea[name="template"]'),
-			switching = false;
-			
-		var use_editor = (typeof editor !== 'undefined') ? true : false;
-		
-		// Load switcher
-		textarea.before('<div id="tabs-wrapper"><ul id="fastyle_switcher" class="tabs"></ul></div>');
-		
-		var switcher = $('#fastyle_switcher');
-		
-		// Load the current tab into the switcher
-		load_button(title.val(), true);
-		
-		if ($('select[name="quickjump"]').length) {
-			
-			title.parents('form').prepend(title.clone().attr('type', 'hidden'));
-			
-			title.parents('tr').remove();
-			
-			title = $('input[name="title"]');
-			
-		}
-			
-		FASTyle.templates = {};
-		
-		function getUrlParameter(sParam) {
-		    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-		        sURLVariables = sPageURL.split('&'),
-		        sParameterName,
-		        i;
-		
-		    for (i = 0; i < sURLVariables.length; i++) {
-		        sParameterName = sURLVariables[i].split('=');
-		
-		        if (sParameterName[0] === sParam) {
-		            return sParameterName[1] === undefined ? true : sParameterName[1];
-		        }
-		    }
-		};
-		
-		function replaceUrlParameter(url, paramName, paramValue) {
-		    if (paramValue == null)
-		        paramValue = '';
-		        
-		    var pattern = new RegExp('('+paramName+'=).*?(&|$)');
-		    
-		    if (url.search(pattern) >= 0) {
-		        return url.replace(pattern, '$1' + paramValue + '$2');
-		    }
-		    
-		    return url + (url.indexOf('?') > 0 ? '&' : '?') + paramName + '=' + paramValue;
-		}
-			
-		function switch_to_template(name, template, id) {
-			
-			switching = true;
-			
-			load_button(name, true);
-			
-			switcher.find(':not(.' + name + ')').removeClass('active');
-			
-			title.val(name);
-			tid.val(parseInt(id));
-			
-			// Wipe history and load the appropriate one
-			if (use_editor) {
-				
-				editor.setValue(template);
-				
-				editor.clearHistory();
-				
-				if (typeof FASTyle.templates[name] !== 'undefined' && FASTyle.templates[name].history) {
-					editor.setHistory(FASTyle.templates[name].history);
-				}
-				
-				editor.focus();
-				editor.changeGeneration();
-				
-			}
-			else {
-				textarea.val(template);
-				textarea.focus();
-			}
-			
-			// Stop the spinner
-			FASTyle.templates_spinner.stop();
-			
-			// Update the URL
-			var currentTitle = getUrlParameter('title');
-			if (currentTitle != name) {
-				history.replaceState(null, '', replaceUrlParameter(window.location.href, 'title', name));
-			}
-			
-			return save_template(name, template, id);
-			
-		}
-		
-		function load_button(name, active) {
-			
-			// Load the button in the switcher
-			var tab = $('#fastyle_switcher .' + name);
-			
-			var className = (active) ? ' active' : '';
-			
-			if (!tab.length) {
-				switcher.append('<li><a class="' + name + className + '">' + name + ' <span class="close"></span></a></li>');
-			}
-			else if (className) {
-				tab.addClass(className);
-			}
-			
-		}
-		
-		function remove_button(name) {
-			
-			var tab = $('#fastyle_switcher .' + name);
-			
-			if (tab.length) {
-				
-				if (tab.parent('li').is(':only-child')) {
-					return false;
-				}
-				
-				var load_new = (tab.hasClass('active')) ? true : false;
-				
-				tab.closest('li').remove();
-				
-				// Switch to the first item if this is the active tab
-				if (load_new) {
-					load_template($('#fastyle_switcher li:first a').text());
-				}
-				
-				return true;
-				
-			}
-			
-			return false;
-			
-		}
-		
-		function save_current_template() {
-			
-			var current_template = (use_editor) ? editor.getValue() : textarea.val();
-			
-			return save_template(title.val(), current_template, tid.val());
-			
-		}
-		
-		function save_template(name, template, tid) {
-			
-			FASTyle.templates[name] = {
-				'tid': parseInt(tid),
-				'template': template
-			};
-			
-			if (use_editor) {
-				FASTyle.templates[name].history = editor.getHistory();
-			}
-			
-			// Add this template in the opened tabs cache
-			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
-			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : [name];
-			
-			if (newCookie.indexOf(name) == -1) {
-				newCookie.push(name);
-			}
-			
-			Cookie.set('fastyle_tabs_opened', newCookie.join('|'));
-			
-		}
-		
-		function unload_template(name) {
-			
-			name = name.trim();
-			
-			if (!remove_button(name)) {
-				return false;
-			}
-			
-			delete FASTyle.templates[name];
-			
-			// Delete this template from the opened tabs cache
-			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
-			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : '';
-			
-			var index = newCookie.indexOf(name);
-			
-			if (index > -1) {
-				newCookie.splice(index, 1);
-			}
-			
-			Cookie.set('fastyle_tabs_opened', newCookie.join('|'));
-			
-		}
-		
-		function load_template(name) {
-			
-			name = name.trim();
-			
-			var t = FASTyle.templates[name];
-					
-			var opts = {
-				  lines: 9 // The number of lines to draw
-				, length: 20 // The length of each line
-				, width: 9 // The line thickness
-				, radius: 19 // The radius of the inner circle
-				, scale: 0.25 // Scales overall size of the spinner
-				, corners: 1 // Corner roundness (0..1)
-				, color: '#000' // #rgb or #rrggbb or array of colors
-				, opacity: 0.25 // Opacity of the lines
-				, rotate: 0 // The rotation offset
-				, direction: 1 // 1: clockwise, -1: counterclockwise
-				, speed: 1 // Rounds per second
-				, trail: 60 // Afterglow percentage
-				, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-				, zIndex: 2e9 // The z-index (defaults to 2000000000)
-				, className: 'spinner' // The CSS class to assign to the spinner
-				, top: '-13px' // Top position relative to parent
-				, left: '-30px' // Left position relative to parent
-				, shadow: false // Whether to render a shadow
-				, hwaccel: false // Whether to use hardware acceleration
-				, position: 'relative' // Element positioning
-			}
-			
-			FASTyle.templates_spinner = new Spinner(opts).spin();
-		    
-		    // Launch the spinner
-		    $('select[name="quickjump"]').after(FASTyle.templates_spinner.el);
-			
-			if (typeof t !== 'undefined') {
-				switch_to_template(name, t.template, t.tid);
-			}
-			else {
-				
-				$.get('index.php?module=style-templates&action=edit_template&sid={$sid}&get_template_ajax=1&title=' + name, function(data) {
-					
-					data = JSON.parse(data);
-					
-					switch_to_template(name, data.template, data.tid);
-					
-				});
-			
-			}
-			
-		}
-		
-		save_current_template();
-		
-		// Load the previously opened tabs
-		var currentlyOpen = Cookie.get('fastyle_tabs_opened');
-		if (typeof currentlyOpen !== 'undefined') {
-			
-			currentlyOpen = currentlyOpen.split('|');
-			$.each(currentlyOpen, function(k, v) {
-				load_button(v);
-			});
-			
-		}
-		
-		// Close tab
-		$('body').on('click', '#fastyle_switcher span.close', function(e) {
-			
-			e.stopImmediatePropagation();
-			
-			var _this = $(this);
-			var d = true;
-			
-			if (_this.parent('a').hasClass('not_saved')) {
-				d = confirm('You have unsaved changes in this tab. Would you like to close it anyway?');
-			}
-			
-			if (d) {
-				unload_template(_this.parent('a').clone().children().remove().end().text());
-			}
-			
-		});
-		
-		// Mark tabs as not saved when edited
-		if (use_editor) {
-			
-			editor.on('changes', function(a, b, event) {
-				
-				if (!switching) {
-					switcher.find('.' + title.val()).addClass('not_saved');
-				}
-				else {
-					switching = false;
-				}
-				
-			});
-			
-		}
-		else {
-			
-			textarea.on('keydown', function(e) {
-				if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-					switcher.find('.' + title.val()).addClass('not_saved');
-				}
-			});
-			
-		}
-		
-		$('body').on('click', '#fastyle_switcher a', function(e) {
-			
-			e.preventDefault();
-			
-			var name = $(this).text();
-			
-			save_current_template();
-			
-			if (name != title.val()) {
-				load_template(name);	
-			}
-			
-			return false;
-			
-		});
-		
-		$('body').on('change', 'select[name="quickjump"]', function(e) {
-			
-			var name = this.value;
-			
-			if (name.length) {
-				
-				save_current_template();
-				
-				load_template(name);
-				
-			}
-			
-		});
-		
-	});
-</script>
-HTML;
-	
-	return $form_container->output_row('Template name', 'Search and select a template to load it into this browser tab.', $script . $form->generate_select_box('quickjump', $templates));
-}
+FASTyle.sid = {$sid};
 
-function fastyle_build_header_template($extraHeader = '')
-{
-	
-	return <<<HTML
-<script type="text/javascript" src="jscripts/FASTyle/spin.js"></script>	
-<script type="text/javascript">
-
-(function() {
-	
-	var fastyle_deferred;
-	
-	$(document).ready(function() {
-		
-		var switcher = $('#fastyle_switcher'),
-			tid_input = $('input[name="tid"]'),
-			title_input = $('input[name="title"]');
-		
-		$extraHeader
-	
-			var pressed = $(this).find("input[type=submit]:focus").attr("name");
-			
-			if (pressed == "close" || pressed == "save_close") return;
-		
-			e.preventDefault();
-			
-			var button = $('.submit_button[name="continue"], .submit_button[name="save"], .form_button_wrapper > label:only-child > .submit_button');
-			var button_container = button.parent();
-			var button_container_html = button_container.html();
-			
-			// Set up the container to be as much similar to the container 
-			var spinnerContainer = $('<div></div>').hide();
-			
-			var buttonHeight = button.outerHeight(true);
-			var buttonWidth = button.outerWidth(true);
-			
-			spinnerContainer.css({width: buttonWidth, height: buttonHeight, position: 'relative', 'display': 'inline-block', 'vertical-align': 'top'});
-		    
-		    // Replace the button with the spinner container
-		    button.replaceWith(spinnerContainer);
-			
-			var opts = {
-				  lines: 9 // The number of lines to draw
-				, length: 20 // The length of each line
-				, width: 9 // The line thickness
-				, radius: 19 // The radius of the inner circle
-				, scale: 0.25 // Scales overall size of the spinner
-				, corners: 1 // Corner roundness (0..1)
-				, color: '#000' // #rgb or #rrggbb or array of colors
-				, opacity: 0.25 // Opacity of the lines
-				, rotate: 0 // The rotation offset
-				, direction: 1 // 1: clockwise, -1: counterclockwise
-				, speed: 1 // Rounds per second
-				, trail: 60 // Afterglow percentage
-				, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-				, zIndex: 2e9 // The z-index (defaults to 2000000000)
-				, className: 'spinner' // The CSS class to assign to the spinner
-				, top: '50%' // Top position relative to parent
-				, left: '50%' // Left position relative to parent
-				, shadow: false // Whether to render a shadow
-				, hwaccel: false // Whether to use hardware acceleration
-				, position: 'absolute' // Element positioning
-			}
-			
-			var spinner = new Spinner(opts).spin();
-			spinnerContainer.append(spinner.el);
-			
-			var url = $(this).attr('action') + '&ajax=1';
-		    
-			if (typeof fastyle_deferred === 'object' && fastyle_deferred.state() == 'pending') {
-				fastyle_deferred.abort();
-			}
-			
-			var data = $(this).serialize();
-			var old_name = title_input.val();
-		    
-			fastyle_deferred = $.ajax({
-	    		type: "POST",
-	    		url: url,
-	    		data: data
-	    	});
-			
-			$.when(
-				fastyle_deferred
-			).done(function(d, t, response) {
-				
-				// Stop the spinner
-				spinner.stop();
-				
-				// Remove the not_saved marker
-				$('#fastyle_switcher .' + old_name).removeClass('not_saved');
-				
-				// Restore the button
-				button_container.html(button_container_html);
-				
-				var response = JSON.parse(response.responseText);
-				
-				// Notify the user
-				$.jGrowl(response.message);
-				
-				// Eventually handle the updated tid
-				if (response.tid) {
-					tid_input.val(response.tid);
-				}
-				
-			});
-		
-		    return false;
-		});
-		
-		// Add shortcuts
-		$(window).bind('keydown', function(event) {
-			
-			// CTRL/CMD
-		    if (event.ctrlKey || event.metaKey) {
-			    
-		        switch (String.fromCharCode(event.which).toLowerCase()) {
-			        
-			        // + S = save
-			        case 's':
-			            var submitButton = $('.submit_button[name="continue"], .submit_button[name="save"]');
-			            if (submitButton.length) {
-			            	event.preventDefault();
-							submitButton.click();
-						}
-			            break;
-			            
-			        // + F = search template
-			        case 'f':
-			            var quickjump = $('select[name="quickjump"]');
-			            if (quickjump.length) {
-			            	event.preventDefault();
-			            	quickjump.select2('open');
-			            }
-			            break;
-			            
-		        }
-		        
-		    }
-		    
-		    // ALT
-		    if (event.altKey) {
-			    
-			    switch (String.fromCharCode(event.which).toLowerCase()) {
-				    
-			        // + W = close tab
-			        case 'w':
-			        	var closeButton = $('#fastyle_switcher a.active .close');
-			        	if (closeButton.length) {
-				            event.preventDefault();
-				            closeButton.click();
-				        }
-			            break;
-			            
-		        }
-		        
-			}
-		    
-		});
-	
-	});
-
-})();
+$(document).ready(function() {
+	FASTyle.init('templates');
+});
 
 </script>
 <style type="text/css">
@@ -1168,6 +467,24 @@ function fastyle_build_header_template($extraHeader = '')
 }
 
 </style>
+HTML;
+	
+	return $form_container->output_row('Template name', 'Search and select a template to load it into this browser tab.', $script . $form->generate_select_box('quickjump', $templates));
+}
+
+function fastyle_load_javascript($extraHeader = '')
+{
+	
+	return <<<HTML
+<script type="text/javascript" src="jscripts/FASTyle/spin.js"></script>
+<script type="text/javascript" src="jscripts/FASTyle/main.js"></script>
+<script type="text/javascript">
+
+$(document).ready(function() {
+	FASTyle.init();
+});
+
+</script>
 HTML;
 	
 }
