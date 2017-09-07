@@ -327,6 +327,7 @@ var FASTyle = {
 								if (FASTyle.input.selector.length) {
 									event.preventDefault();
 									FASTyle.input.selector.select2('open');
+									$('.select2-search input').focus();
 								}
 								break;
 
@@ -450,11 +451,15 @@ var FASTyle = {
 
 			// Stop the spinner
 			FASTyle.spinner.stop();
+			
+			// Reset the selector's value
+			FASTyle.input.selector.select2('val', '');
 
 			// Update the page URL
 			var currentTitle = FASTyle.url.getParameter('title');
 			if (currentTitle != name) {
 				history.replaceState(null, '', FASTyle.url.replaceParameter(window.location.href, 'title', name));
+				document.title = document.title.replace(currentTitle, name);
 			}
 			
 			return true;
