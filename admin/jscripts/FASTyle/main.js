@@ -436,6 +436,11 @@ var FASTyle = {
 						FASTyle.input.editor.setCursor(templateOptions.cursorPosition);
 					}
 					
+					// Selections
+					if (templateOptions.selections) {
+						FASTyle.input.editor.setSelections(templateOptions.selections);
+					}
+					
 				}
 
 			} else {
@@ -518,6 +523,7 @@ var FASTyle = {
 				FASTyle.templateEditor.templates[name].history = FASTyle.input.editor.getHistory();
 				FASTyle.templateEditor.templates[name].scrollInfo = FASTyle.input.editor.getScrollInfo();
 				FASTyle.templateEditor.templates[name].cursorPosition = FASTyle.input.editor.getCursor();
+				FASTyle.templateEditor.templates[name].selections = FASTyle.input.editor.listSelections();
 			}
 
 			// Add this template to the opened tabs cache
