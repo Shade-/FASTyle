@@ -62,6 +62,10 @@ var FASTyle = {
 
 				FASTyle.input.textarea.before('<div id="tabs-wrapper"><ul id="fastyle_switcher" class="tabs"></ul></div>');
 				FASTyle.input.switcher = $('#fastyle_switcher');
+				
+				// Add the close all button
+				FASTyle.input.switcher.parent().css('position', 'relative');
+				FASTyle.input.switcher.before('<span style="position: absolute; left: -140px"><input type="button" class="submit_button close_all" value="Close all tabs" /></span>');
 
 				// Load the current template into the switcher
 				FASTyle.templateEditor.loadButton(FASTyle.input.title.val(), true);
@@ -88,6 +92,15 @@ var FASTyle = {
 					});
 
 				}
+				
+				// Close all tabs
+				$('body').on('click', '.close_all', function(e) {
+					
+					e.preventDefault();
+					
+					FASTyle.input.switcher.find('a:not(.active) .close').click();
+					
+				});
 
 				// Close tab
 				$('body').on('click', '#fastyle_switcher span.close', function(e) {
@@ -96,13 +109,14 @@ var FASTyle = {
 
 					var _this = $(this);
 					var d = true;
+					var name = $.trim(_this.parent('a').clone().children().remove().end().text());
 
 					if (_this.parent('a').hasClass('not_saved')) {
-						d = confirm('You have unsaved changes in this tab. Would you like to close it anyway?');
+						d = confirm('You have unsaved changes in the template "' + name + '". Would you like to close it anyway?');
 					}
 
 					if (d) {
-						FASTyle.templateEditor.unloadTemplate(_this.parent('a').clone().children().remove().end().text());
+						FASTyle.templateEditor.unloadTemplate(name);
 					}
 
 				});
