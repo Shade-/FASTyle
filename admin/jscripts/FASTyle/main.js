@@ -437,10 +437,6 @@ var FASTyle = {
 					}
 					
 				}
-				// Set the cursor to the last line if this is a new template instance
-				else {
-					FASTyle.input.editor.setCursor(FASTyle.input.editor.lineCount(), 0);
-				}
 
 			} else {
 				FASTyle.input.textarea.val(template);
@@ -455,8 +451,8 @@ var FASTyle = {
 			if (currentTitle != name) {
 				history.replaceState(null, '', FASTyle.url.replaceParameter(window.location.href, 'title', name));
 			}
-
-			return FASTyle.templateEditor.saveTemplate(name, template, id);
+			
+			return true;
 
 		},
 
@@ -524,7 +520,7 @@ var FASTyle = {
 				FASTyle.templateEditor.templates[name].cursorPosition = FASTyle.input.editor.getCursor();
 			}
 
-			// Add this template in the opened tabs cache
+			// Add this template to the opened tabs cache
 			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
 			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : [name];
 
