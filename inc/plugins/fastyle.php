@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Save templates, themes and settings on the fly using the power of AJAX.
+ * An all-in-one utility to improve and speed up stylesheets, settings and templates management.
  *
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.6.1
+ * @version 1.7
  */
 
 if (!defined('IN_MYBB')) {
@@ -21,10 +21,10 @@ function fastyle_info()
 {	
 	return [
 		'name' => 'FASTyle',
-		'description' => 'Save templates, themes and settings on the fly using the power of AJAX.',
+		'description' => 'An all-in-one utility to improve and speed up stylesheets, settings and templates management.',
 		'author' => 'Shade',
-		'authorsite' => 'http://www.mybboost.com',
-		'version' => '1.6.1',
+		'authorsite' => 'https://www.mybboost.com',
+		'version' => '1.7',
 		'compatibility' => '18*'
 	];
 }
@@ -98,6 +98,7 @@ if (defined('IN_ADMINCP')) {
 	$plugins->add_hook("admin_style_templates_edit_template", "fastyle_templates_edit");
 	$plugins->add_hook("admin_style_templates_edit_template_commit", "fastyle_templates_edit_commit");
 	$plugins->add_hook("admin_style_themes_edit_stylesheet_advanced", "fastyle_themes_edit_advanced");
+	$plugins->add_hook("admin_style_themes_edit_stylesheet_advanced_commit", "fastyle_themes_edit_advanced_commit");
 	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple", "fastyle_themes_edit_simple");
 	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple_commit", "fastyle_themes_edit_simple_commit");
 	$plugins->add_hook("admin_config_settings_change", "fastyle_admin_config_settings_change", 1000);
@@ -105,6 +106,7 @@ if (defined('IN_ADMINCP')) {
 	$plugins->add_hook("admin_style_templates_set", "fastyle_admin_style_templates_set");
 	$plugins->add_hook("admin_load", "fastyle_get_templates");
 	$plugins->add_hook("admin_style_templates_edit_template_fastyle", "fastyle_quick_templates_jump");
+	$plugins->add_hook("admin_page_output_footer", "fastyle_codemirror_sublime");
 	
 }
 
@@ -116,7 +118,7 @@ function fastyle_ad()
 	$plugins = $cache->read('shade_plugins');
 	if (!in_array($mybb->user['uid'], (array) $plugins['FASTyle']['ad_shown'])) {
 		
-		flash_message('Thank you for using FASTyle! You might also be interested in other great plugins on <a href="http://projectxmybb.altervista.org">MyBBoost</a>, where you can also get support for FASTyle itself.<br /><small>This message will not be shown again to you.</small>', 'success');
+		flash_message('Thank you for using FASTyle! You might also be interested in other great plugins on <a href="https://www.mybboost.com">MyBBoost</a>, where you can also get support for FASTyle itself.<br /><small>This message will not be shown again to you.</small>', 'success');
 		
 		$plugins['FASTyle']['ad_shown'][] = $mybb->user['uid'];
 		$cache->update('shade_plugins', $plugins);
@@ -186,15 +188,14 @@ function fastyle_templates_edit_commit()
 
 function fastyle_themes_edit_advanced()
 {
-	global $mybb, $db, $theme, $lang, $page, $plugins, $stylesheet;
+	global $mybb, $db, $lang, $page, $theme;
 	
 	$page->extra_header .= fastyle_load_javascript();
 
 	if ($mybb->request_method == "post" and $mybb->input['ajax']) {
-
+		
 		$parent_list = make_parent_theme_list($theme['tid']);
 		$parent_list = implode(',', $parent_list);
-		
 		if (!$parent_list) {
 			$parent_list = 1;
 		}
@@ -207,34 +208,17 @@ function fastyle_themes_edit_advanced()
 			fastyle_message($lang->error_invalid_stylesheet);
 		}
 		
-		$sid = $stylesheet['sid'];
+	}
+}
 
-		// Theme & stylesheet theme ID do not match, editing inherited - we copy to local theme
-		if ($theme['tid'] != $stylesheet['tid']) {
-			$sid = copy_stylesheet_to_theme($stylesheet, $theme['tid']);
-		}
+function fastyle_themes_edit_advanced_commit()
+{
+	global $mybb, $theme, $lang;
 
-		// Now we have the new stylesheet, save it
-		$updated_stylesheet = [
-			"cachefile" => $db->escape_string($stylesheet['name']),
-			"stylesheet" => $db->escape_string(unfix_css_urls($mybb->input['stylesheet'])),
-			"lastmodified" => TIME_NOW
-		];
-		$db->update_query("themestylesheets", $updated_stylesheet, "sid='{$sid}'");
-
-		// Cache the stylesheet to the file
-		if (!cache_stylesheet($theme['tid'], $stylesheet['name'], $mybb->input['stylesheet'])) {
-			$db->update_query("themestylesheets", ['cachefile' => "css.php?stylesheet={$sid}"], "sid='{$sid}'", 1);
-		}
-
-		// Update the CSS file list for this theme
-		update_theme_stylesheet_list($theme['tid']);
-		
-		$plugins->run_hooks("admin_style_themes_edit_stylesheet_advanced_commit");
-
-		// Log admin action
+	if ($mybb->request_method == "post" and $mybb->input['ajax']) {
+	
 		log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
-
+		
 		fastyle_message($lang->success_stylesheet_updated);
 		
 	}
@@ -293,17 +277,7 @@ function fastyle_admin_style_templates_set()
 {
 	global $page;
 	
-	$page->extra_header .= <<<HTML
-<script type="text/javascript" src="jscripts/FASTyle/spin.js"></script>
-<script type="text/javascript" src="jscripts/FASTyle/main.js"></script>
-<script type="text/javascript">
-
-$(document).ready(function() {
-	FASTyle.init('templatelist');
-});
-	
-</script>
-HTML;
+	$page->extra_header .= fastyle_load_javascript('templatelist');
 	
 }
 
@@ -426,22 +400,41 @@ function fastyle_quick_templates_jump()
 	
 	ksort($templates);
 	
+	$fastyle_scripts = fastyle_load_javascript('templates');
+	
 	$script = <<<HTML
 <link rel="stylesheet" href="../jscripts/select2/select2.css" type="text/css" />
 <script type="text/javascript" src="../jscripts/select2/select2.min.js"></script>
 <script type="text/javascript">
-
 FASTyle.sid = {$sid};
-
-$(document).ready(function() {
-	FASTyle.init('templates');
-});
-
 </script>
+$fastyle_scripts
 <style type="text/css">
 
 #fastyle_switcher {
-	margin: 10px 0
+	margin: 0 0 10px;
+	height: auto
+}
+
+ul.tabs li {
+	margin-top: 5px
+}
+
+ul.tabs li a {
+	border: 1px solid transparent
+}
+
+ul.tabs li a.active {
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	margin: 0
+}
+
+#fastyle_switcher:after {
+	content: '';
+	display: block;
+	clear: both
 }
 
 #fastyle_switcher a {
@@ -472,21 +465,49 @@ HTML;
 	return $form_container->output_row('Template name', 'Search and select a template to load it into this browser tab.', $script . $form->generate_select_box('quickjump', $templates));
 }
 
-function fastyle_load_javascript($extraHeader = '')
+function fastyle_load_javascript($type = '')
 {
+	static $loaded;
 	
-	return <<<HTML
+	$html = '';
+	
+	if ($loaded != true) {
+		$html .= <<<HTML
 <script type="text/javascript" src="jscripts/FASTyle/spin.js"></script>
 <script type="text/javascript" src="jscripts/FASTyle/main.js"></script>
+HTML;
+	}
+	
+	$loaded = true;
+	
+	$html .= <<<HTML
 <script type="text/javascript">
 
 $(document).ready(function() {
-	FASTyle.init();
+	FASTyle.init('$type');
 });
 
 </script>
 HTML;
 	
+	return $html;
+	
+}
+
+function fastyle_codemirror_sublime(&$args)
+{
+	global $mybb;
+	
+	if (in_array($mybb->input['action'], ['edit_template', 'add_template', 'edit_stylesheet', 'add_stylesheet'])) {
+		echo <<<HTML
+<script type="text/javascript" src="jscripts/FASTyle/sublime.js"></script>
+<script type="text/javascript">
+	if (typeof editor !== 'undefined') {
+		editor.setOption('keyMap', 'sublime');
+	}
+</script>
+HTML;
+	}
 }
 
 function fastyle_message($data)
