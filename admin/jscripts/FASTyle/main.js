@@ -65,7 +65,7 @@ var FASTyle = {
 				
 				// Add the close all button
 				FASTyle.input.switcher.parent().css('position', 'relative');
-				FASTyle.input.switcher.before('<span style="position: absolute; left: -140px"><input type="button" class="submit_button close_all" value="Close all tabs" /></span>');
+				FASTyle.input.switcher.before('<span style="position: absolute; left: -140px; top: 5px"><input type="button" class="submit_button close_all" value="Close all tabs" /></span>');
 
 				// Load the current template into the switcher
 				FASTyle.templateEditor.loadButton(FASTyle.input.title.val(), true);
@@ -83,7 +83,7 @@ var FASTyle = {
 				FASTyle.templateEditor.saveCurrent();
 
 				// Load the previously opened tabs
-				var currentlyOpen = Cookie.get('fastyle_tabs_opened');
+				var currentlyOpen = Cookie.get('active-templates-' + FASTyle.sid);
 				if (typeof currentlyOpen !== 'undefined') {
 
 					currentlyOpen = currentlyOpen.split('|');
@@ -546,14 +546,14 @@ var FASTyle = {
 			}
 
 			// Add this template to the opened tabs cache
-			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
+			var currentlyOpen = Cookie.get('active-templates-' + FASTyle.sid);
 			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : [name];
 
 			if (newCookie.indexOf(name) == -1) {
 				newCookie.push(name);
 			}
 
-			Cookie.set('fastyle_tabs_opened', newCookie.join('|'));
+			Cookie.set('active-templates-' + FASTyle.sid, newCookie.join('|'));
 
 		},
 
@@ -568,7 +568,7 @@ var FASTyle = {
 			delete FASTyle.templateEditor.templates[name];
 
 			// Delete this template from the opened tabs cache
-			var currentlyOpen = Cookie.get('fastyle_tabs_opened');
+			var currentlyOpen = Cookie.get('active-templates-' + FASTyle.sid);
 			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : '';
 
 			var index = newCookie.indexOf(name);
@@ -577,7 +577,7 @@ var FASTyle = {
 				newCookie.splice(index, 1);
 			}
 
-			Cookie.set('fastyle_tabs_opened', newCookie.join('|'));
+			Cookie.set('active-templates-' + FASTyle.sid, newCookie.join('|'));
 
 		},
 
