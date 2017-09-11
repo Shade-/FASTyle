@@ -1,0 +1,142 @@
+.fastyle > .form_row {
+	width: 80%;
+	float: left
+}
+
+.fastyle > .sidebar {
+	width: 20%;
+	float: left;
+	padding: 0 20px 0 0;
+	box-sizing: border-box;
+	position: relative;
+}
+
+.fastyle > .sidebar > * {
+	margin: 10px 0;
+	display: inline-block;
+	position: relative;
+}
+
+.fastyle:after {
+	content: "";
+	display: block;
+	clear: both
+}
+
+#tabs-wrapper {
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+ul.tabs {
+	margin: 0 0 0 45px;
+	height: 44px;
+	line-height: 44px;
+	overflow-x: scroll;
+	overflow-y: hidden;
+	white-space: nowrap;
+	box-sizing: border-box;
+	width: auto;
+}
+
+ul.tabs li {
+	white-space: nowrap;
+	float: none;
+	display: inline-block;
+	height: 100%;
+	margin: 0;
+}
+
+/* 2-4 items */
+ul.tabs li:first-child:nth-last-child(n + 2),
+ul.tabs li:first-child:nth-last-child(n + 2) ~ li {
+	width: 25%;
+}
+
+/* 5 items */
+ul.tabs li:first-child:nth-last-child(5),
+ul.tabs li:first-child:nth-last-child(5) ~ li {
+	width: 20%;
+}
+
+/* 6 items */
+ul.tabs li:first-child:nth-last-child(6),
+ul.tabs li:first-child:nth-last-child(6) ~ li {
+	width: 16.666%;
+}
+
+/* 7 items */
+ul.tabs li:first-child:nth-last-child(7),
+ul.tabs li:first-child:nth-last-child(7) ~ li {
+	width: 14.285%;
+}
+
+/* 8 items onwards */
+ul.tabs li:first-child:nth-last-child(n + 8),
+ul.tabs li:first-child:nth-last-child(n + 8) ~ li {
+	width: 12.5%;
+}
+
+ul.tabs li a {
+    height: 100%;
+    box-sizing: border-box;
+    float: none;
+    padding: 0 34px 0 10px;
+    display: inline-block;
+    position: relative;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    margin: 0;
+    cursor: pointer;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+ul.tabs li a.active {
+    border-bottom-color: transparent;
+    background: #fafafa;
+    margin-top: 0;
+}
+
+ul.tabs:after {
+	content: '';
+	display: block;
+	clear: both
+}
+
+ul.tabs .not_saved {
+	border-bottom: 2px solid #f3943b!important;
+}
+
+ul.tabs .not_saved:before {
+	content: "*"
+}
+
+ul.tabs li:only-child span.close {
+	display: none
+}
+
+ul.tabs li span.close:after {
+	content: "\00D7";
+	cursor: pointer;
+	position: absolute;
+	width: 18px;
+	right: 8px;
+	top: 13px;
+	text-align: center;
+	height: 18px;
+	line-height: 18px;
+	background: #e2e2e2;
+	border-radius: 3px;
+}
+
+ul.tabs li .active span.close:after {
+	background: #fafafa;
+}
+
+.fastyle .sidebar .close_all_button {
+	text-align: center;
+	display: block
+}

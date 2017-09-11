@@ -25,6 +25,7 @@ function fastyle_info()
 		'author' => 'Shade',
 		'authorsite' => 'https://www.mybboost.com',
 		'version' => '1.7',
+		'codename' => 'fastyle',
 		'compatibility' => '18*'
 	];
 }
@@ -359,6 +360,7 @@ function fastyle_get_templates()
 		}
 		// Not present in masters
 		else if (!$templates[-2][$template['title']]) {
+			$popup->add_item($lang->delete_template, "index.php?module=style-templates&amp;action=delete_template&amp;title={$template_title}&amp;sid={$sid}&amp;my_post_key={$mybb->post_code}", "return AdminCP.deleteConfirmation(this, '{$lang->confirm_template_deletion}')");
 			$title = '<span style="color: blue">' . $title . '</span>';
 		}
 		
@@ -409,57 +411,7 @@ function fastyle_quick_templates_jump()
 FASTyle.sid = {$sid};
 </script>
 $fastyle_scripts
-<style type="text/css">
-
-#fastyle_switcher {
-	margin: 0 0 10px;
-	height: auto
-}
-
-ul.tabs li {
-	margin-top: 5px
-}
-
-ul.tabs li a {
-	border: 1px solid transparent
-}
-
-ul.tabs li a.active {
-	border-radius: 5px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	margin: 0
-}
-
-#fastyle_switcher:after {
-	content: '';
-	display: block;
-	clear: both
-}
-
-#fastyle_switcher a {
-	cursor: pointer
-}
-
-#fastyle_switcher .not_saved {
-	border-bottom: 2px solid yellow
-}
-
-#fastyle_switcher .not_saved:before {
-	content: "*"
-}
-
-#fastyle_switcher li:only-child span.close {
-	display: none
-}
-
-#fastyle_switcher li span.close:after {
-	content: "×";
-	color: red;
-	cursor: pointer
-}
-
-</style>
+<link rel="stylesheet" href="jscripts/FASTyle/editor.css" />
 HTML;
 	
 	return $form_container->output_row('Template name', 'Search and select a template to load it into this browser tab.', $script . $form->generate_select_box('quickjump', $templates));
