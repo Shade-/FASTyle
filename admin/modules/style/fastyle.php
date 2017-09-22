@@ -48,7 +48,6 @@ if ($mybb->input['get'] and $mybb->input['sid']) {
 			$template = $db->fetch_array($query);
 			
 			$content = $template['template'];
-			$id = $template['tid'];
 			
 			break;
 		
@@ -66,14 +65,13 @@ if ($mybb->input['get'] and $mybb->input['sid']) {
 			$stylesheet = $db->fetch_array($query);
 			
 			$content = $stylesheet['stylesheet'];
-			$id = $stylesheet['sid'];
 			
 			break;
 		
 	}
 		
-	if ($id) {
-		fastyle_message(['content' => $content, 'id' => $id]);
+	if ($content) {
+		fastyle_message(['content' => $content]);
 	}
 	else {
 		fastyle_message('Error: resource not found');
@@ -160,7 +158,7 @@ if ($tid) {
 	$template_groups = array_change_key_case($template_groups, CASE_LOWER);
 	
 	// Load the list of templates
-	$query = $db->simple_select("templates", "title,sid,tid,template", "sid='".$sid."' OR sid='-2'", array('order_by' => 'sid DESC, title', 'order_dir' => 'ASC'));
+	$query = $db->simple_select("templates", "title,sid,tid,template", "sid='".$sid."' OR sid='-2'", ['order_by' => 'sid DESC, title', 'order_dir' => 'ASC']);
 	while ($template = $db->fetch_array($query)) {
 		
 		$exploded = explode("_", $template['title'], 2);
@@ -180,7 +178,7 @@ if ($tid) {
 			$template['gid'] = $template_groups[$exploded[0]]['gid'];
 		}
 		
-		// If this template is not a master template, we simple add it to the list
+		// If this template is not a master template, we simply add it to the list
 		if ($template['sid'] != -2) {
 			
 			$template['original'] = false;
@@ -191,12 +189,16 @@ if ($tid) {
 		// Otherwise, if we are down to master templates we need to do a few extra things
 		else {
 			
-			// Master template that hasn't been customised in the set we have expanded
-			if (!isset($template_groups[$group]['templates'][$template['title']]) or $template_groups[$group]['templates'][$template['title']]['template'] == $template['template']) {
+			// Master template
+			if (!isset($template_groups[$group]['templates'][$template['title']])) {
 				
 				$template['original'] = true;
 				$template_groups[$group]['templates'][$template['title']] = $template;
 				
+			}
+			// Template that hasn't been customised in the set we have expanded
+			else if ($template_groups[$group]['templates'][$template['title']]['template'] == $template['template']) {
+				$template_groups[$group]['templates'][$template['title']]['original'] = true;
 			}
 			// Template has been modified in the set we have expanded (it doesn't match the master)
 			else if ($template_groups[$group]['templates'][$template['title']]['template'] != $template['template'] and $template_groups[$group]['templates'][$template['title']]['sid'] != -2) {
@@ -298,13 +300,15 @@ if ($tid) {
 	}
 	
 	// Search
-	$resourcelist .= '<li class="header search"><input type="textbox" name="search" /></li>';
+	$resourcelist .= '<li class="header search"><input type="textbox" name="search" autocomplete="off" /></li>';
 	
 	// Stylesheets
 	$resourcelist .= '<li class="header">Stylesheets</li>';
 	$resourcelist .= '<ul data-type="stylesheets">';
 
 	foreach ($ordered_stylesheets as $filename => $style) {
+		
+		$modified = '';
 		
 		if (strpos($filename, 'css.php?stylesheet=') !== false) {
 			
@@ -358,6 +362,9 @@ if ($tid) {
 			
 			$inherited .= ")</small>";
 			
+		}
+		else {
+			$modified = ' data-modified';
 		}
 		
 		if(is_array($style['applied_to']) && (!isset($style['applied_to']['global']) || $style['applied_to']['global'][0] != "global")) {
@@ -443,7 +450,7 @@ if ($tid) {
 			$attached_to = "<small>{$lang->attached_to_all_pages}</small>";
 		}
 		
-		$resourcelist .= "<li data-title='{$filename}'>{$filename}{$inherited}<br>{$attached_to}</li>";
+		$resourcelist .= "<li data-title='{$filename}'{$modified}>{$filename}{$inherited}<br>{$attached_to}</li>";
 	
 	}
 	
@@ -465,7 +472,18 @@ if ($tid) {
 			$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'>";
 
 			foreach ($templates as $template) {
-				$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'>{$template['title']}</li>";
+				
+				$modified = $original = '';
+				
+				if (isset($template['modified']) && $template['modified'] == true) {
+					$modified = ' data-modified';
+				}
+				else if (isset($template['original']) && $template['original'] == false) {
+					$original = ' data-original';
+				}
+				
+				$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$modified}{$original}>{$template['title']}</li>";
+				
 			}
 			
 			$resourcelist .= '</ul>';

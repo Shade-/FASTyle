@@ -61,6 +61,22 @@
 	right: 10px;
 }
 
+.fastyle > .sidebar ul li[data-modified] {
+	color: #557d3e
+}
+
+.fastyle > .sidebar ul li[data-modified].active {
+	color: #a3d23b
+}
+
+.fastyle > .sidebar ul li[data-original] {
+	color: #485ea5;
+}
+
+.fastyle > .sidebar ul li[data-original].active {
+	color: #7a98f7;
+}
+
 .fastyle > .sidebar [name="search"] {
 	padding: 12px;
 	margin: 0;
@@ -94,4 +110,15 @@
 	content: "";
 	display: block;
 	clear: both
+}
+
+/* CodeMirror overlay */
+.CodeMirror .overlay {
+	width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,.6);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9999
 }

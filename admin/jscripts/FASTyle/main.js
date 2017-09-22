@@ -40,7 +40,7 @@ var FASTyle = {
 			zIndex: 2e9,
 			className: 'spinner',
 			top: '50%',
-			left: '30px',
+			left: '50%',
 			shadow: false,
 			hwaccel: false,
 			position: 'relative'
@@ -67,6 +67,13 @@ var FASTyle = {
 		FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
 		FASTyle.useEditor = (typeof editor !== 'undefined') ? true : false;
 		FASTyle.dom.editor = (FASTyle.useEditor) ? editor : null;
+		
+		// Load overlay
+		if (FASTyle.useEditor) {
+			$('<div class="overlay" />').hide().prependTo('.CodeMirror');
+			FASTyle.spinner.spin();
+			$('.CodeMirror .overlay').append(FASTyle.spinner.el);
+		}
 
 		// Load the previously opened resource
 		var currentlyOpen = Cookie.get('active-resource-' + FASTyle.sid);
@@ -191,40 +198,7 @@ var FASTyle = {
 
 	},
 
-	url: {
-
-		getParameter: function(sParam) {
-			var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-				sURLVariables = sPageURL.split('&'),
-				sParameterName,
-				i;
-
-			for (i = 0; i < sURLVariables.length; i++) {
-				sParameterName = sURLVariables[i].split('=');
-
-				if (sParameterName[0] === sParam) {
-					return sParameterName[1] === undefined ? true : sParameterName[1];
-				}
-			}
-		},
-
-		replaceParameter: function(url, paramName, paramValue) {
-			if (paramValue == null) {
-				paramValue = '';
-			}
-
-			var pattern = new RegExp('(' + paramName + '=).*?(&|$)');
-
-			if (url.search(pattern) >= 0) {
-				return url.replace(pattern, '$1' + paramValue + '$2');
-			}
-
-			return url + (url.indexOf('?') > 0 ? '&' : '?') + paramName + '=' + paramValue;
-		}
-
-	},
-
-	loadResourceInDOM: function(name, content, id) {
+	loadResourceInDOM: function(name, content) {
 
 		FASTyle.switching = true;
 
@@ -291,12 +265,11 @@ var FASTyle = {
 		}
 
 		// Stop the spinner
-		FASTyle.spinner.stop();
+		$('.CodeMirror .overlay').hide();
 		
 		// Set this resource internally
 		FASTyle.currentResource = {
-			'title': name,
-			'id': id
+			'title': name
 		};
 		
 		// Remember tab
@@ -376,8 +349,7 @@ var FASTyle = {
 		}
 
 		// Launch the spinner
-		FASTyle.spinner.spin();
-		$('.close_all_button').after(FASTyle.spinner.el);
+		$('.CodeMirror .overlay').show();
 
 		if (typeof t !== 'undefined')  {
 			return FASTyle.loadResourceInDOM(name, t.content);
@@ -438,12 +410,19 @@ var FASTyle = {
 
 		FASTyle.sendRequest('POST', 'index.php', data, (response) => {
 			
+			var currentTab = FASTyle.dom.sidebar.find('.active');
+			
 			// Stop the spinner
 			spinner.stop();
+			
+			// Modify this resource's status
+			if (typeof currentTab.attr('modified') === 'undefined' || currentTab.attr('modified') == false) {
+				currentTab.attr('data-modified', 1);
+			}
 
 			// Remove the "not saved" marker
 			if (FASTyle.dom.sidebar.length) {
-				FASTyle.dom.sidebar.find('.active').removeClass('not-saved');
+				currentTab.removeClass('not-saved');
 			}
 
 			// Restore the button
@@ -454,7 +433,7 @@ var FASTyle = {
 
 			// Eventually handle the updated tid (fixes templates not saving through multiple calls when a template hasn't been edited before)
 			if (response.tid && data.action == 'edit_template') {
-				FASTyle.dom.sidebar.find('[data-title="' + data.title + '"]').attr('data-tid', Number(response.tid));
+				currentTab.attr('data-tid', Number(response.tid));
 			}
 			
 		});
