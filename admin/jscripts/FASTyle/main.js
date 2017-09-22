@@ -6,8 +6,21 @@ var FASTyle = {
 	spinner: {},
 	deferred: null,
 	dom: {},
+	currentResource: {},
+	resources: {},
+	postKey: '',
 
-	init: function(type) {
+	init: function(sid, tid) {
+		
+		// Template set ID
+		if (sid > 0) {
+			FASTyle.sid = sid;
+		}
+		
+		// Theme ID
+		if (tid > 0) {
+			FASTyle.tid = tid;
+		}
 
 		// Set the spinner default options
 		FASTyle.spinner.opts = {
@@ -32,341 +45,149 @@ var FASTyle = {
 			hwaccel: false,
 			position: 'relative'
 		}
+		
+		// Set the postKey
+		var postKey = $('[name="my_post_key"]').val();
+		
+		if (postKey.length) {
+			FASTyle.postKey = postKey;
+		}
 
 		FASTyle.dom.selector = $('select[name="quickjump"]');
 		FASTyle.dom.title = $('input[name="title"]');
+		FASTyle.dom.sidebar = $('.sidebar');
+		FASTyle.dom.textarea = $('#editor');
+		FASTyle.dom.mainContainer = $('.fastyle');
+		
+		// Expand/collapse
+		FASTyle.dom.sidebar.find('.header').on('click', function(e) {
+			return $(this).next('ul').toggleClass('expanded');
+		});
+		
+		FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
+		FASTyle.useEditor = (typeof editor !== 'undefined') ? true : false;
+		FASTyle.dom.editor = (FASTyle.useEditor) ? editor : null;
 
-		switch (type) {
+		// Load the previously opened resource
+		var currentlyOpen = Cookie.get('active-resource-' + FASTyle.sid);
+		if (typeof currentlyOpen !== 'undefined') {
+			FASTyle.loadResource(currentlyOpen);
+		}
 
-			case 'templates':
+		// Close tab
+		/*$('body').on('click', '#tabs span.close', function(e) {
 
-				FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
+			e.stopImmediatePropagation();
 
-				FASTyle.useEditor = (typeof editor !== 'undefined') ? true : false;
+			var _this = $(this);
+			var d = true;
+			var name = $.trim(_this.parent('a').clone().children().remove().end().text());
 
-				FASTyle.dom.tid = $('input[name="tid"]');
-				FASTyle.dom.textarea = $('textarea[name="template"]');
-				FASTyle.dom.editor = (FASTyle.useEditor) ? editor : null;
+			if (_this.parent('a').hasClass('not_saved')) {
+				d = confirm('You have unsaved changes in the template "' + name + '". Would you like to close it anyway?');
+			}
 
-				FASTyle.dom.textarea.parents('td').wrapInner('<div class="fastyle" />');
-				FASTyle.dom.mainContainer = $('.fastyle');
-				
-				FASTyle.dom.textarea.before('<div id="tabs-wrapper"><ul id="tabs" class="tabs"></ul></div>');
-				FASTyle.dom.switcher = $('ul#tabs');
-				
-				FASTyle.dom.mainContainer.prepend('<div class="sidebar" />');
-				FASTyle.dom.sidebar = FASTyle.dom.mainContainer.children('.sidebar');
+			if (d) {
+				FASTyle.removeResourceFromCache(name);
+			}
 
-				// Move the quick jumper and load select2 onto it
-				FASTyle.dom.selector.appendTo(FASTyle.dom.sidebar);
-				$('select[name="sid"]').appendTo(FASTyle.dom.sidebar);
-				FASTyle.dom.sidebar.find('select').select2({
-					width: '100%'
-				});
+		});*/
+		
+		// Mark tabs as not saved when edited
+		if (FASTyle.useEditor) {
 
-				// Hide the title
-				if (FASTyle.dom.selector.length) {
-					FASTyle.dom.title.appendTo(FASTyle.dom.title.parents('form')).attr('type', 'hidden');
-				}
-				
-				// Remove unnecessary elements
-				FASTyle.dom.mainContainer.parents('tr').siblings().find('link').appendTo('head');
-				FASTyle.dom.mainContainer.parents('tr').siblings().remove();
-				
-				// Add the close all button
-				FASTyle.dom.sidebar.append('<span class="close_all_button"><input type="button" class="submit_button close_all" value="Close all tabs" /></span>');
-				
-				// Load the current template into the switcher
-				FASTyle.templateEditor.loadButton(FASTyle.dom.title.val(), true);
+			FASTyle.dom.editor.on('changes', function(a, b, event) {
 
-				FASTyle.templateEditor.saveCurrent();
-
-				// Load the previously opened tabs
-				var currentlyOpen = Cookie.get('active-templates-' + FASTyle.sid);
-				if (typeof currentlyOpen !== 'undefined') {
-
-					currentlyOpen = currentlyOpen.split('|');
-					$.each(currentlyOpen, function(k, v) {
-						FASTyle.templateEditor.loadButton(v);
-					});
-
-				}
-				
-				// Close all tabs
-				$('body').on('click', '.close_all', function(e) {
-					
-					e.preventDefault();
-					
-					FASTyle.dom.switcher.find('a:not(.active) .close').click();
-					
-				});
-
-				// Close tab
-				$('body').on('click', '#tabs span.close', function(e) {
-
-					e.stopImmediatePropagation();
-
-					var _this = $(this);
-					var d = true;
-					var name = $.trim(_this.parent('a').clone().children().remove().end().text());
-
-					if (_this.parent('a').hasClass('not_saved')) {
-						d = confirm('You have unsaved changes in the template "' + name + '". Would you like to close it anyway?');
-					}
-
-					if (d) {
-						FASTyle.templateEditor.unloadTemplate(name);
-					}
-
-				});
-
-				// Mark tabs as not saved when edited
-				if (FASTyle.useEditor) {
-
-					FASTyle.dom.editor.on('changes', function(a, b, event) {
-
-						if (!FASTyle.switching) {
-							FASTyle.dom.switcher.find('.' + FASTyle.dom.title.val()).addClass('not_saved');
-						} else {
-							FASTyle.switching = false;
-						}
-
-					});
-
+				if (!FASTyle.switching) {
+					FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved');
 				} else {
-
-					FASTyle.dom.textarea.on('keydown', function(e) {
-						if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-							FASTyle.dom.switcher.find('.' + FASTyle.dom.title.val()).addClass('not_saved');
-						}
-					});
-
+					FASTyle.switching = false;
 				}
 
-				// Switch to template
-				$('body').on('click', '#tabs a', function(e) {
+			});
 
-					e.preventDefault();
+		} else {
 
-					var name = $(this).text();
-
-					FASTyle.templateEditor.saveCurrent();
-
-					if (name != FASTyle.dom.title.val()) {
-						FASTyle.templateEditor.loadTemplate(name);
-					}
-
-					return false;
-
-				});
-				
-				// Listen to changes in the quick jumper
-				$('body').on('change', 'select[name="quickjump"]', function(e) {
-
-					var name = this.value;
-
-					if (name.length) {
-
-						FASTyle.templateEditor.saveCurrent();
-
-						FASTyle.templateEditor.loadTemplate(name);
-
-					}
-
-				});
-
-				break;
-
-			case 'templatelist':
-
-				var updateUrls = function(gid) {
-
-					var expanded_string = expand_list.join('|');
-
-					// Update the url of every link
-					$('.group' + gid + ' a:not([class])').each(function(k, v) {
-						return ($(this).attr('href').indexOf('javascript:;') === -1) ? $(this).attr('href', FASTyle.url.replaceParameter($(this).attr('href'), 'expand', expanded_string)) : false;
-					});
-
-					// Update the current page url
-					var currentExpand = FASTyle.url.getParameter('expand');
-					if (currentExpand != expanded_string) {
-						history.replaceState(null, '', FASTyle.url.replaceParameter(window.location.href, 'expand', expanded_string));
-					}
-
+			FASTyle.dom.textarea.on('keydown', function(e) {
+				if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+					FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not_saved');
 				}
-
-				var expanded = FASTyle.url.getParameter('expand');
-				var expand_list = (typeof expanded !== 'undefined') ? expanded.split('|') : [];
-
-				$('body').on('click', 'tr[id*="group_"] .first a', function(e) {
-
-					e.preventDefault();
-
-					var a = $(this);
-					var url = a.attr('href'),
-						string = '#group_';
-
-					var gid = Number(url.substring(url.indexOf(string) + string.length));
-
-					if (!gid || typeof gid == 'undefined') {
-						return false;
-					}
-
-					// Check if there are rows already open
-					var visible_rows = a.parents('tr').nextUntil('tr[id*="group_"]');
-
-					if (visible_rows.length > 0 && !visible_rows.hasClass('group' + gid)) {
-
-						visible_rows.addClass('group' + gid);
-						a.data('expanded', true);
-
-					}
-
-					// Open
-					if (a.data('expanded') != true) {
-
-						var items = $('.group' + gid);
-
-						expand_list.push(gid);
-
-						if (items.length) {
-
-							items.show();
-
-							a.data('expanded', true);
-							updateUrls(gid);
-
-						} else {
-
-							FASTyle.spinner.opts.top = '50%';
-							FASTyle.spinner.opts.left = '120%';
-							FASTyle.spinner.opts.position = 'absolute';
-
-							var spinner = new Spinner(FASTyle.spinner.opts).spin();
-
-							// Launch the spinner
-							a.css('position', 'relative').append(spinner.el);
-
-							FASTyle.sendRequest('GET', 'index.php?action=get_templates', {
-									'gid': gid,
-									'sid': Number(FASTyle.url.getParameter('sid'))
-								},
-								(response) => {
-
-									// Stop the spinner
-									spinner.stop();
-
-									a.parents('tr').after(response);
-
-									a.data('expanded', true);
-
-									updateUrls(gid);
-
-								}
-							);
-
-						}
-
-					}
-					// Close
-					else {
-
-						a.data('expanded', false).parents('tr').siblings('.group' + gid).hide();
-
-						FASTyle.utils.removeItemFromArray(expand_list, gid);
-						updateUrls(gid);
-
-					}
-
-				});
-
-				break;
-
-			default:
-
-				// Save templates/stylesheets/settings with AJAX
-				var edit_template = $('#edit_template');
-				if (edit_template.length) {
-					edit_template.submit(function(e) {
-						return FASTyle.save.call(this, e);
-					});
-				}
-
-				var edit_stylesheet = $('#edit_stylesheet');
-				if (edit_stylesheet.length) {
-					edit_stylesheet.submit(function(e) {
-						return FASTyle.save.call(this, e);
-					});
-				}
-
-				var edit_stylesheet_simple = $('form[action*="edit_stylesheet"]');
-				if (edit_stylesheet_simple.length) {
-					$(document).on('submit', edit_stylesheet_simple, function(e) {
-						return FASTyle.save.call(this, e);
-					});
-				}
-
-				var edit_settings = $('#change');
-				if (edit_settings.length) {
-					edit_settings.submit(function(e) {
-						return FASTyle.save.call(this, e);
-					});
-				}
-
-				// Add shortcuts
-				$(window).bind('keydown', function(event) {
-
-					// CTRL/CMD
-					if (event.ctrlKey || event.metaKey) {
-
-						switch (String.fromCharCode(event.which).toLowerCase()) {
-
-							// + S = save
-							case 's':
-								var submitButton = $('.submit_button[name="continue"], .submit_button[name="save"], #change .submit_button');
-								if (submitButton.length) {
-									event.preventDefault();
-									submitButton.click();
-								}
-								break;
-
-								// + F = search template
-							case 'f':
-								if (FASTyle.dom.selector.length) {
-									event.preventDefault();
-									FASTyle.dom.selector.select2('open');
-									$('.select2-search input').focus();
-								}
-								break;
-
-						}
-
-					}
-
-					// ALT
-					if (event.altKey) {
-
-						switch (String.fromCharCode(event.which).toLowerCase()) {
-
-							// + W = close tab
-							case 'w':
-								var closeButton = $('#tabs a.active .close');
-								if (closeButton.length) {
-									event.preventDefault();
-									closeButton.click();
-								}
-								break;
-
-						}
-
-					}
-
-				});
-
-				break;
+			});
 
 		}
+		
+		// Load resource
+		FASTyle.dom.sidebar.find('ul [data-title]').on('click', function(e) {
+
+			e.preventDefault();
+
+			var name = $(this).attr('data-title');
+
+			FASTyle.storeCurrentResourceInCache();
+
+			if (name != FASTyle.currentResource.title) {
+				FASTyle.loadResource(name);
+			}
+
+			return false;
+
+		});
+		
+		// Search resource
+		FASTyle.dom.sidebar.find('input[name="search"]').on('keyup', function(e) {
+			
+			var val = $(this).val();
+			
+			if (!val) {
+				FASTyle.dom.sidebar.find('.header+ul, .header+ul li').removeClass('expanded').removeAttr('style');
+				return FASTyle.dom.sidebar.find('.header:not(.search)').show();
+			}
+			
+			// Hide all groups
+			FASTyle.dom.sidebar.find('.header:not(.search), .header+ul, .header+ul li').hide();
+			
+			// Show
+			FASTyle.dom.sidebar.find('[data-title*="' + val + '"]').show().closest('ul').show().addClass('expanded').prev('.header').show();
+			
+		});
+
+		// Save templates/stylesheets with AJAX
+		var form = $('#fastyle_editor');
+		if (form.length) {
+			form.submit(function(e) {
+				return FASTyle.save.call(this, e);
+			});
+		}
+
+		/*var edit_settings = $('#change');
+		if (edit_settings.length) {
+			edit_settings.submit(function(e) {
+				return FASTyle.save.call(this, e);
+			});
+		}*/
+
+		// Add shortcuts
+		$(window).bind('keydown', function(event) {
+
+			// CTRL/CMD
+			if (event.ctrlKey || event.metaKey) {
+
+				switch (String.fromCharCode(event.which).toLowerCase()) {
+
+					// + S = save
+					case 's':
+						var submitButton = $('.submit_button[name="continue"], .submit_button[name="save"], #change .submit_button');
+						if (submitButton.length) {
+							event.preventDefault();
+							submitButton.click();
+						}
+						break;
+
+				}
+
+			}
+
+		});
 
 	},
 
@@ -403,219 +224,176 @@ var FASTyle = {
 
 	},
 
-	templateEditor: {
+	loadResourceInDOM: function(name, content, id) {
 
-		templates: {},
+		FASTyle.switching = true;
 
-		switchToTemplate: function(name, template, id) {
+		FASTyle.markAsActive(name, true);
+		
+		var tab = FASTyle.dom.sidebar.find('[data-title="' + name + '"]');
 
-			FASTyle.switching = true;
+		FASTyle.dom.sidebar.find(':not([data-title="' + name + '"])').removeClass('active');
 
-			FASTyle.templateEditor.loadButton(name, true);
-
-			FASTyle.dom.switcher.find(':not(.' + name + ')').removeClass('active');
-
-			FASTyle.dom.title.val(name);
-			FASTyle.dom.tid.val(parseInt(id));
-
-			// Switch template in editor/textarea
-			if (FASTyle.useEditor) {
-
-				FASTyle.dom.editor.setValue(template);
-				FASTyle.dom.editor.focus();
-				FASTyle.dom.editor.clearHistory();
-				
-				var templateOptions = FASTyle.templateEditor.templates[name];
-				
-				// Set the previously-saved editor status
-				if (typeof templateOptions !== 'undefined') {
-					
-					// Edit history
-					if (templateOptions.history) {
-						FASTyle.dom.editor.setHistory(templateOptions.history);
-					}
-					
-					// Scrolling position and editor dimensions
-					if (templateOptions.scrollInfo) {
-						FASTyle.dom.editor.scrollTo(templateOptions.scrollInfo.left, templateOptions.scrollInfo.top);
-						FASTyle.dom.editor.setSize(templateOptions.scrollInfo.clientWidth, templateOptions.scrollInfo.clientHeight);
-					}
-					
-					// Cursor position
-					if (templateOptions.cursorPosition) {
-						FASTyle.dom.editor.setCursor(templateOptions.cursorPosition);
-					}
-					
-					// Selections
-					if (templateOptions.selections) {
-						FASTyle.dom.editor.setSelections(templateOptions.selections);
-					}
-					
-				}
-
-			} else {
-				FASTyle.dom.textarea.val(template);
-				FASTyle.dom.textarea.focus();
-			}
-
-			// Stop the spinner
-			FASTyle.spinner.stop();
+		// Switch resource in editor/textarea
+		if (FASTyle.useEditor) {
 			
-			// Reset the selector's value
-			FASTyle.dom.selector.select2('val', '');
-
-			// Update the page URL and title
-			var currentTitle = FASTyle.url.getParameter('title');
-			if (currentTitle != name) {
+			// Switch mode if we have to
+			if (name.indexOf('.css') > -1) {
 				
-				history.replaceState(null, '', FASTyle.url.replaceParameter(window.location.href, 'title', name));
-				document.title = document.title.replace(currentTitle, name);
+				if (FASTyle.dom.editor.getOption('mode') != 'text/css') {
+					FASTyle.dom.editor.setOption('mode', 'text/css');
+				}
 				
-				var titleElem = $('.border_wrapper .title');
-				titleElem.text(titleElem.text().replace(currentTitle, name));
+			}
+			else {
+				
+				if (FASTyle.dom.editor.getOption('mode') != 'text/html') {
+					FASTyle.dom.editor.setOption('mode', 'text/html');
+				}
 				
 			}
 			
-			return true;
-
-		},
-
-		loadButton: function(name, active) {
+			FASTyle.dom.editor.setValue(content);
+			FASTyle.dom.editor.focus();
+			FASTyle.dom.editor.clearHistory();
 			
-			if (!name.length) return false;
-
-			// Load the button in the switcher
-			var tab = FASTyle.dom.switcher.find('.' + name);
-
-			var className = (active) ? ' active' : '';
-
-			if (!tab.length) {
+			var templateOptions = FASTyle.resources[name];
+			
+			// Set the previously-saved editor status
+			if (typeof templateOptions !== 'undefined') {
 				
-				FASTyle.dom.switcher.append('<li><a class="' + name + className + '">' + name + ' <span class="close"></span></a></li>');
-				
-				if (active) {
-					FASTyle.dom.switcher.scrollLeft(99999);
+				// Edit history
+				if (templateOptions.history) {
+					FASTyle.dom.editor.setHistory(templateOptions.history);
 				}
 				
-			} else if (className) {
-				tab.addClass(className);
-			}
-
-		},
-
-		removeButton: function(name) {
-
-			var tab = FASTyle.dom.switcher.find('.' + name);
-
-			if (tab.length)  {
-
-				if (tab.parent('li').is(':only-child')) {
-					return false;
-				}
-
-				var loadNew = (tab.hasClass('active')) ? true : false;
-
-				tab.closest('li').remove();
-
-				// Switch to the first item if this is the active tab
-				if (loadNew) {
-					FASTyle.templateEditor.loadTemplate($('#tabs li:first a').text());
-				}
-
-				return true;
-
-			}
-
-			return false;
-
-		},
-
-		saveCurrent: function() {
-
-			var current_template = (FASTyle.useEditor) ? FASTyle.dom.editor.getValue() : FASTyle.dom.textarea.val();
-
-			return FASTyle.templateEditor.saveTemplate(FASTyle.dom.title.val(), current_template, FASTyle.dom.tid.val());
-
-		},
-
-		saveTemplate: function(name, template, tid) {
-
-			FASTyle.templateEditor.templates[name] = {
-				'tid': parseInt(tid),
-				'template': template
-			};
-
-			// Save the current editor status
-			if (FASTyle.useEditor) {
-				FASTyle.templateEditor.templates[name].history = FASTyle.dom.editor.getHistory();
-				FASTyle.templateEditor.templates[name].scrollInfo = FASTyle.dom.editor.getScrollInfo();
-				FASTyle.templateEditor.templates[name].cursorPosition = FASTyle.dom.editor.getCursor();
-				FASTyle.templateEditor.templates[name].selections = FASTyle.dom.editor.listSelections();
-			}
-
-			// Add this template to the opened tabs cache
-			var currentlyOpen = Cookie.get('active-templates-' + FASTyle.sid);
-			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : [name];
-
-			if (newCookie.indexOf(name) == -1) {
-				newCookie.push(name);
-			}
-
-			Cookie.set('active-templates-' + FASTyle.sid, newCookie.join('|'));
-
-		},
-
-		unloadTemplate: function(name) {
-
-			name = name.trim();
-
-			if (!FASTyle.templateEditor.removeButton(name)) {
-				return false;
-			}
-
-			delete FASTyle.templateEditor.templates[name];
-
-			// Delete this template from the opened tabs cache
-			var currentlyOpen = Cookie.get('active-templates-' + FASTyle.sid);
-			var newCookie = (typeof currentlyOpen !== 'undefined' && currentlyOpen.length) ? currentlyOpen.split('|') : '';
-
-			var index = newCookie.indexOf(name);
-
-			if (index > -1) {
-				newCookie.splice(index, 1);
-			}
-
-			Cookie.set('active-templates-' + FASTyle.sid, newCookie.join('|'));
-
-		},
-
-		loadTemplate: function(name) {
-
-			name = name.trim();
-
-			var t = FASTyle.templateEditor.templates[name];
-
-			// Launch the spinner
-			FASTyle.spinner.spin();
-			$('.close_all_button').after(FASTyle.spinner.el);
-
-			if (typeof t !== 'undefined')  {
-				return FASTyle.templateEditor.switchToTemplate(name, t.template, t.tid);
-			} else {
-				
-				var url = 'index.php?module=style-templates';
-				var data = {
-					'action': 'edit_template',
-					'sid': FASTyle.sid,
-					'get_template_ajax': 1,
-					'title': name
+				// Scrolling position and editor dimensions
+				if (templateOptions.scrollInfo) {
+					FASTyle.dom.editor.scrollTo(templateOptions.scrollInfo.left, templateOptions.scrollInfo.top);
+					FASTyle.dom.editor.setSize(templateOptions.scrollInfo.clientWidth, templateOptions.scrollInfo.clientHeight);
 				}
 				
-				return FASTyle.sendRequest('POST', url, data, (response) => {
-					return FASTyle.templateEditor.switchToTemplate(name, response.template, response.tid);
-				});
-
+				// Cursor position
+				if (templateOptions.cursorPosition) {
+					FASTyle.dom.editor.setCursor(templateOptions.cursorPosition);
+				}
+				
+				// Selections
+				if (templateOptions.selections) {
+					FASTyle.dom.editor.setSelections(templateOptions.selections);
+				}
+				
 			}
+
+		} else {
+			FASTyle.dom.textarea.val(content);
+			FASTyle.dom.textarea.focus();
+		}
+
+		// Stop the spinner
+		FASTyle.spinner.stop();
+		
+		// Set this resource internally
+		FASTyle.currentResource = {
+			'title': name,
+			'id': id
+		};
+		
+		// Remember tab
+		Cookie.set('active-resource-' + FASTyle.sid, name);
+
+		// Update the title
+		$('.border_wrapper .title').text(name);
+		
+		return true;
+
+	},
+
+	markAsActive: function(name, active) {
+		
+		if (!name.length) return false;
+		
+		// Find this tab and group
+		var tab = FASTyle.dom.sidebar.find('[data-title="' + name + '"]');
+		var group = tab.closest('ul');
+		
+		// Is this group not already expanded?
+		if (!group.hasClass('expanded')) {
+			group.addClass('expanded');
+		}
+		
+		// Is this group even visible?
+		var scrollingPosition = FASTyle.dom.sidebar.scrollTop();
+		var tabPosition = tab.position().top;
+		var scrollingEnd = scrollingPosition + FASTyle.dom.sidebar.outerHeight();
+		
+		if (tabPosition < scrollingPosition || tabPosition > scrollingEnd) {
+			FASTyle.dom.sidebar.scrollTop(tabPosition);
+		}
+					
+		tab.addClass('active');
+
+	},
+
+	storeCurrentResourceInCache: function() {
+		return (FASTyle.currentResource.title) ? FASTyle.storeResourceInCache(FASTyle.currentResource.title, FASTyle.getEditorContent()) : false;
+	},
+
+	storeResourceInCache: function(name, content) {
+		
+		name = name.trim();
+
+		FASTyle.resources[name] = {
+			'content': content
+		};
+
+		// Save the current editor status
+		if (FASTyle.useEditor) {
+			FASTyle.resources[name].history = FASTyle.dom.editor.getHistory();
+			FASTyle.resources[name].scrollInfo = FASTyle.dom.editor.getScrollInfo();
+			FASTyle.resources[name].cursorPosition = FASTyle.dom.editor.getCursor();
+			FASTyle.resources[name].selections = FASTyle.dom.editor.listSelections();
+		}
+
+	},
+
+	removeResourceFromCache: function(name) {
+
+		name = name.trim();
+
+		delete FASTyle.resources[name];
+
+	},
+
+	loadResource: function(name, type) {
+
+		name = name.trim();
+
+		var t = FASTyle.resources[name];
+		
+		if (!type) {
+			type = (name.indexOf('.css') > -1) ? 'stylesheet' : 'template';
+		}
+
+		// Launch the spinner
+		FASTyle.spinner.spin();
+		$('.close_all_button').after(FASTyle.spinner.el);
+
+		if (typeof t !== 'undefined')  {
+			return FASTyle.loadResourceInDOM(name, t.content);
+		} else {
+			
+			var url = 'index.php?module=style-fastyle';
+			var data = {
+				'get': type,
+				'sid': FASTyle.sid,
+				'tid': FASTyle.tid,
+				'title': name
+			}
+			
+			return FASTyle.sendRequest('POST', url, data, (response) => {
+				return FASTyle.loadResourceInDOM(name, response.content);
+			});
 
 		}
 
@@ -655,17 +433,17 @@ var FASTyle = {
 
 		var spinner = new Spinner(opts).spin();
 		spinnerContainer.append(spinner.el);
+		
+		var data = FASTyle.buildRequestData();
 
-		var url = $this.attr('action') + '&ajax=1';
-
-		FASTyle.sendRequest('POST', url, $this.serialize(), (response) => {
+		FASTyle.sendRequest('POST', 'index.php', data, (response) => {
 			
 			// Stop the spinner
 			spinner.stop();
 
 			// Remove the "not saved" marker
-			if (FASTyle.dom.switcher.length) {
-				FASTyle.dom.switcher.find('.active').removeClass('not_saved');
+			if (FASTyle.dom.sidebar.length) {
+				FASTyle.dom.sidebar.find('.active').removeClass('not-saved');
 			}
 
 			// Restore the button
@@ -674,15 +452,53 @@ var FASTyle = {
 			// Notify the user
 			$.jGrowl(response.message);
 
-			// Eventually handle the updated tid
-			if (response.tid && FASTyle.dom.tid.length) {
-				FASTyle.dom.tid.val(Number(response.tid));
+			// Eventually handle the updated tid (fixes templates not saving through multiple calls when a template hasn't been edited before)
+			if (response.tid && data.action == 'edit_template') {
+				FASTyle.dom.sidebar.find('[data-title="' + data.title + '"]').attr('data-tid', Number(response.tid));
 			}
 			
 		});
 
 		return false;
 
+	},
+	
+	buildRequestData: function() {
+		
+		var params = {};
+		
+		params.ajax = 1;
+		params.my_post_key = FASTyle.postKey;
+		
+		var content = FASTyle.getEditorContent();
+		
+		// Stylesheet
+		if (FASTyle.currentResource.title.indexOf('.css') > -1) {
+			
+			params.module = 'style-themes';
+			params.action = 'edit_stylesheet';
+			params.mode = 'advanced';
+			params.tid = FASTyle.tid;
+			params.file = FASTyle.currentResource.title;
+			params.stylesheet = content;
+			
+		}
+		// Templates
+		else {
+			
+			params.module = 'style-templates';
+			params.action = 'edit_template';
+			params.title = FASTyle.currentResource.title;
+			params.sid = FASTyle.sid;
+			params.template = content;
+			
+			// This is NOT the theme ID, but the template ID!
+			params.tid = parseInt($('[data-title="' + params.title + '"]').attr('data-tid'));
+			
+		}
+		
+		return params;
+		
 	},
 	
     sendRequest: function(type, url, data, callback) {
@@ -701,6 +517,10 @@ var FASTyle = {
 
     isRequestPending: function() {
         return (typeof FASTyle.request === 'object' && FASTyle.request.state() == 'pending');
+    },
+    
+    getEditorContent: function() {
+	    return (FASTyle.useEditor) ? FASTyle.dom.editor.getValue() : FASTyle.dom.textarea.val();
     },
 
 	utils: {

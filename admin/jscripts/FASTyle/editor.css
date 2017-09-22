@@ -1,142 +1,97 @@
 .fastyle > .form_row {
 	width: 80%;
-	float: left
+	float: left;
+	margin: 0;
 }
 
 .fastyle > .sidebar {
 	width: 20%;
 	float: left;
-	padding: 0 20px 0 0;
+	padding: 0;
 	box-sizing: border-box;
 	position: relative;
+	height: 500px;
+	background: #1c2939;
+	overflow-y: scroll
 }
 
 .fastyle > .sidebar > * {
 	margin: 10px 0;
 	display: inline-block;
+	position: relative
+}
+
+.fastyle > .sidebar ul {
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	list-style-type: none
+}
+
+.fastyle > .sidebar ul li {
+	margin: 0;
+	display: block;
+	cursor: pointer;
+	padding: 10px 20px;
+	background: #253447;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #607588;
+	font-size: 10px;
 	position: relative;
+	font-weight: 500;
+}
+
+.fastyle > .sidebar ul li.active {
+	background: #1f4661;
+	color: #fff;
+}
+
+.fastyle > .sidebar ul li.not-saved:after {
+	content: '';
+	width: 8px;
+	height: 8px;
+	background: #ec6721;
+	display: inline-block;
+	border-radius: 999em;
+	position: absolute;
+	top: 12px;
+	right: 10px;
+}
+
+.fastyle > .sidebar [name="search"] {
+	padding: 12px;
+	margin: 0;
+	-webkit-appearance: none;
+	border: 1px solid rgba(255,255,255,.1);
+	background: rgba(255,255,255,.1);
+	color: #fff;
+	outline: none;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.fastyle > .sidebar li.header {
+	padding: 12px;
+	margin: 0;
+	background: #1c2939;
+	color: #7e8c98;
+	font-size: 9px;
+	text-transform: uppercase;
+}
+
+.fastyle > .sidebar li.header+ul {
+	display: none
+}
+
+.fastyle > .sidebar li.header+ul.expanded {
+	display: block
 }
 
 .fastyle:after {
 	content: "";
 	display: block;
 	clear: both
-}
-
-#tabs-wrapper {
-	position: relative;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-ul.tabs {
-	margin: 0 0 0 45px;
-	height: 44px;
-	line-height: 44px;
-	overflow-x: scroll;
-	overflow-y: hidden;
-	white-space: nowrap;
-	box-sizing: border-box;
-	width: auto;
-}
-
-ul.tabs li {
-	white-space: nowrap;
-	float: none;
-	display: inline-block;
-	height: 100%;
-	margin: 0;
-}
-
-/* 2-4 items */
-ul.tabs li:first-child:nth-last-child(n + 2),
-ul.tabs li:first-child:nth-last-child(n + 2) ~ li {
-	width: 25%;
-}
-
-/* 5 items */
-ul.tabs li:first-child:nth-last-child(5),
-ul.tabs li:first-child:nth-last-child(5) ~ li {
-	width: 20%;
-}
-
-/* 6 items */
-ul.tabs li:first-child:nth-last-child(6),
-ul.tabs li:first-child:nth-last-child(6) ~ li {
-	width: 16.666%;
-}
-
-/* 7 items */
-ul.tabs li:first-child:nth-last-child(7),
-ul.tabs li:first-child:nth-last-child(7) ~ li {
-	width: 14.285%;
-}
-
-/* 8 items onwards */
-ul.tabs li:first-child:nth-last-child(n + 8),
-ul.tabs li:first-child:nth-last-child(n + 8) ~ li {
-	width: 12.5%;
-}
-
-ul.tabs li a {
-    height: 100%;
-    box-sizing: border-box;
-    float: none;
-    padding: 0 34px 0 10px;
-    display: inline-block;
-    position: relative;
-    border: 1px solid transparent;
-    border-bottom: 2px solid transparent;
-    margin: 0;
-    cursor: pointer;
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-ul.tabs li a.active {
-    border-bottom-color: transparent;
-    background: #fafafa;
-    margin-top: 0;
-}
-
-ul.tabs:after {
-	content: '';
-	display: block;
-	clear: both
-}
-
-ul.tabs .not_saved {
-	border-bottom: 2px solid #f3943b!important;
-}
-
-ul.tabs .not_saved:before {
-	content: "*"
-}
-
-ul.tabs li:only-child span.close {
-	display: none
-}
-
-ul.tabs li span.close:after {
-	content: "\00D7";
-	cursor: pointer;
-	position: absolute;
-	width: 18px;
-	right: 8px;
-	top: 13px;
-	text-align: center;
-	height: 18px;
-	line-height: 18px;
-	background: #e2e2e2;
-	border-radius: 3px;
-}
-
-ul.tabs li .active span.close:after {
-	background: #fafafa;
-}
-
-.fastyle .sidebar .close_all_button {
-	text-align: center;
-	display: block
 }

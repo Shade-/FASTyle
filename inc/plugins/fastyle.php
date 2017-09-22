@@ -6,7 +6,7 @@
  * @package FASTyle
  * @author  Shade <legend_k@live.it>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 1.7
+ * @version 2.0
  */
 
 if (!defined('IN_MYBB')) {
@@ -24,7 +24,7 @@ function fastyle_info()
 		'description' => 'An all-in-one utility to improve and speed up stylesheets, settings and templates management.',
 		'author' => 'Shade',
 		'authorsite' => 'https://www.mybboost.com',
-		'version' => '1.7',
+		'version' => '2.0',
 		'codename' => 'fastyle',
 		'compatibility' => '18*'
 	];
@@ -98,16 +98,13 @@ if (defined('IN_ADMINCP')) {
 	$plugins->add_hook("admin_load", "fastyle_ad");
 	$plugins->add_hook("admin_style_templates_edit_template", "fastyle_templates_edit");
 	$plugins->add_hook("admin_style_templates_edit_template_commit", "fastyle_templates_edit_commit");
-	$plugins->add_hook("admin_style_themes_edit_stylesheet_advanced", "fastyle_themes_edit_advanced");
 	$plugins->add_hook("admin_style_themes_edit_stylesheet_advanced_commit", "fastyle_themes_edit_advanced_commit");
-	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple", "fastyle_themes_edit_simple");
-	$plugins->add_hook("admin_style_themes_edit_stylesheet_simple_commit", "fastyle_themes_edit_simple_commit");
 	$plugins->add_hook("admin_config_settings_change", "fastyle_admin_config_settings_change", 1000);
 	$plugins->add_hook("admin_config_settings_change_commit", "fastyle_admin_config_settings_change_commit");
-	$plugins->add_hook("admin_style_templates_set", "fastyle_admin_style_templates_set");
-	$plugins->add_hook("admin_load", "fastyle_get_templates");
-	$plugins->add_hook("admin_style_templates_edit_template_fastyle", "fastyle_quick_templates_jump");
-	$plugins->add_hook("admin_page_output_footer", "fastyle_codemirror_sublime");
+		
+	// Custom module
+	$plugins->add_hook("admin_style_menu", "fastyle_admin_style_menu");
+	$plugins->add_hook("admin_style_action_handler", "fastyle_admin_style_action_handler");
 	
 }
 
@@ -142,8 +139,6 @@ function fastyle_templates_edit()
 		fastyle_message(['template' => $template['template'], 'tid' => $template['tid']]);
 		
 	}
-	
-	$page->extra_header .= fastyle_load_javascript();
 
 	if ($mybb->input['ajax']) {
 		
@@ -165,14 +160,16 @@ function fastyle_templates_edit()
 
 function fastyle_templates_edit_commit()
 {
-	global $template, $mybb, $set, $lang, $errors, $template_array;
+	global $template, $mybb, $set, $lang, $errors;
 	
 	if ($mybb->input['ajax']) {
+		
+		$lang->load('fastyle');
 	
 		log_admin_action($template['tid'], $mybb->input['title'], $mybb->input['sid'], $set['title']);
 		
 		$data = [
-			'message' => "{$template['title']} has been updated successfully."
+			'message' => $lang->sprintf($lang->fastyle_success_template_saved, $template['title'])
 		];
 		
 		// Check if the tid coming from the browser matches the one returned from the db. If it doesn't = new template,
@@ -187,61 +184,16 @@ function fastyle_templates_edit_commit()
 	
 }
 
-function fastyle_themes_edit_advanced()
-{
-	global $mybb, $db, $lang, $page, $theme;
-	
-	$page->extra_header .= fastyle_load_javascript();
-
-	if ($mybb->request_method == "post" and $mybb->input['ajax']) {
-		
-		$parent_list = make_parent_theme_list($theme['tid']);
-		$parent_list = implode(',', $parent_list);
-		if (!$parent_list) {
-			$parent_list = 1;
-		}
-	
-		$query = $db->simple_select("themestylesheets", "*", "name='".$db->escape_string($mybb->input['file'])."' AND tid IN ({$parent_list})", ['order_by' => 'tid', 'order_dir' => 'desc', 'limit' => 1]);
-		$stylesheet = $db->fetch_array($query);
-	
-		// Does the theme not exist?
-		if (!$stylesheet['sid']) {
-			fastyle_message($lang->error_invalid_stylesheet);
-		}
-		
-	}
-}
-
 function fastyle_themes_edit_advanced_commit()
 {
-	global $mybb, $theme, $lang;
+	global $mybb, $theme, $lang, $stylesheet;
 
 	if ($mybb->request_method == "post" and $mybb->input['ajax']) {
 	
 		log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
 		
-		fastyle_message($lang->success_stylesheet_updated);
+		fastyle_message($lang->sprintf($lang->fastyle_success_stylesheet_updated, $stylesheet['name']));
 		
-	}
-}
-
-function fastyle_themes_edit_simple()
-{
-	global $page;
-	
-	$page->extra_header .= fastyle_load_javascript();
-
-}
-
-function fastyle_themes_edit_simple_commit()
-{
-	global $mybb, $lang, $theme, $stylesheet;
-	
-	// Log admin action
-	log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
-	
-	if ($mybb->input['ajax']) {
-		fastyle_message($lang->success_stylesheet_updated);
 	}
 }
 
@@ -250,7 +202,6 @@ function fastyle_admin_config_settings_change()
 	global $page;
 	
 	$page->extra_header .= fastyle_load_javascript();
-
 }
 
 function fastyle_admin_config_settings_change_commit()
@@ -274,152 +225,12 @@ function fastyle_admin_config_settings_change_commit()
 	}
 }
 
-function fastyle_admin_style_templates_set()
-{
-	global $page;
-	
-	$page->extra_header .= fastyle_load_javascript('templatelist');
-	
-}
-
-function fastyle_get_templates()
-{
-	global $mybb, $db, $lang;
-	
-	if ($mybb->input['action'] != 'get_templates') {
-		return false;
-	}
-	
-	$gid = (int) $mybb->input['gid'];
-	$sid = (int) $mybb->input['sid'];
-	
-	$prefixes = [];
-	
-	$where_sql = ($gid != -1) ? "gid = '$gid'" : '';
-	
-	$query = $db->simple_select("templategroups", "prefix", $where_sql);
-	while ($prefix = $db->fetch_field($query, 'prefix')) {
-		$prefixes[$prefix] = 1;
-	}
-	
-	$html = $temp_templates = [];
-	
-	$ungrouped = (count($prefixes) > 1) ? true : false;
-	
-	$query = $db->simple_select("templates", "*", "sid='{$sid}' OR sid='-2'", ['order_by' => 'sid DESC, title', 'order_dir' => 'ASC']);
-	while ($template = $db->fetch_array($query)) {
-		
-		$exploded = explode("_", $template['title'], 2);
-
-		// Set the prefix to lowercase for case insensitive comparison.
-		$exploded[0] = strtolower($exploded[0]);
-		
-		if ((!$ungrouped and !$prefixes[$exploded[0]]) or ($ungrouped and $prefixes[$exploded[0]])) {
-			continue;
-		}
-		
-		$templates[$template['sid']][$template['title']] = $template;
-		
-		$temp_templates[] = $template;
-		
-	}
-	
-	$lang->load('style_templates', false, true);
-	$alt = ' alt_row';
-	
-	// No templates found
-	if (empty($temp_templates)) {
-		$html[] = '<tr>
-	<td colspan="2">' . $lang->empty_template_set . '</td>
-</tr>';
-	}
-	
-	foreach ($temp_templates as $template) {
-		
-		if (($html[$template['title']] and $template['sid'] == -2) or (in_array($template['title'], $prefixes) and !$multiple_prefixes)) {
-			continue;
-		}
-		
-		$template_title = urlencode($template['title']);
-		
-		$popup = new PopupMenu("template_{$template['tid']}", $lang->options);
-		$popup->add_item($lang->full_edit, "index.php?module=style-templates&amp;action=edit_template&amp;title={$template_title}&amp;sid={$sid}");
-		
-		// Not modified
-		$title = $template['title'];
-		
-		// Modified
-		if ($templates['sid'] != -2 and $templates[-2][$template['title']] and $templates[-2][$template['title']]['template'] != $template['template']) {
-			
-			$title = '<span style="color: green">' . $template['title'] . '</span>';
-			
-			// Add diff/revert options
-			$popup->add_item($lang->diff_report, "index.php?module=style-templates&amp;action=diff_report&amp;title={$template_title}&amp;sid2={$sid}");
-			$popup->add_item($lang->revert_to_orig, "index.php?module=style-templates&amp;action=revert&amp;title={$template_title}&amp;sid={$sid}&amp;my_post_key={$mybb->post_code}", "return AdminCP.deleteConfirmation(this, '{$lang->confirm_template_revertion}')");
-			
-		}
-		// Not present in masters
-		else if (!$templates[-2][$template['title']]) {
-			$popup->add_item($lang->delete_template, "index.php?module=style-templates&amp;action=delete_template&amp;title={$template_title}&amp;sid={$sid}&amp;my_post_key={$mybb->post_code}", "return AdminCP.deleteConfirmation(this, '{$lang->confirm_template_deletion}')");
-			$title = '<span style="color: blue">' . $title . '</span>';
-		}
-		
-		$alt = ($alt == '') ? ' alt_row' : '';
-		
-		$html[$template['title']] = <<<HTML
-<tr class="group{$gid}{$alt}">
-	<td class="first"><span style="padding: 20px"><a href="index.php?module=style-templates&amp;action=edit_template&amp;title={$template_title}&amp;sid={$sid}">{$title}</a></span></td>
-	<td class="align_center last alt_col">{$popup->fetch()}</td>
-</tr>
-HTML;
-
-	}
-	
-	ksort($html);
-
-	echo json_encode(implode("\n", $html));
-	
-	exit;
-	
-}
-
-function fastyle_quick_templates_jump()
-{
-	global $db, $lang, $form_container, $form, $template_sets, $sid;
-	
-	$templates = ['' => 'Select a template'];
-	
-	$query = $db->simple_select('templates', 'title', "sid = '-2' OR sid = '{$sid}'");
-	while ($title = $db->fetch_field($query, 'title')) {
-		
-		if ($templates[$title]) {
-			continue;
-		}
-		
-		$templates[$title] = $title;
-		
-	}
-	
-	ksort($templates);
-	
-	$fastyle_scripts = fastyle_load_javascript('templates');
-	
-	$script = <<<HTML
-<link rel="stylesheet" href="../jscripts/select2/select2.css" type="text/css" />
-<script type="text/javascript" src="../jscripts/select2/select2.min.js"></script>
-<script type="text/javascript">
-FASTyle.sid = {$sid};
-</script>
-$fastyle_scripts
-<link rel="stylesheet" href="jscripts/FASTyle/editor.css" />
-HTML;
-	
-	return $form_container->output_row('Template name', 'Search and select a template to load it into this browser tab.', $script . $form->generate_select_box('quickjump', $templates));
-}
-
-function fastyle_load_javascript($type = '')
+function fastyle_load_javascript($sid = 0, $tid = 0)
 {
 	static $loaded;
+	
+	$sid = (int) $sid;
+	$tid = (int) $tid;
 	
 	$html = '';
 	
@@ -436,7 +247,7 @@ HTML;
 <script type="text/javascript">
 
 $(document).ready(function() {
-	FASTyle.init('$type');
+	FASTyle.init($sid, $tid);
 });
 
 </script>
@@ -444,22 +255,6 @@ HTML;
 	
 	return $html;
 	
-}
-
-function fastyle_codemirror_sublime(&$args)
-{
-	global $mybb;
-	
-	if (in_array($mybb->input['action'], ['edit_template', 'add_template', 'edit_stylesheet', 'add_stylesheet'])) {
-		echo <<<HTML
-<script type="text/javascript" src="jscripts/FASTyle/sublime.js"></script>
-<script type="text/javascript">
-	if (typeof editor !== 'undefined') {
-		editor.setOption('keyMap', 'sublime');
-	}
-</script>
-HTML;
-	}
 }
 
 function fastyle_message($data)
@@ -471,4 +266,29 @@ function fastyle_message($data)
 	echo json_encode($data);
 	
 	exit;
+}
+
+function fastyle_admin_style_menu($sub_menu)
+{
+	global $lang;
+	
+	$lang->load("fastyle");
+	
+	$sub_menu[] = [
+		"id" => "fastyle",
+		"title" => $lang->fastyle,
+		"link" => "index.php?module=style-fastyle"
+	];
+	
+	return $sub_menu;
+}
+
+function fastyle_admin_style_action_handler($actions)
+{
+	$actions['fastyle'] = array(
+		"active" => "fastyle",
+		"file" => "fastyle.php"
+	);
+	
+	return $actions;
 }
