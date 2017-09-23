@@ -59,6 +59,12 @@ li.expanded.header:not(.search):before {
 .icon-plus:before {
   content: "\66";
 }
+.icon-attach:before {
+  content: "\67";
+}
+.icon-attention:before {
+  content: "\68";
+}
 
 li.header:before {
 	margin-right: 5px;
@@ -91,6 +97,9 @@ li.header:before {
 	width: 80%;
 	float: left;
 	margin: 0;
+	padding: 0 20px 20px;
+	box-sizing: border-box;
+	background: #1c2939;
 }
 
 .fastyle .sidebar {
@@ -99,9 +108,9 @@ li.header:before {
 	padding: 0;
 	box-sizing: border-box;
 	position: relative;
-	height: 500px;
+	height: 520px;
 	background: #1c2939;
-	overflow-y: auto
+	overflow-y: auto;
 }
 
 .fastyle .sidebar > * {
@@ -122,8 +131,7 @@ li.header:before {
 	margin: 0;
 	display: block;
 	cursor: pointer;
-	padding: 10px 20px;
-	background: #253447;
+	padding: 10px 25px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -134,28 +142,29 @@ li.header:before {
 }
 
 .fastyle .sidebar ul li.active {
-	background: #1f4661;
 	color: #fff;
+	border-left: 5px solid #ef5b7b;
+	padding: 10px 25px 10px 20px;
 }
 
 .fastyle .sidebar ul li.not-saved:after {
 	content: '';
-	width: 8px;
-	height: 8px;
-	background: #ec6721;
+	width: 7px;
+	height: 7px;
+	background: #f58d4b;
 	display: inline-block;
 	border-radius: 999em;
 	position: absolute;
-	top: 12px;
-	right: 10px;
+	top: 13px;
+	right: 14px;
 }
 
 .fastyle .sidebar ul li[data-status="modified"] {
-	color: #557d3e
+	color: #62734a;
 }
 
 .fastyle .sidebar ul li[data-status="modified"].active {
-	color: #a3d23b
+	color: #badc8a;
 }
 
 .fastyle .sidebar ul li[data-status="original"] {
@@ -166,11 +175,19 @@ li.header:before {
 	color: #7a98f7;
 }
 
+.fastyle .sidebar ul li .icon-attention {
+	color: #adaf7b;
+}
+
+.fastyle .sidebar ul li.active .icon-attention {
+	color: #fff077;
+}
+
 .fastyle .sidebar ul li .action {
 	position: absolute;
 	top: 10px;
 	right: 10px;
-	font-size: 12px
+	font-size: 12px;
 }
 
 .fastyle .sidebar [name="search"] {
@@ -194,7 +211,8 @@ li.header:before {
 	text-transform: uppercase;
 }
 
-.fastyle .sidebar li.header .deletegroup {
+.fastyle .sidebar li.header .deletegroup,
+.fastyle .sidebar li i[class*="icon-"] {
 	float: right;
 	font-size: 11px
 }
@@ -292,12 +310,13 @@ li.header:before {
 
 /* CodeMirror overlay */
 .CodeMirror .overlay {
-	width: calc(100% - 45px);
+	width: calc(100% - 43px);
 	height: 100%;
-	background: rgba(255,255,255,.6);
+	background: rgba(0,0,0,.15);
 	position: absolute;
 	top: 0;
 	left: 0;
 	z-index: 9999;
-	margin-left: 45px;
+	margin-left: 43px;
+	border-radius: 3px;
 }

@@ -12,12 +12,12 @@ var FASTyle = {
 	quickMode: false,
 
 	init: function(sid, tid) {
-		
+
 		// Template set ID
 		if (sid >= -1) {
 			FASTyle.sid = sid;
 		}
-		
+
 		// Theme ID
 		if (tid > 0) {
 			FASTyle.tid = tid;
@@ -31,7 +31,7 @@ var FASTyle = {
 			radius: 19,
 			scale: 0.25,
 			corners: 1,
-			color: '#000',
+			color: '#fff',
 			opacity: 0.25,
 			rotate: 0,
 			direction: 1,
@@ -46,10 +46,10 @@ var FASTyle = {
 			hwaccel: false,
 			position: 'relative'
 		}
-		
+
 		// Set the postKey
 		var postKey = $('[name="my_post_key"]').val();
-		
+
 		if (postKey.length) {
 			FASTyle.postKey = postKey;
 		}
@@ -58,18 +58,18 @@ var FASTyle = {
 		FASTyle.dom.textarea = $('#editor');
 		FASTyle.dom.mainContainer = $('.fastyle');
 		FASTyle.dom.bar = FASTyle.dom.mainContainer.find('.bar');
-		
+
 		// Expand/collapse
 		FASTyle.dom.sidebar.find('.header').on('click', function(e) {
 			return $(this).toggleClass('expanded');
 		});
-		
+
 		FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
 		FASTyle.useEditor = (typeof editor !== 'undefined') ? true : false;
 		FASTyle.dom.editor = (FASTyle.useEditor) ? editor : null;
-		
+
 		// Load overlay
-		if (FASTyle.useEditor) {
+		if (FASTyle.useEditor)  {
 			$('<div class="overlay" />').hide().prependTo('.CodeMirror');
 			FASTyle.spinner.spin();
 			$('.CodeMirror .overlay').append(FASTyle.spinner.el);
@@ -99,7 +99,7 @@ var FASTyle = {
 			}
 
 		});*/
-		
+
 		// Mark tabs as not saved when edited
 		if (FASTyle.useEditor) {
 
@@ -122,7 +122,7 @@ var FASTyle = {
 			});
 
 		}
-		
+
 		// Load resource
 		FASTyle.dom.sidebar.find('ul [data-title]').on('click', function(e) {
 
@@ -139,76 +139,77 @@ var FASTyle = {
 			return false;
 
 		});
-		
+
 		var notFoundElement = FASTyle.dom.sidebar.find('.nothing-found');
-		
+
 		// Search resource
 		$('.sidebar input[name="search"]').on('keyup', function(e) {
-			
+
 			var val = $(this).val();
-			
+
 			if (!val) {
 				FASTyle.dom.sidebar.find('.header+ul, .header+ul li').removeClass('expanded').removeAttr('style');
 				return FASTyle.dom.sidebar.find('.header').show();
 			}
-			
+
 			// Hide all groups
 			FASTyle.dom.sidebar.find('.header, .header+ul, .header+ul li').hide();
-			
+
 			// Show
 			var found = FASTyle.dom.sidebar.find('[data-title*="' + val + '"]');
-			
+
 			if (found.length) {
 				notFoundElement.hide();
 				found.show().closest('ul').show().addClass('expanded').prev('.header').show();
-			}
-			else {
+			} else {
 				notFoundElement.show();
 			}
-			
+
 		});
-		
+
 		// Quick mode
 		FASTyle.dom.bar.find('.actions span.quickmode').on('click', function(e) {
-			
+
 			e.stopImmediatePropagation();
-			
+
 			FASTyle.quickMode = (FASTyle.quickMode == true) ? false : true;
-			
+
 			return $(this).toggleClass('enabled');
-			
+
 		});
-		
+
 		// Full page
 		FASTyle.dom.bar.find('.actions .fullpage').on('click', function(e) {
-			
+
 			FASTyle.dom.mainContainer.toggleClass('full');
-			
+
+			if (FASTyle.useEditor) FASTyle.dom.editor.refresh();
+
 			return ($(this).hasClass('icon-resize-full')) ? $(this).removeClass('icon-resize-full').addClass('icon-resize-small') : $(this).removeClass('icon-resize-small').addClass('icon-resize-full');
-			
+
 		});
-		
+
 		// Revert/delete
 		FASTyle.dom.bar.find('.actions span').on('click', function(e) {
-			
+
 			e.preventDefault();
-			
+
 			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
 			var mode = ($(this).hasClass('revert')) ? 'revert' : 'delete';
-			
+
 			if ((tab.attr('data-status') == 'modified' && mode == 'delete') || (tab.attr('data-status') == 'original' && mode == 'revert')) {
 				return false;
 			}
-			
+
 			if (!FASTyle.quickMode) {
-				
+
 				var confirm = window.confirm('Are you sure you want to ' + mode + ' this template?');
 				if (confirm != true) {
 					return false;
 				}
-				
+
 			}
-			
+
 			var data = {
 				'module': 'style-fastyle',
 				'api': 1,
@@ -217,54 +218,54 @@ var FASTyle = {
 				'title': tab.attr('data-title'),
 				'sid': FASTyle.sid
 			};
-			
+
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
-				
+
 				$.jGrowl(response.message);
-				
+
 				if (response.tid) {
 					tab.attr('data-tid', Number(response.tid));
 				}
-				
+
 				tab.removeAttr('data-status');
-				
+
 				if (mode == 'delete') {
 					tab.remove();
 				}
-				
+
 				FASTyle.dom.bar.removeAttr('data-status');
-				
+
 				if (mode == 'delete' || !response.template) {
 					response.template = '';
 				}
-				
+
 				// Prevents the tab to be marked as "not saved"
 				FASTyle.switching = true;
-				
+
 				if (tab.hasClass('active')) {
 					return (FASTyle.useEditor) ? FASTyle.dom.editor.setValue(response.template) : FASTyle.dom.textarea.val(response.template);
 				}
-				
+
 			});
-			
+
 		});
-		
+
 		// Delete template group
 		FASTyle.dom.sidebar.find('.deletegroup').on('click', function(e) {
-			
+
 			e.preventDefault();
-			
+
 			if (!FASTyle.quickMode) {
 
 				var confirm = window.confirm('Are you sure you want to delete this whole template group?');
 				if (confirm != true) {
 					return false;
 				}
-				
+
 			}
-			
+
 			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
-			
+
 			var data = {
 				'module': 'style-fastyle',
 				'api': 1,
@@ -272,11 +273,11 @@ var FASTyle = {
 				'action': 'deletegroup',
 				'gid': $(this).parent('[data-gid]').attr('data-gid')
 			};
-			
+
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
 				return $.jGrowl(response.message);
 			});
-			
+
 		});
 
 		// Save templates/stylesheets with AJAX
@@ -324,60 +325,59 @@ var FASTyle = {
 		FASTyle.switching = true;
 
 		FASTyle.markAsActive(name, true);
-		
+
 		var tab = FASTyle.dom.sidebar.find('[data-title="' + name + '"]');
 
 		FASTyle.dom.sidebar.find(':not([data-title="' + name + '"])').removeClass('active');
 
 		// Switch resource in editor/textarea
 		if (FASTyle.useEditor) {
-			
+
 			// Switch mode if we have to
 			if (name.indexOf('.css') > -1) {
-				
+
 				if (FASTyle.dom.editor.getOption('mode') != 'text/css') {
 					FASTyle.dom.editor.setOption('mode', 'text/css');
 				}
-				
-			}
-			else {
-				
+
+			} else {
+
 				if (FASTyle.dom.editor.getOption('mode') != 'text/html') {
 					FASTyle.dom.editor.setOption('mode', 'text/html');
 				}
-				
+
 			}
-			
+
 			FASTyle.dom.editor.setValue(content);
 			FASTyle.dom.editor.focus();
 			FASTyle.dom.editor.clearHistory();
-			
+
 			var templateOptions = FASTyle.resources[name];
-			
+
 			// Set the previously-saved editor status
 			if (typeof templateOptions !== 'undefined') {
-				
+
 				// Edit history
 				if (templateOptions.history) {
 					FASTyle.dom.editor.setHistory(templateOptions.history);
 				}
-				
+
 				// Scrolling position and editor dimensions
 				if (templateOptions.scrollInfo) {
 					FASTyle.dom.editor.scrollTo(templateOptions.scrollInfo.left, templateOptions.scrollInfo.top);
 					FASTyle.dom.editor.setSize(templateOptions.scrollInfo.clientWidth, templateOptions.scrollInfo.clientHeight);
 				}
-				
+
 				// Cursor position
 				if (templateOptions.cursorPosition) {
 					FASTyle.dom.editor.setCursor(templateOptions.cursorPosition);
 				}
-				
+
 				// Selections
 				if (templateOptions.selections) {
 					FASTyle.dom.editor.setSelections(templateOptions.selections);
 				}
-				
+
 			}
 
 		} else {
@@ -387,66 +387,58 @@ var FASTyle = {
 
 		// Stop the spinner
 		$('.CodeMirror .overlay').hide();
-		
+
 		// Set this resource internally
 		FASTyle.currentResource = {
 			'title': name
 		};
-		
+
 		// Remember tab
 		Cookie.set('active-resource-' + FASTyle.sid, name);
 
 		// Update the title
 		FASTyle.dom.bar.find('.label .name').text(name);
-		
-		if (FASTyle.utils.exists(tab.attr('data-status'))) {
-		
-			if (dateline) {
-				
-				FASTyle.dom.bar.find('.label .date').html('Last edited: ' + FASTyle.utils.processDateline(dateline));
-				FASTyle.currentResource.dateline = dateline;
-				
-			}
-			
+
+		// Update last edited
+		if (FASTyle.utils.exists(tab.attr('data-status')) && dateline) {
+			FASTyle.updateDatelineLabel(dateline);
+		} else {
+			FASTyle.removeDatelineLabel();
 		}
-		else {
-			FASTyle.dom.bar.find('.label .date').empty();
-		}
-		
+
 		return true;
 
 	},
 
 	markAsActive: function(name, active) {
-		
+
 		if (!name.length) return false;
-		
+
 		// Find this tab and group
 		var tab = FASTyle.dom.sidebar.find('[data-title="' + name + '"]');
 		var group = tab.closest('ul').prev('.header');
-		
+
 		// Is this group not already expanded?
 		if (!group.hasClass('expanded')) {
 			group.addClass('expanded');
 		}
-		
+
 		// Is this group even visible?
 		var scrollingPosition = FASTyle.dom.sidebar.scrollTop();
 		var tabPosition = tab.position().top;
 		var scrollingEnd = scrollingPosition + FASTyle.dom.sidebar.outerHeight();
-		
+
 		if (tabPosition < scrollingPosition || tabPosition > scrollingEnd) {
 			FASTyle.dom.sidebar.scrollTop(tabPosition);
 		}
-		
+
 		// Update the bar status
 		if (FASTyle.utils.exists(tab.attr('data-status'))) {
 			FASTyle.dom.bar.attr('data-status', tab.attr('data-status'));
-		}
-		else {
+		} else {
 			FASTyle.dom.bar.removeAttr('data-status');
 		}
-					
+
 		tab.addClass('active');
 
 	},
@@ -456,7 +448,7 @@ var FASTyle = {
 	},
 
 	storeResourceInCache: function(name, content) {
-		
+
 		name = name.trim();
 
 		FASTyle.resources[name] = {
@@ -487,7 +479,7 @@ var FASTyle = {
 		name = name.trim();
 
 		var t = FASTyle.resources[name];
-		
+
 		if (!type) {
 			type = (name.indexOf('.css') > -1) ? 'stylesheet' : 'template';
 		}
@@ -498,7 +490,7 @@ var FASTyle = {
 		if (typeof t !== 'undefined')  {
 			return FASTyle.loadResourceInDOM(name, t.content, t.dateline);
 		} else {
-			
+
 			var data = {
 				'api': 1,
 				'module': 'style-fastyle',
@@ -507,7 +499,7 @@ var FASTyle = {
 				'tid': FASTyle.tid,
 				'title': name
 			}
-			
+
 			return FASTyle.sendRequest('POST', 'index.php', data, (response) => {
 				return FASTyle.loadResourceInDOM(name, response.content, response.dateline);
 			});
@@ -525,7 +517,7 @@ var FASTyle = {
 		if (pressed == "close" || pressed == "save_close") return;
 
 		e.preventDefault();
-		
+
 		var saveButton = $('.submit_button[name="continue"], .submit_button[name="save"], .form_button_wrapper > label:only-child > .submit_button, #change .submit_button');
 		var saveButtonContainer = saveButton.parent();
 		var saveButtonHtml = saveButtonContainer.html();
@@ -550,24 +542,26 @@ var FASTyle = {
 
 		var spinner = new Spinner(opts).spin();
 		spinnerContainer.append(spinner.el);
-		
+
 		var data = FASTyle.buildRequestData();
 
 		FASTyle.sendRequest('POST', 'index.php', data, (response) => {
-			
+
 			var currentTab = FASTyle.dom.sidebar.find('.active');
-			
+
 			// Stop the spinner
 			spinner.stop();
 
 			// Restore the button
 			saveButtonContainer.html(saveButtonHtml);
-			
+
 			// Error?
 			if (response.error) {
-				return $.jGrowl(response.message, {themeState: 'error'});
+				return $.jGrowl(response.message, {
+					themeState: 'error'
+				});
 			}
-			
+
 			// Modify this resource's status
 			if (FASTyle.sid != -1 && !FASTyle.utils.exists(currentTab.attr('data-status'))) {
 				currentTab.attr('data-status', 'modified');
@@ -582,76 +576,88 @@ var FASTyle = {
 			// Notify the user
 			$.jGrowl(response.message);
 
+			// Update last edited
+			FASTyle.updateDatelineLabel(Math.round(new Date().getTime() / 1000));
+
 			// Eventually handle the updated tid (fixes templates not saving through multiple calls when a template hasn't been edited before)
 			if (response.tid && data.action == 'edit_template') {
 				currentTab.attr('data-tid', Number(response.tid));
 			}
-			
+
 		});
 
 		return false;
 
 	},
-	
+
 	buildRequestData: function() {
-		
+
 		var params = {};
-		
+
 		params.ajax = 1;
 		params.my_post_key = FASTyle.postKey;
-		
+
 		var content = FASTyle.getEditorContent();
-		
+
 		// Stylesheet
 		if (FASTyle.currentResource.title.indexOf('.css') > -1) {
-			
+
 			params.module = 'style-themes';
 			params.action = 'edit_stylesheet';
 			params.mode = 'advanced';
 			params.tid = FASTyle.tid;
 			params.file = FASTyle.currentResource.title;
 			params.stylesheet = content;
-			
+
 		}
 		// Templates
 		else {
-			
+
 			params.module = 'style-templates';
 			params.action = 'edit_template';
 			params.title = FASTyle.currentResource.title;
 			params.sid = FASTyle.sid;
 			params.template = content;
-			
+
 			// This is NOT the theme ID, but the template ID!
 			params.tid = parseInt($('[data-title="' + params.title + '"]').attr('data-tid'));
-			
+
 		}
-		
+
 		return params;
-		
+
 	},
-	
-    sendRequest: function(type, url, data, callback) {
 
-        FASTyle.request = $.ajax({
-            type: type,
-            url: url,
-            data: data
-        });
+	sendRequest: function(type, url, data, callback) {
 
-        $.when(FASTyle.request).done(function(output, t) {
-            return (typeof callback === 'function' && t == 'success') ? callback.apply(this, [JSON.parse(output)]) : false;
-        });
+		FASTyle.request = $.ajax({
+			type: type,
+			url: url,
+			data: data
+		});
 
-    },
+		$.when(FASTyle.request).done(function(output, t) {
+			return (typeof callback === 'function' && t == 'success') ? callback.apply(this, [JSON.parse(output)]) : false;
+		});
 
-    isRequestPending: function() {
-        return (typeof FASTyle.request === 'object' && FASTyle.request.state() == 'pending');
-    },
-    
-    getEditorContent: function() {
-	    return (FASTyle.useEditor) ? FASTyle.dom.editor.getValue() : FASTyle.dom.textarea.val();
-    },
+	},
+
+	isRequestPending: function() {
+		return (typeof FASTyle.request === 'object' && FASTyle.request.state() == 'pending');
+	},
+
+	getEditorContent: function() {
+		return (FASTyle.useEditor) ? FASTyle.dom.editor.getValue() : FASTyle.dom.textarea.val();
+	},
+
+	updateDatelineLabel: function(dateline) {
+		FASTyle.dom.bar.find('.label .date').html('Last edited: ' + FASTyle.utils.processDateline(dateline));
+		FASTyle.currentResource.dateline = dateline;
+	},
+
+	removeDatelineLabel: function() {
+		return FASTyle.dom.bar.find('.label .date').empty();
+	},
 
 	utils: {
 
@@ -672,46 +678,46 @@ var FASTyle = {
 				}
 			}
 		},
-		
+
 		exists: function(data) {
 			return (typeof data === 'undefined' || data == false) ? false : true;
 		},
-		
-	    processDateline: function(dateline, type) {
 
-            var date;
+		processDateline: function(dateline, type) {
 
-            if (!dateline || !FASTyle.utils.exists(dateline)) {
-                date = new Date();
-            } else {
-                date = new Date(dateline * 1000);
-            }
-            
-            var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            var todayMidnight = new Date().setHours(0, 0, 0, 0) / 1000;
-            var yesterdayMidnight = todayMidnight - (24 * 60 * 60);
-            var hour = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
+			var date;
 
-            if (dateline > yesterdayMidnight && dateline < todayMidnight) {
-                return 'Yesterday, ' + hour;
-            } else if (dateline > todayMidnight) {
-                return 'Today, ' + hour;
-            }
+			if (!dateline || !FASTyle.utils.exists(dateline)) {
+				date = new Date();
+			} else {
+				date = new Date(dateline * 1000);
+			}
 
-            var string = (date.getDate() + " " + monthNames[date.getMonth()]);
-            var year = date.getFullYear();
-            
-            if (year != new Date().getFullYear()) {
-	            string += ' ' + year;
-            }
-            
-            if (type == 'day') {
-	            return string;
-            }
+			var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+			var todayMidnight = new Date().setHours(0, 0, 0, 0) / 1000;
+			var yesterdayMidnight = todayMidnight - (24 * 60 * 60);
+			var hour = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
 
-            return string + ', ' + hour;
+			if (dateline > yesterdayMidnight && dateline < todayMidnight) {
+				return 'Yesterday, ' + hour;
+			} else if (dateline > todayMidnight) {
+				return 'Today, ' + hour;
+			}
 
-        }
+			var string = (date.getDate() + " " + monthNames[date.getMonth()]);
+			var year = date.getFullYear();
+
+			if (year != new Date().getFullYear()) {
+				string += ' ' + year;
+			}
+
+			if (type == 'day') {
+				return string;
+			}
+
+			return string + ', ' + hour;
+
+		}
 
 	}
 

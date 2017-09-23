@@ -75,7 +75,7 @@ if (isset($mybb->input['api'])) {
 				
 				$content = $stylesheet['stylesheet'];
 				$id = $stylesheet['sid'];
-				$dateline = $stylesheet['dateline'];
+				$dateline = $stylesheet['lastmodified'];
 				
 				break;
 			
@@ -197,7 +197,6 @@ if ($tid or $sid) {
 		
 		$page->extra_header .= '
 <link href="./jscripts/codemirror/lib/codemirror.css" rel="stylesheet">
-<link href="./jscripts/codemirror/theme/mybb.css" rel="stylesheet">
 <script type="text/javascript" src="./jscripts/codemirror/lib/codemirror.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/xml/xml.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
@@ -212,7 +211,8 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/sublime.js"></script>
 <link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">
-<link href="./jscripts/FASTyle/editor.css" rel="stylesheet">';
+<link href="./jscripts/FASTyle/editor.css" rel="stylesheet">
+<link href="./jscripts/FASTyle/material.css" rel="stylesheet">';
 
 	}
 
@@ -436,7 +436,7 @@ if ($tid or $sid) {
 	
 			if (!empty($inherited_ary)) {
 				
-				$inherited = " <small>({$lang->inherited_from}";
+				$inherited = " <i class='icon-attention' title='{$lang->inherited_from}";
 				$sep = " ";
 				$inherited_count = count($inherited_ary);
 				$count = 0;
@@ -454,7 +454,7 @@ if ($tid or $sid) {
 					
 				}
 				
-				$inherited .= ")</small>";
+				$inherited .= "'></i>";
 				
 			}
 			else {
@@ -668,7 +668,7 @@ HTML;
 				indentWithTabs: true,
 				indentUnit: 4,
 				mode: "text/html",
-				theme: "mybb",
+				theme: "material",
 				keyMap: "sublime"
 			});
 		</script>';
