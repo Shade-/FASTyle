@@ -179,6 +179,15 @@ var FASTyle = {
 			
 		});
 		
+		// Full page
+		FASTyle.dom.bar.find('.actions .fullpage').on('click', function(e) {
+			
+			FASTyle.dom.mainContainer.toggleClass('full');
+			
+			return ($(this).hasClass('icon-resize-full')) ? $(this).removeClass('icon-resize-full').addClass('icon-resize-small') : $(this).removeClass('icon-resize-small').addClass('icon-resize-full');
+			
+		});
+		
 		// Revert/delete
 		FASTyle.dom.bar.find('.actions span').on('click', function(e) {
 			
@@ -222,6 +231,8 @@ var FASTyle = {
 				if (mode == 'delete') {
 					tab.remove();
 				}
+				
+				FASTyle.dom.bar.removeAttr('data-status');
 				
 				if (mode == 'delete' || !response.template) {
 					response.template = '';
@@ -537,7 +548,9 @@ var FASTyle = {
 			// Modify this resource's status
 			if (FASTyle.sid != -1 && !FASTyle.utils.attrExists(currentTab.attr('data-status'))) {
 				currentTab.attr('data-status', 'modified');
+				FASTyle.dom.bar.attr('data-status', 'modified');
 			}
+
 
 			// Remove the "not saved" marker
 			if (FASTyle.dom.sidebar.length) {

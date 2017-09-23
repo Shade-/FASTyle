@@ -38,11 +38,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-back-in-time:before {
+.icon-cancel:before {
   content: "\61";
 }
-.icon-cancel:before {
+.icon-resize-full:before {
   content: "\62";
+}
+.icon-resize-small:before {
+  content: "\63";
+}
+
+.fastyle.full {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%
+}
+
+.fastyle.full .sidebar {
+	height: calc(100vh - 63px)
+}
+
+.fastyle.full .CodeMirror {
+	height: calc(100vh - 63px)
 }
 
 .fastyle .form_row {
@@ -207,10 +226,15 @@
 	padding: 4px 8px;
 	background: rgb(42, 65, 80);
 	border-radius: 3px;
-	margin: 0 10px;
+	margin: 0 4px;
 	display: inline-block;
 	cursor: pointer;
 	color: #7e8488
+}
+
+.fastyle .bar .actions i {
+	margin: 0 0 0 20px;
+	cursor: pointer
 }
 
 .fastyle .bar .actions .button.quickmode.enabled {
