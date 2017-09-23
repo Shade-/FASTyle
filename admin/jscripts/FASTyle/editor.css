@@ -60,8 +60,12 @@
 	height: calc(100vh - 63px)
 }
 
+.CodeMirror {
+	height: 500px!important
+}
+
 .fastyle.full .CodeMirror {
-	height: calc(100vh - 63px)
+	height: calc(100vh - 63px)!important;
 }
 
 .fastyle .form_row {
