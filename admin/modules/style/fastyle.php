@@ -35,10 +35,11 @@ unset($themes);
 
 $theme = $theme_cache[$tid];
 
+$sid = (int) $mybb->input['sid'];
+
 // API endpoint
 if (isset($mybb->input['api'])) {
 	
-	$sid = (int) $mybb->input['sid'];
 	$title = $db->escape_string($mybb->input['title']);
 	
 	// Get stylesheet/template
@@ -624,6 +625,7 @@ if ($tid or $sid) {
 			<span class="button quickmode">Quick mode</span>
 			<span class="button revert">Revert</span>
 			<span class="button delete">Delete</span>
+			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>
 	<div>
