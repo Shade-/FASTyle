@@ -609,7 +609,7 @@ if ($tid or $sid) {
 	
 	$form = new Form("index.php", "post", "fastyle_editor");
 	
-	$form_container = new FormContainer($lang->edit_template_breadcrumb, 'tfixed');
+	$form_container = new FormContainer();
 	
 	$textarea = $form->generate_text_area('editor', '', ['id' => 'editor', 'style' => 'width: 100%; height: 500px']);
 	$content = <<<HTML
@@ -617,6 +617,8 @@ if ($tid or $sid) {
 	<div class="bar">
 		<div class="sidebar">
 			<ul><li class="header search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
+		</div>
+		<div class="label">
 		</div>
 		<div class="actions">
 			<span class="button quickmode">Quick mode</span>

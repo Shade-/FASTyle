@@ -54,8 +54,6 @@ var FASTyle = {
 			FASTyle.postKey = postKey;
 		}
 
-		FASTyle.dom.selector = $('select[name="quickjump"]');
-		FASTyle.dom.title = $('input[name="title"]');
 		FASTyle.dom.sidebar = $('#sidebar');
 		FASTyle.dom.textarea = $('#editor');
 		FASTyle.dom.mainContainer = $('.fastyle');
@@ -188,6 +186,10 @@ var FASTyle = {
 			
 			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
 			var mode = ($(this).hasClass('revert')) ? 'revert' : 'delete';
+			
+			if ((tab.attr('data-status') == 'modified' && mode == 'delete') || (tab.attr('data-status') == 'original' && mode == 'revert')) {
+				return false;
+			}
 			
 			if (!FASTyle.quickMode) {
 				
@@ -384,7 +386,7 @@ var FASTyle = {
 		Cookie.set('active-resource-' + FASTyle.sid, name);
 
 		// Update the title
-		$('.border_wrapper .title').text(name);
+		FASTyle.dom.bar.find('.label').text(name);
 		
 		return true;
 

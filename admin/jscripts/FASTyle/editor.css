@@ -192,8 +192,15 @@
 	float: none
 }
 
+.fastyle .bar .label {
+	width: 40%;
+	font-size: 15px;
+	padding: 0 20px
+}
+
 .fastyle .bar .actions {
 	padding: 0 25px;
+	text-align: right;
 }
 
 .fastyle .bar .actions .button {
@@ -202,7 +209,6 @@
 	border-radius: 3px;
 	margin: 0 10px;
 	display: inline-block;
-	float: right;
 	cursor: pointer;
 	color: #7e8488
 }
@@ -212,8 +218,13 @@
 	color: #fff
 }
 
-.fastyle .sidebar .nothing-found {
+.fastyle .sidebar .nothing-found,
+.fastyle .bar .actions .button {
 	display: none
+}
+
+.fastyle .bar[data-status] .actions .button {
+	display: inline-block
 }
 
 .fastyle .bar[data-status="modified"] .actions .revert,
