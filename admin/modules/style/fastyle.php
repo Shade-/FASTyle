@@ -36,45 +36,133 @@ unset($themes);
 $theme = $theme_cache[$tid];
 
 // API endpoint
-if ($mybb->input['get'] and $mybb->input['sid']) {
+if (isset($mybb->input['api'])) {
 	
-	switch ($mybb->input['get']) {
-		
-		case 'template':
-		
-			$query = $db->simple_select('templates', 'template, tid',
-				'title = \'' . $db->escape_string($mybb->input['title']) . '\' AND (sid = -2 OR sid = ' . (int) $mybb->input['sid'] . ')',
-				['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
-			$template = $db->fetch_array($query);
+	$sid = (int) $mybb->input['sid'];
+	$title = $db->escape_string($mybb->input['title']);
+	
+	// Get stylesheet/template
+	if ($mybb->input['get']) {
+	
+		switch ($mybb->input['get']) {
 			
-			$content = $template['template'];
+			case 'template':
 			
-			break;
-		
-		case 'stylesheet':
-		
-			$parent_list = make_parent_theme_list($theme['tid']);
-			$parent_list = implode(',', $parent_list);
-			if (!$parent_list) {
-				$parent_list = 1;
-			}
-		
-			$query = $db->simple_select("themestylesheets", "*",
-				"name='".$db->escape_string($mybb->input['title'])."' AND tid IN ({$parent_list})",
-				['order_by' => 'tid', 'order_dir' => 'desc', 'limit' => 1]);
-			$stylesheet = $db->fetch_array($query);
+				$query = $db->simple_select('templates', 'template, tid',
+					'title = \'' . $title . '\' AND (sid = -2 OR sid = ' . $sid . ')',
+					['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
+				$template = $db->fetch_array($query);
+				
+				$content = $template['template'];
+				$id = $template['tid'];
+				
+				break;
 			
-			$content = $stylesheet['stylesheet'];
+			case 'stylesheet':
 			
-			break;
+				$parent_list = make_parent_theme_list($theme['tid']);
+				$parent_list = implode(',', $parent_list);
+				if (!$parent_list) {
+					$parent_list = 1;
+				}
+			
+				$query = $db->simple_select("themestylesheets", "*",
+					"name='" . $title . "' AND tid IN ({$parent_list})",
+					['order_by' => 'tid', 'order_dir' => 'desc', 'limit' => 1]);
+				$stylesheet = $db->fetch_array($query);
+				
+				$content = $stylesheet['stylesheet'];
+				$id = $stylesheet['sid'];
+				
+				break;
+			
+		}
+			
+		if ($id) {
+			fastyle_message(['content' => $content]);
+		}
+		else {
+			fastyle_message('Error: resource not found');
+		}
+	
+	}
+	
+	// Revert template
+	if ($mybb->input['action'] == 'revert') {
+		
+		$query = $db->query("
+			SELECT t.*, s.title as set_title
+			FROM " . TABLE_PREFIX . "templates t
+			LEFT JOIN " . TABLE_PREFIX . "templatesets s ON(s.sid=t.sid)
+			WHERE t.title='" . $title . "' AND t.sid > 0 AND t.sid = '" . $sid . "'
+		");
+		$template = $db->fetch_array($query);
+	
+		// Does the template not exist?
+		if (!$template) {
+			fastyle_message('This template does not exist');
+		}
+			
+		// Revert the template
+		$db->delete_query("templates", "tid='{$template['tid']}'");
+
+		// Log admin action
+		log_admin_action($template['tid'], $template['title'], $template['sid'], $template['set_title']);
+		
+		// Get the master template id
+		$query = $db->simple_select('templates', 'tid,template', "title = '" . $title . "' AND sid = -2");
+		$template = $db->fetch_array($query);
+
+		fastyle_message(['message' => $lang->success_template_reverted, 'tid' => $template['tid'], 'template' => $template['template']]);
 		
 	}
+	
+	// Delete template
+	if ($mybb->input['action'] == 'delete') {
+	
+		$query = $db->query("
+			SELECT t.*, s.title as set_title
+			FROM " . TABLE_PREFIX . "templates t
+			LEFT JOIN " . TABLE_PREFIX . "templatesets s ON(t.sid=s.sid)
+			WHERE t.title='" . $title . "' AND t.sid > '-2' AND t.sid = '{$sid}'
+		");
+		$template = $db->fetch_array($query);
+	
+		// Does the template not exist?
+		if (!$template) {
+			fastyle_message($lang->error_invalid_template);
+		}
+	
+		// Delete the template
+		$db->delete_query("templates", "tid='{$template['tid']}'");
+
+		// Log admin action
+		log_admin_action($template['tid'], $template['title'], $template['sid'], $template['set_title']);
+
+		fastyle_message($lang->success_template_deleted);
 		
-	if ($content) {
-		fastyle_message(['content' => $content]);
 	}
-	else {
-		fastyle_message('Error: resource not found');
+	
+	// Delete template group
+	if ($mybb->input['action'] == 'deletegroup') {
+		
+		$gid = $mybb->get_input('gid', MyBB::INPUT_INT);
+		$query = $db->simple_select("templategroups", "*", "gid='{$gid}'");
+	
+		if (!$db->num_rows($query)) {
+			fastyle_message($lang->error_missing_template_group);
+		}
+	
+		$template_group = $db->fetch_array($query);
+		
+		// Delete the group
+		$db->delete_query("templategroups", "gid = '{$template_group['gid']}'");
+
+		// Log admin action
+		log_admin_action($template_group['gid'], htmlspecialchars_uni($template_group['title']));
+
+		fastyle_message($lang->success_template_group_deleted);
+		
 	}
 	
 }
@@ -90,12 +178,12 @@ if ($theme['properties']['templateset']) {
 	$sid = $theme['properties']['templateset'];
 }
 
-if ($tid) {
+if ($tid or $sid) {
 	
-	if (!isset($theme_cache[$tid])) {
+	/*if (!isset($theme_cache[$tid])) {
 		flash_message($lang->error_invalid_input, 'error');
 		admin_redirect("index.php?module=style-fastyle");
-	}
+	}*/
 	
 	$page->add_breadcrumb_item($lang->sprintf($lang->fastyle_breadcrumb_editing_theme, $theme_cache[$tid]['name']), "index.php?module=style-fastyle&amp;tid={$tid}");
 	
@@ -127,7 +215,7 @@ if ($tid) {
 	// Get a list of templates
 	$query = $db->simple_select("templategroups", "*");
 
-	$template_groups = array();
+	$template_groups = [];
 	while ($templategroup = $db->fetch_array($query)) {
 		
 		$templategroup['title'] = $lang->sprintf($lang->templates, htmlspecialchars_uni($lang->parse($templategroup['title'])));
@@ -157,8 +245,10 @@ if ($tid) {
 	// Set the template group keys to lowercase for case insensitive comparison.
 	$template_groups = array_change_key_case($template_groups, CASE_LOWER);
 	
+	$where = ($sid == -1) ? "sid='{$sid}'" : "sid='{$sid}' OR sid = '-2'";
+	
 	// Load the list of templates
-	$query = $db->simple_select("templates", "title,sid,tid,template", "sid='".$sid."' OR sid='-2'", ['order_by' => 'sid DESC, title', 'order_dir' => 'ASC']);
+	$query = $db->simple_select("templates", "title,sid,tid,template", $where, ['order_by' => 'sid DESC, title', 'order_dir' => 'ASC']);
 	while ($template = $db->fetch_array($query)) {
 		
 		$exploded = explode("_", $template['title'], 2);
@@ -215,29 +305,33 @@ if ($tid) {
 	$resourcelist = '<ul>';
 
 	// Stylesheets
-	$file_stylesheets = $theme['stylesheets'];
-
-	$stylesheets = [];
-	$inherited_load = [];
-
-	foreach ($file_stylesheets as $file => $action_stylesheet) {
+	if ($tid) {
 		
-		if ($file == 'inherited' or !is_array($action_stylesheet)) {
-			continue;
-		}
-
-		foreach ($action_stylesheet as $action => $style) {
+		$file_stylesheets = $theme['stylesheets'];
+	
+		$stylesheets = [];
+		$inherited_load = [];
+	
+		foreach ($file_stylesheets as $file => $action_stylesheet) {
 			
-			foreach ($style as $stylesheet) {
+			if ($file == 'inherited' or !is_array($action_stylesheet)) {
+				continue;
+			}
+	
+			foreach ($action_stylesheet as $action => $style) {
 				
-				$stylesheets[$stylesheet]['applied_to'][$file][] = $action;
-				
-				if (is_array($file_stylesheets['inherited'][$file."_".$action]) and in_array($stylesheet, array_keys($file_stylesheets['inherited'][$file."_".$action]))) {
+				foreach ($style as $stylesheet) {
 					
-					$stylesheets[$stylesheet]['inherited'] = $file_stylesheets['inherited'][$file."_".$action];
+					$stylesheets[$stylesheet]['applied_to'][$file][] = $action;
 					
-					foreach ($file_stylesheets['inherited'][$file."_".$action] as $value) {
-						$inherited_load[] = $value;
+					if (is_array($file_stylesheets['inherited'][$file."_".$action]) and in_array($stylesheet, array_keys($file_stylesheets['inherited'][$file."_".$action]))) {
+						
+						$stylesheets[$stylesheet]['inherited'] = $file_stylesheets['inherited'][$file."_".$action];
+						
+						foreach ($file_stylesheets['inherited'][$file."_".$action] as $value) {
+							$inherited_load[] = $value;
+						}
+						
 					}
 					
 				}
@@ -246,41 +340,63 @@ if ($tid) {
 			
 		}
 		
-	}
+		$inherited_load[] = $tid;
+		$inherited_load = array_unique($inherited_load);
 	
-	$inherited_load[] = $tid;
-	$inherited_load = array_unique($inherited_load);
-
-	$inherited_themes = [];
-	$theme_stylesheets = [];
-	
-	if (count($inherited_load) > 0) {
+		$inherited_themes = [];
+		$theme_stylesheets = [];
 		
-		$query = $db->simple_select("themes", "tid, name", "tid IN (".implode(",", $inherited_load).")");
-		
-		while ($inherited_theme = $db->fetch_array($query)) {
-			$inherited_themes[$inherited_theme['tid']] = $inherited_theme['name'];
-		}
-		
-		$query = $db->simple_select("themestylesheets", "*", "", array('order_by' => 'sid DESC, tid', 'order_dir' => 'desc'));
-		while ($theme_stylesheet = $db->fetch_array($query)) {
+		if (count($inherited_load) > 0) {
 			
-			if (!isset($theme_stylesheets[$theme_stylesheet['name']]) && in_array($theme_stylesheet['tid'], $inherited_load)) {
-				$theme_stylesheets[$theme_stylesheet['name']] = $theme_stylesheet;
+			$query = $db->simple_select("themes", "tid, name", "tid IN (".implode(",", $inherited_load).")");
+			
+			while ($inherited_theme = $db->fetch_array($query)) {
+				$inherited_themes[$inherited_theme['tid']] = $inherited_theme['name'];
 			}
-
-			$theme_stylesheets[$theme_stylesheet['sid']] = $theme_stylesheet['name'];
+			
+			$query = $db->simple_select("themestylesheets", "*", "", array('order_by' => 'sid DESC, tid', 'order_dir' => 'desc'));
+			while ($theme_stylesheet = $db->fetch_array($query)) {
+				
+				if (!isset($theme_stylesheets[$theme_stylesheet['name']]) && in_array($theme_stylesheet['tid'], $inherited_load)) {
+					$theme_stylesheets[$theme_stylesheet['name']] = $theme_stylesheet;
+				}
+	
+				$theme_stylesheets[$theme_stylesheet['sid']] = $theme_stylesheet['name'];
+				
+			}
 			
 		}
 		
-	}
+		// Order stylesheets
+		$ordered_stylesheets = [];
 	
-	// Order stylesheets
-	$ordered_stylesheets = [];
-
-	foreach ($theme['properties']['disporder'] as $style_name => $order) {
+		foreach ($theme['properties']['disporder'] as $style_name => $order) {
+			
+			foreach ($stylesheets as $filename => $style) {
+				
+				if (strpos($filename, 'css.php?stylesheet=') !== false) {
+					
+					$style['sid'] = (int) str_replace('css.php?stylesheet=', '', $filename);
+					$filename = $theme_stylesheets[$style['sid']];
+					
+				}
+	
+				if (basename($filename) != $style_name) {
+					continue;
+				}
+	
+				$ordered_stylesheets[$filename] = $style;
+				
+			}
+			
+		}
 		
-		foreach ($stylesheets as $filename => $style) {
+		$resourcelist .= '<li class="header">Stylesheets</li>';
+		$resourcelist .= '<ul data-type="stylesheets">';
+	
+		foreach ($ordered_stylesheets as $filename => $style) {
+			
+			$modified = '';
 			
 			if (strpos($filename, 'css.php?stylesheet=') !== false) {
 				
@@ -288,214 +404,204 @@ if ($tid) {
 				$filename = $theme_stylesheets[$style['sid']];
 				
 			}
-
-			if (basename($filename) != $style_name) {
-				continue;
+			else {
+				
+				$filename = basename($filename);
+				$style['sid'] = $theme_stylesheets[$filename]['sid'];
+				
 			}
-
-			$ordered_stylesheets[$filename] = $style;
 			
-		}
-		
-	}
+			$filename = htmlspecialchars_uni($theme_stylesheets[$filename]['name']);
 	
-	// Search
-	$resourcelist .= '<li class="header search"><input type="textbox" name="search" autocomplete="off" /></li>';
-	
-	// Stylesheets
-	$resourcelist .= '<li class="header">Stylesheets</li>';
-	$resourcelist .= '<ul data-type="stylesheets">';
-
-	foreach ($ordered_stylesheets as $filename => $style) {
-		
-		$modified = '';
-		
-		if (strpos($filename, 'css.php?stylesheet=') !== false) {
+			$inherited = "";
+			$inherited_ary = [];
 			
-			$style['sid'] = (int) str_replace('css.php?stylesheet=', '', $filename);
-			$filename = $theme_stylesheets[$style['sid']];
-			
-		}
-		else {
-			
-			$filename = basename($filename);
-			$style['sid'] = $theme_stylesheets[$filename]['sid'];
-			
-		}
-		
-		$filename = htmlspecialchars_uni($theme_stylesheets[$filename]['name']);
-
-		$inherited = "";
-		$inherited_ary = [];
-		
-		if (is_array($style['inherited'])) {
-			
-			foreach($style['inherited'] as $_tid) {
+			if (is_array($style['inherited'])) {
 				
-				if ($inherited_themes[$_tid]) {
-					$inherited_ary[$_tid] = $inherited_themes[$_tid];
-				}
-				
-			}
-			
-		}
-
-		if (!empty($inherited_ary)) {
-			
-			$inherited = " <small>({$lang->inherited_from}";
-			$sep = " ";
-			$inherited_count = count($inherited_ary);
-			$count = 0;
-
-			foreach($inherited_ary as $_tid => $file) {
-				
-				if (isset($applied_to_count) && $count == $applied_to_count && $count != 0) {
-					$sep = " {$lang->and} ";
-				}
-
-				$inherited .= $sep.$file;
-				$sep = $lang->comma;
-
-				++$count;
-				
-			}
-			
-			$inherited .= ")</small>";
-			
-		}
-		else {
-			$modified = ' data-modified';
-		}
-		
-		if(is_array($style['applied_to']) && (!isset($style['applied_to']['global']) || $style['applied_to']['global'][0] != "global")) {
-			
-			$attached_to = '';
-
-			$applied_to_count = count($style['applied_to']);
-			$count = 0;
-			$sep = " ";
-			$name = "";
-
-			$colors = array();
-
-			if(!is_array($properties['colors'])) {
-				$properties['colors'] = array();
-			}
-
-			foreach($style['applied_to'] as $name => $actions) {
-				
-				if(!$name) {
-					continue;
-				}
-
-				if(array_key_exists($name, $properties['colors'])) {
-					$colors[] = $properties['colors'][$name];
-				}
-
-				// Colors override files and are handled below.
-				if(count($colors)) {
-					continue;
-				}
-
-				// It's a file:
-				++$count;
-
-				if($actions[0] != "global") {
-					$name = "{$name} ({$lang->actions}: ".implode(',', $actions).")";
-				}
-
-				if($count == $applied_to_count && $count > 1) {
-					$sep = " {$lang->and} ";
-				}
-				$attached_to .= $sep.$name;
-
-				$sep = $lang->comma;
-				
-			}
-
-			if($attached_to) {
-				$attached_to = "<small>{$lang->attached_to} {$attached_to}</small>";
-			}
-
-			if(count($colors)) {
-				
-				// Attached to color instead of files.
-				$count = 1;
-				$color_list = $sep = '';
-
-				foreach($colors as $color) {
+				foreach ($style['inherited'] as $_tid) {
 					
-					if($count == count($colors) && $count > 1) {
+					if ($inherited_themes[$_tid]) {
+						$inherited_ary[$_tid] = $inherited_themes[$_tid];
+					}
+					
+				}
+				
+			}
+	
+			if (!empty($inherited_ary)) {
+				
+				$inherited = " <small>({$lang->inherited_from}";
+				$sep = " ";
+				$inherited_count = count($inherited_ary);
+				$count = 0;
+	
+				foreach ($inherited_ary as $_tid => $file) {
+					
+					if (isset($applied_to_count) && $count == $applied_to_count && $count != 0) {
 						$sep = " {$lang->and} ";
 					}
-
-					$color_list .= $sep.trim($color);
+	
+					$inherited .= $sep.$file;
+					$sep = $lang->comma;
+	
 					++$count;
-
-					$sep = ', ';
 					
 				}
-
-				$attached_to = "<small>{$lang->attached_to} ".$lang->sprintf($lang->colors_attached_to)." {$color_list}</small>";
+				
+				$inherited .= ")</small>";
 				
 			}
-
-			// Orphaned! :(
-			if($attached_to == '') {
-				$attached_to = "<small>{$lang->attached_to_nothing}</small>";
+			else {
+				$modified = ' data-status="modified"';
 			}
 			
-		}
-		else {
-			$attached_to = "<small>{$lang->attached_to_all_pages}</small>";
+			if (is_array($style['applied_to']) && (!isset($style['applied_to']['global']) || $style['applied_to']['global'][0] != "global")) {
+				
+				$attached_to = '';
+	
+				$applied_to_count = count($style['applied_to']);
+				$count = 0;
+				$sep = " ";
+				$name = "";
+	
+				$colors = [];
+	
+				if (!is_array($properties['colors'])) {
+					$properties['colors'] = [];
+				}
+	
+				foreach ($style['applied_to'] as $name => $actions) {
+					
+					if (!$name) {
+						continue;
+					}
+	
+					if (array_key_exists($name, $properties['colors'])) {
+						$colors[] = $properties['colors'][$name];
+					}
+	
+					// Colors override files and are handled below.
+					if (count($colors)) {
+						continue;
+					}
+	
+					// It's a file:
+					++$count;
+	
+					if ($actions[0] != "global") {
+						$name = "{$name} ({$lang->actions}: ".implode(',', $actions).")";
+					}
+	
+					if ($count == $applied_to_count && $count > 1) {
+						$sep = " {$lang->and} ";
+					}
+					$attached_to .= $sep.$name;
+	
+					$sep = $lang->comma;
+					
+				}
+	
+				if ($attached_to) {
+					$attached_to = "<small>{$lang->attached_to} {$attached_to}</small>";
+				}
+	
+				if (count($colors)) {
+					
+					// Attached to color instead of files.
+					$count = 1;
+					$color_list = $sep = '';
+	
+					foreach ($colors as $color) {
+						
+						if ($count == count($colors) && $count > 1) {
+							$sep = " {$lang->and} ";
+						}
+	
+						$color_list .= $sep.trim($color);
+						++$count;
+	
+						$sep = ', ';
+						
+					}
+	
+					$attached_to = "<small>{$lang->attached_to} ".$lang->sprintf($lang->colors_attached_to)." {$color_list}</small>";
+					
+				}
+	
+				// Orphaned! :(
+				if ($attached_to == '') {
+					$attached_to = "<small>{$lang->attached_to_nothing}</small>";
+				}
+				
+			}
+			else {
+				$attached_to = "<small>{$lang->attached_to_all_pages}</small>";
+			}
+			
+			$resourcelist .= "<li data-title='{$filename}'{$modified}>{$filename}{$inherited}<br>{$attached_to}</li>";
+		
 		}
 		
-		$resourcelist .= "<li data-title='{$filename}'{$modified}>{$filename}{$inherited}<br>{$attached_to}</li>";
-	
+		$resourcelist .= '</ul>';
+		
 	}
-	
-	$resourcelist .= '</ul>';
 
 	// Template list
-	foreach ($template_groups as $prefix => $group) {
+	// Global templates
+	if ($sid == -1 and !empty($template_groups[-1]['templates'])) {
 		
-		$title = str_replace(' Templates', '', $group['title']);
+		foreach ($template_groups[-1]['templates'] as $template) {
+			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-original>{$template['title']}<span class='action icon-'></span></li>";
+		}
 		
-		$resourcelist .= "<li class='header' data-gid='{$group['gid']}'>{$title}</li>";
+	}
+	// Regular set
+	else {
 		
-		// Templates for this group exist
-		if (isset($group['templates']) and count($group['templates']) > 0) {
+		foreach ($template_groups as $prefix => $group) {
+						
+			$title = str_replace(' Templates', '', $group['title']);
 			
-			$templates = $group['templates'];
-			ksort($templates);
+			// We can delete this group
+			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<span class="deletegroup icon-cancel"></span>' : '';
 			
-			$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'>";
-
-			foreach ($templates as $template) {
+			$resourcelist .= "<li class='header' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
+						
+			// Templates for this group exist
+			if (isset($group['templates']) and count($group['templates']) > 0) {
 				
-				$modified = $original = '';
+				$templates = $group['templates'];
+				ksort($templates);
 				
-				if (isset($template['modified']) && $template['modified'] == true) {
-					$modified = ' data-modified';
+				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'>";
+	
+				foreach ($templates as $template) {
+					
+					$originalOrModified = '';
+					
+					if (isset($template['modified']) && $template['modified'] == true) {
+						$originalOrModified = ' data-status="modified"';
+					}
+					else if (isset($template['original']) && $template['original'] == false) {
+						$originalOrModified = ' data-status="original"';
+					}
+					
+					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}<span class='action icon-'></span></li>";
+					
 				}
-				else if (isset($template['original']) && $template['original'] == false) {
-					$original = ' data-original';
-				}
 				
-				$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$modified}{$original}>{$template['title']}</li>";
+				$resourcelist .= '</ul>';
 				
 			}
+			// No templates in this group
+			else {
+				$resourcelist .= "<ul><li>{$lang->fastyle_no_templates_available}</li></ul>";
+			}
+	
 			
-			$resourcelist .= '</ul>';
+			$resourcelist .= '</li>';
 			
 		}
-		// No templates in this group
-		else {
-			$resourcelist .= "<ul><li>{$lang->fastyle_no_templates_available}</li></ul>";
-		}
-
-		
-		$resourcelist .= '</li>';
 		
 	}
 	
@@ -508,11 +614,24 @@ if ($tid) {
 	$textarea = $form->generate_text_area('editor', '', ['id' => 'editor', 'style' => 'width: 100%; height: 500px']);
 	$content = <<<HTML
 <div class="fastyle">
-	<div class="sidebar">
-		$resourcelist
+	<div class="bar">
+		<div class="sidebar">
+			<ul><li class="header search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
+		</div>
+		<div class="actions">
+			<span class="button quickmode">Quick mode</span>
+			<span class="button revert">Revert</span>
+			<span class="button delete">Delete</span>
+		</div>
 	</div>
-	<div class="form_row">
-		$textarea
+	<div>
+		<div class="sidebar" id="sidebar">
+			$resourcelist
+			<ul class="nothing-found"><li>Nothing found</li></ul>
+		</div>
+		<div class="form_row">
+			$textarea
+		</div>
 	</div>
 </div>
 HTML;
@@ -557,10 +676,29 @@ if (!$mybb->input['action']) {
 
 	$table = new Table;
 	$table->construct_header($lang->theme);
+	
+	$not_processed = $template_sets;
 
 	fastyle_build_theme_list();
 
 	$table->output($lang->themes);
+	
+	// Include template sets not attached to any theme and global templates
+	if ($not_processed) {
+		
+		$table = new Table;
+		$table->construct_header('Other sets');
+		
+		foreach ($not_processed as $set) {
+			
+			$table->construct_cell("<div><strong><a href=\"index.php?module=style-fastyle&amp;sid={$set['sid']}\">" . htmlspecialchars_uni($set['title']) . "</a></strong></div>");
+			$table->construct_row();
+			
+		}
+		
+		$table->output($lang->themes);
+		
+	}
 
 	$page->output_footer();
 	
@@ -568,7 +706,7 @@ if (!$mybb->input['action']) {
 
 function fastyle_build_theme_list($parent = 0, $depth = 0)
 {
-	global $mybb, $db, $table, $lang, $page, $template_sets;
+	global $mybb, $db, $table, $lang, $page, $template_sets, $not_processed;
 	static $theme_cache;
 	
 	$padding = $depth * 20; // Padding
@@ -613,6 +751,8 @@ function fastyle_build_theme_list($parent = 0, $depth = 0)
 		
 		$table->construct_cell("<div style=\"margin-left: {$padding}px;\"><strong>{$theme['name']}</strong><br /><small>{$notice}</small></div>");
 		$table->construct_row();
+		
+		unset ($not_processed[$theme['properties']['templateset']]);
 
 		// Fetch & build any child themes
 		fastyle_build_theme_list($theme['tid'], ++$depth);

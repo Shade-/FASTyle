@@ -9,11 +9,12 @@ var FASTyle = {
 	currentResource: {},
 	resources: {},
 	postKey: '',
+	quickMode: false,
 
 	init: function(sid, tid) {
 		
 		// Template set ID
-		if (sid > 0) {
+		if (sid >= -1) {
 			FASTyle.sid = sid;
 		}
 		
@@ -55,9 +56,10 @@ var FASTyle = {
 
 		FASTyle.dom.selector = $('select[name="quickjump"]');
 		FASTyle.dom.title = $('input[name="title"]');
-		FASTyle.dom.sidebar = $('.sidebar');
+		FASTyle.dom.sidebar = $('#sidebar');
 		FASTyle.dom.textarea = $('#editor');
 		FASTyle.dom.mainContainer = $('.fastyle');
+		FASTyle.dom.bar = FASTyle.dom.mainContainer.find('.bar');
 		
 		// Expand/collapse
 		FASTyle.dom.sidebar.find('.header').on('click', function(e) {
@@ -140,21 +142,127 @@ var FASTyle = {
 
 		});
 		
+		var notFoundElement = FASTyle.dom.sidebar.find('.nothing-found');
+		
 		// Search resource
-		FASTyle.dom.sidebar.find('input[name="search"]').on('keyup', function(e) {
+		$('.sidebar input[name="search"]').on('keyup', function(e) {
 			
 			var val = $(this).val();
 			
 			if (!val) {
 				FASTyle.dom.sidebar.find('.header+ul, .header+ul li').removeClass('expanded').removeAttr('style');
-				return FASTyle.dom.sidebar.find('.header:not(.search)').show();
+				return FASTyle.dom.sidebar.find('.header').show();
 			}
 			
 			// Hide all groups
-			FASTyle.dom.sidebar.find('.header:not(.search), .header+ul, .header+ul li').hide();
+			FASTyle.dom.sidebar.find('.header, .header+ul, .header+ul li').hide();
 			
 			// Show
-			FASTyle.dom.sidebar.find('[data-title*="' + val + '"]').show().closest('ul').show().addClass('expanded').prev('.header').show();
+			var found = FASTyle.dom.sidebar.find('[data-title*="' + val + '"]');
+			
+			if (found.length) {
+				notFoundElement.hide();
+				found.show().closest('ul').show().addClass('expanded').prev('.header').show();
+			}
+			else {
+				notFoundElement.show();
+			}
+			
+		});
+		
+		// Quick mode
+		FASTyle.dom.bar.find('.actions span.quickmode').on('click', function(e) {
+			
+			e.stopImmediatePropagation();
+			
+			FASTyle.quickMode = (FASTyle.quickMode == true) ? false : true;
+			
+			return $(this).toggleClass('enabled');
+			
+		});
+		
+		// Revert/delete
+		FASTyle.dom.bar.find('.actions span').on('click', function(e) {
+			
+			e.preventDefault();
+			
+			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
+			var mode = ($(this).hasClass('revert')) ? 'revert' : 'delete';
+			
+			if (!FASTyle.quickMode) {
+				
+				var confirm = window.confirm('Are you sure you want to ' + mode + ' this template?');
+				if (confirm != true) {
+					return false;
+				}
+				
+			}
+			
+			var data = {
+				'module': 'style-fastyle',
+				'api': 1,
+				'my_post_key': FASTyle.postKey,
+				'action': mode,
+				'title': tab.attr('data-title'),
+				'sid': FASTyle.sid
+			};
+			
+			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
+				
+				$.jGrowl(response.message);
+				
+				if (response.tid) {
+					tab.attr('data-tid', Number(response.tid));
+				}
+				
+				tab.removeAttr('data-status');
+				
+				if (mode == 'delete') {
+					tab.remove();
+				}
+				
+				if (mode == 'delete' || !response.template) {
+					response.template = '';
+				}
+				
+				// Prevents the tab to be marked as "not saved"
+				FASTyle.switching = true;
+				
+				if (tab.hasClass('active')) {
+					return (FASTyle.useEditor) ? FASTyle.dom.editor.setValue(response.template) : FASTyle.dom.textarea.val(response.template);
+				}
+				
+			});
+			
+		});
+		
+		// Delete template group
+		FASTyle.dom.sidebar.find('.deletegroup').on('click', function(e) {
+			
+			e.preventDefault();
+			
+			if (!FASTyle.quickMode) {
+
+				var confirm = window.confirm('Are you sure you want to delete this whole template group?');
+				if (confirm != true) {
+					return false;
+				}
+				
+			}
+			
+			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
+			
+			var data = {
+				'module': 'style-fastyle',
+				'api': 1,
+				'my_post_key': FASTyle.postKey,
+				'action': 'deletegroup',
+				'gid': $(this).parent('[data-gid]').attr('data-gid')
+			};
+			
+			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
+				return $.jGrowl(response.message);
+			});
 			
 		});
 
@@ -303,6 +411,14 @@ var FASTyle = {
 		if (tabPosition < scrollingPosition || tabPosition > scrollingEnd) {
 			FASTyle.dom.sidebar.scrollTop(tabPosition);
 		}
+		
+		// Update the bar status
+		if (FASTyle.utils.attrExists(tab.attr('data-status'))) {
+			FASTyle.dom.bar.attr('data-status', tab.attr('data-status'));
+		}
+		else {
+			FASTyle.dom.bar.removeAttr('data-status');
+		}
 					
 		tab.addClass('active');
 
@@ -355,15 +471,16 @@ var FASTyle = {
 			return FASTyle.loadResourceInDOM(name, t.content);
 		} else {
 			
-			var url = 'index.php?module=style-fastyle';
 			var data = {
+				'api': 1,
+				'module': 'style-fastyle',
 				'get': type,
 				'sid': FASTyle.sid,
 				'tid': FASTyle.tid,
 				'title': name
 			}
 			
-			return FASTyle.sendRequest('POST', url, data, (response) => {
+			return FASTyle.sendRequest('POST', 'index.php', data, (response) => {
 				return FASTyle.loadResourceInDOM(name, response.content);
 			});
 
@@ -416,8 +533,8 @@ var FASTyle = {
 			spinner.stop();
 			
 			// Modify this resource's status
-			if (typeof currentTab.attr('modified') === 'undefined' || currentTab.attr('modified') == false) {
-				currentTab.attr('data-modified', 1);
+			if (FASTyle.sid != -1 && !FASTyle.utils.attrExists(currentTab.attr('data-status'))) {
+				currentTab.attr('data-status', 'modified');
 			}
 
 			// Remove the "not saved" marker
@@ -520,6 +637,10 @@ var FASTyle = {
 					}
 				}
 			}
+		},
+		
+		attrExists: function(attr) {
+			return (typeof attr === 'undefined' || attr == false) ? false : true;
 		}
 
 	}

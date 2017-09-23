@@ -1,10 +1,57 @@
-.fastyle > .form_row {
+@charset "UTF-8";
+
+@font-face {
+  font-family: "fastyle";
+  src:url("fonts/fastyle.eot");
+  src:url("fonts/fastyle.eot?#iefix") format("embedded-opentype"),
+    url("fonts/fastyle.woff") format("woff"),
+    url("fonts/fastyle.ttf") format("truetype"),
+    url("fonts/fastyle.svg#fastyle") format("svg");
+  font-weight: normal;
+  font-style: normal;
+
+}
+
+[data-icon]:before {
+  font-family: "fastyle" !important;
+  content: attr(data-icon);
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  speak: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[class^="icon-"]:before,
+[class*=" icon-"]:before {
+  font-family: "fastyle" !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  speak: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-back-in-time:before {
+  content: "\61";
+}
+.icon-cancel:before {
+  content: "\62";
+}
+
+.fastyle .form_row {
 	width: 80%;
 	float: left;
 	margin: 0;
 }
 
-.fastyle > .sidebar {
+.fastyle .sidebar {
 	width: 20%;
 	float: left;
 	padding: 0;
@@ -15,13 +62,13 @@
 	overflow-y: scroll
 }
 
-.fastyle > .sidebar > * {
+.fastyle .sidebar > * {
 	margin: 10px 0;
 	display: inline-block;
 	position: relative
 }
 
-.fastyle > .sidebar ul {
+.fastyle .sidebar ul {
 	width: 100%;
 	padding: 0;
 	margin: 0;
@@ -29,7 +76,7 @@
 	list-style-type: none
 }
 
-.fastyle > .sidebar ul li {
+.fastyle .sidebar ul li {
 	margin: 0;
 	display: block;
 	cursor: pointer;
@@ -44,12 +91,12 @@
 	font-weight: 500;
 }
 
-.fastyle > .sidebar ul li.active {
+.fastyle .sidebar ul li.active {
 	background: #1f4661;
 	color: #fff;
 }
 
-.fastyle > .sidebar ul li.not-saved:after {
+.fastyle .sidebar ul li.not-saved:after {
 	content: '';
 	width: 8px;
 	height: 8px;
@@ -61,23 +108,30 @@
 	right: 10px;
 }
 
-.fastyle > .sidebar ul li[data-modified] {
+.fastyle .sidebar ul li[data-status="modified"] {
 	color: #557d3e
 }
 
-.fastyle > .sidebar ul li[data-modified].active {
+.fastyle .sidebar ul li[data-status="modified"].active {
 	color: #a3d23b
 }
 
-.fastyle > .sidebar ul li[data-original] {
+.fastyle .sidebar ul li[data-status="original"] {
 	color: #485ea5;
 }
 
-.fastyle > .sidebar ul li[data-original].active {
+.fastyle .sidebar ul li[data-status="original"].active {
 	color: #7a98f7;
 }
 
-.fastyle > .sidebar [name="search"] {
+.fastyle .sidebar ul li .action {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	font-size: 12px
+}
+
+.fastyle .sidebar [name="search"] {
 	padding: 12px;
 	margin: 0;
 	-webkit-appearance: none;
@@ -89,7 +143,7 @@
 	box-sizing: border-box;
 }
 
-.fastyle > .sidebar li.header {
+.fastyle .sidebar li.header {
 	padding: 12px;
 	margin: 0;
 	background: #1c2939;
@@ -98,11 +152,16 @@
 	text-transform: uppercase;
 }
 
-.fastyle > .sidebar li.header+ul {
+.fastyle .sidebar li.header .deletegroup {
+	float: right;
+	font-size: 11px
+}
+
+.fastyle .sidebar li.header+ul {
 	display: none
 }
 
-.fastyle > .sidebar li.header+ul.expanded {
+.fastyle .sidebar li.header+ul.expanded {
 	display: block
 }
 
@@ -110,6 +169,61 @@
 	content: "";
 	display: block;
 	clear: both
+}
+
+.fastyle .bar {
+	background: #1c2939;
+	color: #fff;
+	display: table;
+	width: 100%;
+}
+
+.fastyle .bar > * {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.fastyle .bar + div {
+	clear: both;
+}
+
+.fastyle .bar .sidebar {
+	height: auto;
+	float: none
+}
+
+.fastyle .bar .actions {
+	padding: 0 25px;
+}
+
+.fastyle .bar .actions .button {
+	padding: 4px 8px;
+	background: rgb(42, 65, 80);
+	border-radius: 3px;
+	margin: 0 10px;
+	display: inline-block;
+	float: right;
+	cursor: pointer;
+	color: #7e8488
+}
+
+.fastyle .bar .actions .button.quickmode.enabled {
+	background: #73ab57;
+	color: #fff
+}
+
+.fastyle .sidebar .nothing-found {
+	display: none
+}
+
+.fastyle .bar[data-status="modified"] .actions .revert,
+.fastyle .bar[data-status="original"] .actions .delete {
+	color: #fff;
+	background: #1f4661
+}
+
+.fastyle .bar[data-status="original"] .actions .delete {
+	background: #a54848
 }
 
 /* CodeMirror overlay */
