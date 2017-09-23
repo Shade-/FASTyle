@@ -49,13 +49,14 @@ if (isset($mybb->input['api'])) {
 			
 			case 'template':
 			
-				$query = $db->simple_select('templates', 'template, tid',
+				$query = $db->simple_select('templates', 'template, tid, dateline',
 					'title = \'' . $title . '\' AND (sid = -2 OR sid = ' . $sid . ')',
 					['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
 				$template = $db->fetch_array($query);
 				
 				$content = $template['template'];
 				$id = $template['tid'];
+				$dateline = $template['dateline'];
 				
 				break;
 			
@@ -74,13 +75,17 @@ if (isset($mybb->input['api'])) {
 				
 				$content = $stylesheet['stylesheet'];
 				$id = $stylesheet['sid'];
+				$dateline = $stylesheet['dateline'];
 				
 				break;
 			
 		}
 			
 		if ($id) {
-			fastyle_message(['content' => $content]);
+			
+			$data = ($dateline) ? ['content' => $content, 'dateline' => $dateline] : ['content' => $content];
+			fastyle_message($data);
+			
 		}
 		else {
 			fastyle_message('Error: resource not found');
@@ -392,7 +397,7 @@ if ($tid or $sid) {
 			
 		}
 		
-		$resourcelist .= '<li class="header">Stylesheets</li>';
+		$resourcelist .= '<li class="header icon">Stylesheets</li>';
 		$resourcelist .= '<ul data-type="stylesheets">';
 	
 		foreach ($ordered_stylesheets as $filename => $style) {
@@ -566,7 +571,7 @@ if ($tid or $sid) {
 			// We can delete this group
 			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<span class="deletegroup icon-cancel"></span>' : '';
 			
-			$resourcelist .= "<li class='header' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
+			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
 						
 			// Templates for this group exist
 			if (isset($group['templates']) and count($group['templates']) > 0) {
@@ -620,11 +625,13 @@ if ($tid or $sid) {
 			<ul><li class="header search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
 		</div>
 		<div class="label">
+			<span class="name"></span>
+			<span class="date"></span>
 		</div>
 		<div class="actions">
-			<span class="button quickmode">Quick mode</span>
 			<span class="button revert">Revert</span>
 			<span class="button delete">Delete</span>
+			<span class="button quickmode">Quick mode</span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>

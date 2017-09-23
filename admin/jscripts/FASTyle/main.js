@@ -61,7 +61,7 @@ var FASTyle = {
 		
 		// Expand/collapse
 		FASTyle.dom.sidebar.find('.header').on('click', function(e) {
-			return $(this).next('ul').toggleClass('expanded');
+			return $(this).toggleClass('expanded');
 		});
 		
 		FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
@@ -319,7 +319,7 @@ var FASTyle = {
 
 	},
 
-	loadResourceInDOM: function(name, content) {
+	loadResourceInDOM: function(name, content, dateline) {
 
 		FASTyle.switching = true;
 
@@ -397,7 +397,21 @@ var FASTyle = {
 		Cookie.set('active-resource-' + FASTyle.sid, name);
 
 		// Update the title
-		FASTyle.dom.bar.find('.label').text(name);
+		FASTyle.dom.bar.find('.label .name').text(name);
+		
+		if (FASTyle.utils.exists(tab.attr('data-status'))) {
+		
+			if (dateline) {
+				
+				FASTyle.dom.bar.find('.label .date').html('Last edited: ' + FASTyle.utils.processDateline(dateline));
+				FASTyle.currentResource.dateline = dateline;
+				
+			}
+			
+		}
+		else {
+			FASTyle.dom.bar.find('.label .date').empty();
+		}
 		
 		return true;
 
@@ -409,7 +423,7 @@ var FASTyle = {
 		
 		// Find this tab and group
 		var tab = FASTyle.dom.sidebar.find('[data-title="' + name + '"]');
-		var group = tab.closest('ul');
+		var group = tab.closest('ul').prev('.header');
 		
 		// Is this group not already expanded?
 		if (!group.hasClass('expanded')) {
@@ -426,7 +440,7 @@ var FASTyle = {
 		}
 		
 		// Update the bar status
-		if (FASTyle.utils.attrExists(tab.attr('data-status'))) {
+		if (FASTyle.utils.exists(tab.attr('data-status'))) {
 			FASTyle.dom.bar.attr('data-status', tab.attr('data-status'));
 		}
 		else {
@@ -446,7 +460,8 @@ var FASTyle = {
 		name = name.trim();
 
 		FASTyle.resources[name] = {
-			'content': content
+			'content': content,
+			'dateline': FASTyle.currentResource.dateline
 		};
 
 		// Save the current editor status
@@ -481,7 +496,7 @@ var FASTyle = {
 		$('.CodeMirror .overlay').show();
 
 		if (typeof t !== 'undefined')  {
-			return FASTyle.loadResourceInDOM(name, t.content);
+			return FASTyle.loadResourceInDOM(name, t.content, t.dateline);
 		} else {
 			
 			var data = {
@@ -494,7 +509,7 @@ var FASTyle = {
 			}
 			
 			return FASTyle.sendRequest('POST', 'index.php', data, (response) => {
-				return FASTyle.loadResourceInDOM(name, response.content);
+				return FASTyle.loadResourceInDOM(name, response.content, response.dateline);
 			});
 
 		}
@@ -544,21 +559,25 @@ var FASTyle = {
 			
 			// Stop the spinner
 			spinner.stop();
+
+			// Restore the button
+			saveButtonContainer.html(saveButtonHtml);
+			
+			// Error?
+			if (response.error) {
+				return $.jGrowl(response.message, {themeState: 'error'});
+			}
 			
 			// Modify this resource's status
-			if (FASTyle.sid != -1 && !FASTyle.utils.attrExists(currentTab.attr('data-status'))) {
+			if (FASTyle.sid != -1 && !FASTyle.utils.exists(currentTab.attr('data-status'))) {
 				currentTab.attr('data-status', 'modified');
 				FASTyle.dom.bar.attr('data-status', 'modified');
 			}
-
 
 			// Remove the "not saved" marker
 			if (FASTyle.dom.sidebar.length) {
 				currentTab.removeClass('not-saved');
 			}
-
-			// Restore the button
-			saveButtonContainer.html(saveButtonHtml);
 
 			// Notify the user
 			$.jGrowl(response.message);
@@ -654,9 +673,45 @@ var FASTyle = {
 			}
 		},
 		
-		attrExists: function(attr) {
-			return (typeof attr === 'undefined' || attr == false) ? false : true;
-		}
+		exists: function(data) {
+			return (typeof data === 'undefined' || data == false) ? false : true;
+		},
+		
+	    processDateline: function(dateline, type) {
+
+            var date;
+
+            if (!dateline || !FASTyle.utils.exists(dateline)) {
+                date = new Date();
+            } else {
+                date = new Date(dateline * 1000);
+            }
+            
+            var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            var todayMidnight = new Date().setHours(0, 0, 0, 0) / 1000;
+            var yesterdayMidnight = todayMidnight - (24 * 60 * 60);
+            var hour = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
+
+            if (dateline > yesterdayMidnight && dateline < todayMidnight) {
+                return 'Yesterday, ' + hour;
+            } else if (dateline > todayMidnight) {
+                return 'Today, ' + hour;
+            }
+
+            var string = (date.getDate() + " " + monthNames[date.getMonth()]);
+            var year = date.getFullYear();
+            
+            if (year != new Date().getFullYear()) {
+	            string += ' ' + year;
+            }
+            
+            if (type == 'day') {
+	            return string;
+            }
+
+            return string + ', ' + hour;
+
+        }
 
 	}
 

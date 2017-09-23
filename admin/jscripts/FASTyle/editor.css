@@ -26,7 +26,8 @@
 }
 
 [class^="icon-"]:before,
-[class*=" icon-"]:before {
+[class*=" icon-"]:before,
+.icon:before {
   font-family: "fastyle" !important;
   font-style: normal !important;
   font-weight: normal !important;
@@ -47,6 +48,23 @@
 .icon-resize-small:before {
   content: "\63";
 }
+.icon-right-open:before,
+li.header:not(.search):before {
+  content: "\65";
+}
+.icon-down-open:before,
+li.expanded.header:not(.search):before {
+  content: "\64";
+}
+.icon-plus:before {
+  content: "\66";
+}
+
+li.header:before {
+	margin-right: 5px;
+	position: relative;
+	top: 1px
+}
 
 .fastyle.full {
 	position: fixed;
@@ -61,7 +79,8 @@
 }
 
 .CodeMirror {
-	height: 500px!important
+	height: 500px!important;
+	width: 100%!important
 }
 
 .fastyle.full .CodeMirror {
@@ -82,7 +101,7 @@
 	position: relative;
 	height: 500px;
 	background: #1c2939;
-	overflow-y: scroll
+	overflow-y: auto
 }
 
 .fastyle .sidebar > * {
@@ -184,7 +203,7 @@
 	display: none
 }
 
-.fastyle .sidebar li.header+ul.expanded {
+.fastyle .sidebar li.header.expanded+ul {
 	display: block
 }
 
@@ -221,6 +240,12 @@
 	padding: 0 20px
 }
 
+.fastyle .bar .label .date {
+	font-size: 11px;
+	margin-left: 10px;
+	color: #999
+}
+
 .fastyle .bar .actions {
 	padding: 0 25px;
 	text-align: right;
@@ -247,7 +272,7 @@
 }
 
 .fastyle .sidebar .nothing-found,
-.fastyle .bar .actions .button {
+.fastyle .bar .actions .button:not(.quickmode) {
 	display: none
 }
 
@@ -267,11 +292,12 @@
 
 /* CodeMirror overlay */
 .CodeMirror .overlay {
-	width: 100%;
-    height: 100%;
-    background: rgba(255,255,255,.6);
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 9999
+	width: calc(100% - 45px);
+	height: 100%;
+	background: rgba(255,255,255,.6);
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 9999;
+	margin-left: 45px;
 }

@@ -127,18 +127,7 @@ function fastyle_ad()
 
 function fastyle_templates_edit()
 {
-	global $page, $mybb, $lang, $db, $sid;
-	
-	if ($mybb->input['get_template_ajax']) {
-		
-		$query = $db->simple_select('templates', 'template, tid',
-			'title = \'' . $db->escape_string($mybb->input['title']) . '\' AND (sid = -2 OR sid = ' . (int) $sid . ')',
-			['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
-		$template = $db->fetch_array($query);
-		
-		fastyle_message(['template' => $template['template'], 'tid' => $template['tid']]);
-		
-	}
+	global $page, $mybb, $db, $sid, $lang;
 
 	if ($mybb->input['ajax']) {
 		
@@ -151,7 +140,11 @@ function fastyle_templates_edit()
 		}
 		
 		if ($errors) {
-			fastyle_message($errors);
+			
+			$errors = implode("\n", $errors);
+			
+			fastyle_message($errors, 'error');
+			
 		}
 		
 	}
@@ -160,7 +153,7 @@ function fastyle_templates_edit()
 
 function fastyle_templates_edit_commit()
 {
-	global $template, $mybb, $set, $lang, $errors;
+	global $template, $mybb, $set, $lang;
 	
 	if ($mybb->input['ajax']) {
 		
@@ -257,10 +250,14 @@ HTML;
 	
 }
 
-function fastyle_message($data)
+function fastyle_message($data, $type = 'success')
 {
 	if (!is_array($data)) {
 		$data = ['message' => $data];
+	}
+	
+	if ($type == 'error') {
+		$data['error'] = 1;
 	}
 	
 	echo json_encode($data);
