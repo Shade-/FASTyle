@@ -69,6 +69,8 @@ var FASTyle = {
 			return $(this).toggleClass('expanded');
 		});
 
+		FASTyle.resourcesList['ungrouped'] = [];
+
 		// Build a virtual array of stylesheets and templates
 		$.each(FASTyle.dom.sidebar.find('[data-prefix], [data-title]'), function(k, item) {
 
@@ -76,8 +78,10 @@ var FASTyle = {
 			var title = item.getAttribute('data-title');
 
 			if (prefix) {
+				
+				prefix = prefix.toLowerCase();
 
-				if (prefix == -1) {
+				if (!prefix) {
 					prefix = 'ungrouped';
 				}
 
@@ -88,7 +92,7 @@ var FASTyle = {
 			if (title) {
 
 				prefix = title.split('_');
-				prefix = prefix[0];
+				prefix = prefix[0].toLowerCase();
 
 				if (title.indexOf('.css') > -1) {
 					prefix = 'stylesheets';
@@ -313,7 +317,13 @@ var FASTyle = {
 
 					var group = FASTyle.findResourceGroup(data.title);
 					var newIndex = FASTyle.removeFromResourceList(data.title);
-					return FASTyle.loadResource(FASTyle.resourcesList[group][newIndex]);
+					var newResource = FASTyle.resourcesList[group][newIndex];
+					
+					if (typeof newResource === 'undefined') {
+						newResource = 'postbit';
+					}
+					
+					return FASTyle.loadResource(newResource);
 
 				}
 
@@ -707,9 +717,10 @@ var FASTyle = {
 
 			// Notify the user
 			$.jGrowl(response.message);
-
-			// Update last edited
-			FASTyle.updateDatelineLabel(Math.round(new Date().getTime() / 1000));
+			
+			// Update internal cache
+			FASTyle.addResourceToCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));
+			FASTyle.syncBarStatus();
 
 			// Eventually handle the updated tid (fixes templates not saving through multiple calls when a template hasn't been edited before)
 			if (response.tid && data.action == 'edit_template') {
@@ -793,7 +804,7 @@ var FASTyle = {
 	findResourceGroup: function(title) {
 
 		var split = title.split('_');
-		var group = split[0];
+		var group = split[0].toLowerCase();
 
 		// Stylesheet
 		if (title.indexOf('.css') > -1) {
@@ -869,19 +880,62 @@ var FASTyle = {
 
 			if (!dateline || !FASTyle.utils.exists(dateline)) {
 				date = new Date();
-			} else {
+			}
+			else {
 				date = new Date(dateline * 1000);
 			}
+			
+			var now = Math.round(new Date().getTime() / 1000);
 
 			var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 			var todayMidnight = new Date().setHours(0, 0, 0, 0) / 1000;
 			var yesterdayMidnight = todayMidnight - (24 * 60 * 60);
-			var hour = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
+			var hourTime = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
 
 			if (dateline > yesterdayMidnight && dateline < todayMidnight) {
-				return 'Yesterday, ' + hour;
-			} else if (dateline > todayMidnight) {
-				return 'Today, ' + hour;
+				return 'Yesterday, ' + hourTime;
+			}
+			// Relative date
+			else if (dateline > todayMidnight) {
+				
+				var diff = now - dateline;
+				var minute = 60;
+				var hour = minute*60;
+				var day = hour*24;
+				
+				// Just now
+				if (diff < 60) {
+					
+					if (diff < 2) {
+						return '1 second ago';
+					}
+					
+					return diff + ' seconds ago';
+					
+				}
+				// Minutes ago
+				else if (diff < hour) {
+					
+					if (diff < minute*2) {
+						return '1 minute ago';
+					}
+					
+					return Math.floor(diff / minute) + ' minutes ago';
+					
+				}
+				// Hours ago
+				else if (diff < day) {
+					
+					if (diff < hour*2) {
+						return '1 hour ago';
+					}
+					
+					return Math.floor(diff / hour) + ' hours ago';
+					
+				}
+				
+				return 'Today, ' + hourTime;
+				
 			}
 
 			var string = (date.getDate() + " " + monthNames[date.getMonth()]);
@@ -895,7 +949,7 @@ var FASTyle = {
 				return string;
 			}
 
-			return string + ', ' + hour;
+			return string + ', ' + hourTime;
 
 		}
 

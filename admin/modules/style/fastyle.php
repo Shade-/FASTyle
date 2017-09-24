@@ -669,7 +669,7 @@ if ($tid or $sid) {
 			}
 			// No templates in this group
 			else {
-				$resourcelist .= "<ul><li>{$lang->fastyle_no_templates_available}</li></ul>";
+				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'><li>{$lang->fastyle_no_templates_available}</li></ul>";
 			}
 	
 			
