@@ -22,6 +22,10 @@ var FASTyle = {
 		if (tid > 0) {
 			FASTyle.tid = tid;
 		}
+		
+		// Notification defaults
+		$.jGrowl.defaults.appendTo = ".fastyle";
+		$.jGrowl.defaults.position = "bottom-right";
 
 		// Set the spinner default options
 		FASTyle.spinner.opts = {
@@ -160,7 +164,7 @@ var FASTyle = {
 
 			if (found.length) {
 				notFoundElement.hide();
-				found.show().closest('ul').show().addClass('expanded').prev('.header').show();
+				found.show().closest('ul').show().prev('.header').addClass('expanded').show();
 			} else {
 				notFoundElement.show();
 			}
@@ -522,17 +526,24 @@ var FASTyle = {
 		var saveButtonContainer = saveButton.parent();
 		var saveButtonHtml = saveButtonContainer.html();
 
-		// Set up the container to be as much similar to the container 
-		var spinnerContainer = $('<div />').css({
-			width: saveButton.outerWidth(true),
-			height: saveButton.outerHeight(true),
-			position: 'relative',
-			'display': 'inline-block',
-			'vertical-align': 'top'
-		});
+		if (!FASTyle.dom.mainContainer.hasClass('full')) {
 
-		// Replace the button with the spinner container
-		saveButton.replaceWith(spinnerContainer);
+			// Set up the container to be as much similar to the container 
+			var spinnerContainer = $('<div />').css({
+				width: saveButton.outerWidth(true),
+				height: saveButton.outerHeight(true),
+				position: 'relative',
+				'display': 'inline-block',
+				'vertical-align': 'top'
+			});
+	
+			// Replace the button with the spinner container
+			saveButton.replaceWith(spinnerContainer);
+
+		}
+		else {
+			var spinnerContainer = $('<div />');
+		}
 
 		var opts = $.extend(true, {}, FASTyle.spinner.opts);
 

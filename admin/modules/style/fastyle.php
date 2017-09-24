@@ -664,7 +664,6 @@ HTML;
 				lineWrapping: true,
 				foldGutter: true,
 				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-				viewportMargin: Infinity,
 				indentWithTabs: true,
 				indentUnit: 4,
 				mode: "text/html",

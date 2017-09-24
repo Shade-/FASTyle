@@ -27,7 +27,8 @@
 
 [class^="icon-"]:before,
 [class*=" icon-"]:before,
-.icon:before {
+.icon:before,
+.jGrowl-notification:before {
   font-family: "fastyle" !important;
   font-style: normal !important;
   font-weight: normal !important;
@@ -39,7 +40,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-cancel:before {
+.icon-cancel:before,
+.jGrowl-notification.ui-state-error:before {
   content: "\61";
 }
 .icon-resize-full:before {
@@ -65,11 +67,19 @@ li.expanded.header:not(.search):before {
 .icon-attention:before {
   content: "\68";
 }
+.icon-check:before,
+.jGrowl-notification.ui-state-highlight:before {
+  content: "\69";
+}
 
 li.header:before {
 	margin-right: 5px;
 	position: relative;
 	top: 1px
+}
+
+.fastyle {
+	position: relative
 }
 
 .fastyle.full {
@@ -143,7 +153,7 @@ li.header:before {
 
 .fastyle .sidebar ul li.active {
 	color: #fff;
-	border-left: 5px solid #ef5b7b;
+	border-left: 5px solid #badc8a;
 	padding: 10px 25px 10px 20px;
 }
 
@@ -310,13 +320,59 @@ li.header:before {
 
 /* CodeMirror overlay */
 .CodeMirror .overlay {
-	width: calc(100% - 43px);
+	width: 100%;
 	height: 100%;
 	background: rgba(0,0,0,.15);
 	position: absolute;
 	top: 0;
 	left: 0;
 	z-index: 9999;
-	margin-left: 43px;
-	border-radius: 3px;
+	border-radius: 6px;
+}
+
+/* jGrowl */
+.jGrowl {
+	position: absolute
+}
+
+.jGrowl-notification.ui-state-highlight,
+.jGrowl-notification.ui-state-error {
+    border: none;
+    background: hsla(0, 0%, 100%, 0.95);
+    font-weight: 400;
+    color: #676767;
+    opacity: 1;
+    border-radius: 3px;
+    padding-left: 55px;
+    position: relative;
+}
+
+.jGrowl-notification .jGrowl-close {
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: none;
+    color: inherit;
+}
+
+.jGrowl-notification.ui-state-highlight:before,
+.jGrowl-notification.ui-state-error:before {
+  display: block;
+  text-align: center;
+  background: #71c341;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 999em;
+  line-height: 30px;
+  font-size: 16px;
+  float: left;
+  margin: 0 10px 0 0;
+  position: absolute;
+  top: 15px;
+  left: 10px;
+}
+
+.jGrowl-notification.ui-state-error:before {
+  background: #c34156;
 }
