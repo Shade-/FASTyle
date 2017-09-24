@@ -1,340 +1,307 @@
 @charset "UTF-8";
-
 @font-face {
-  font-family: "fastyle";
-  src:url("fonts/fastyle.eot");
-  src:url("fonts/fastyle.eot?#iefix") format("embedded-opentype"),
-    url("fonts/fastyle.woff") format("woff"),
-    url("fonts/fastyle.ttf") format("truetype"),
-    url("fonts/fastyle.svg#fastyle") format("svg");
-  font-weight: normal;
-  font-style: normal;
-
+    font-family: "fastyle";
+    src: url("fonts/fastyle.eot");
+    src: url("fonts/fastyle.eot?#iefix") format("embedded-opentype"), url("fonts/fastyle.woff") format("woff"), url("fonts/fastyle.ttf") format("truetype"), url("fonts/fastyle.svg#fastyle") format("svg");
+    font-weight: normal;
+    font-style: normal
 }
-
 [data-icon]:before {
-  font-family: "fastyle" !important;
-  content: attr(data-icon);
-  font-style: normal !important;
-  font-weight: normal !important;
-  font-variant: normal !important;
-  text-transform: none !important;
-  speak: none;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    font-family: "fastyle" !important;
+    content: attr(data-icon);
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    speak: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
 }
-
 [class^="icon-"]:before,
 [class*=" icon-"]:before,
 .icon:before,
 .jGrowl-notification:before {
-  font-family: "fastyle" !important;
-  font-style: normal !important;
-  font-weight: normal !important;
-  font-variant: normal !important;
-  text-transform: none !important;
-  speak: none;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    font-family: "fastyle" !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    speak: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
 }
-
 .icon-cancel:before,
 .jGrowl-notification.ui-state-error:before {
-  content: "\61";
+    content: "\61"
 }
 .icon-resize-full:before {
-  content: "\62";
+    content: "\62"
 }
 .icon-resize-small:before {
-  content: "\63";
+    content: "\63"
 }
 .icon-right-open:before,
 li.header:not(.search):before {
-  content: "\65";
+    content: "\65"
 }
 .icon-down-open:before,
 li.expanded.header:not(.search):before {
-  content: "\64";
+    content: "\64"
 }
 .icon-plus:before {
-  content: "\66";
+    content: "\66"
 }
 .icon-attach:before {
-  content: "\67";
+    content: "\67"
 }
 .icon-attention:before {
-  content: "\68";
+    content: "\68"
 }
 .icon-check:before,
 .jGrowl-notification.ui-state-highlight:before {
-  content: "\69";
+    content: "\69"
 }
-
 li.header:before {
-	margin-right: 5px;
-	position: relative;
-	top: 1px
+    margin-right: 5px;
+    position: relative;
+    top: 1px
 }
-
 .fastyle {
-	position: relative
+    position: relative
 }
-
 .fastyle.full {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%
 }
-
 .fastyle.full .sidebar {
-	height: calc(100vh - 63px)
+    height: calc(100vh - 63px)
 }
-
 .CodeMirror {
-	height: 500px!important;
-	width: 100%!important
+    height: 500px!important;
+    width: 100%!important
 }
-
 .fastyle.full .CodeMirror {
-	height: calc(100vh - 63px)!important;
+    height: calc(100vh - 63px)!important
 }
-
 .fastyle .form_row {
-	width: 80%;
-	float: left;
-	margin: 0;
-	padding: 0 20px 20px;
-	box-sizing: border-box;
-	background: #1c2939;
+    width: 80%;
+    float: left;
+    margin: 0;
+    padding: 0 20px 20px;
+    box-sizing: border-box;
+    background: #1c2939
 }
-
 .fastyle .sidebar {
-	width: 20%;
-	float: left;
-	padding: 0;
-	box-sizing: border-box;
-	position: relative;
-	height: 520px;
-	background: #1c2939;
-	overflow-y: auto;
+    width: 20%;
+    float: left;
+    padding: 0;
+    box-sizing: border-box;
+    position: relative;
+    height: 520px;
+    background: #1c2939;
+    overflow-y: auto
 }
-
 .fastyle .sidebar > * {
-	margin: 10px 0;
-	display: inline-block;
-	position: relative
+    margin: 10px 0;
+    display: inline-block;
+    position: relative
 }
-
 .fastyle .sidebar ul {
-	width: 100%;
-	padding: 0;
-	margin: 0;
-	box-sizing: border-box;
-	list-style-type: none
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    list-style-type: none
 }
-
 .fastyle .sidebar ul li {
-	margin: 0;
-	display: block;
-	cursor: pointer;
-	padding: 10px 25px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	color: #607588;
-	font-size: 10px;
-	position: relative;
-	font-weight: 500;
+    margin: 0;
+    display: block;
+    cursor: pointer;
+    padding: 10px 25px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #607588;
+    font-size: 10px;
+    position: relative;
+    font-weight: 500
 }
-
 .fastyle .sidebar ul li.active {
-	color: #fff;
-	border-left: 5px solid #badc8a;
-	padding: 10px 25px 10px 20px;
+    color: #fff;
+    border-left: 5px solid #badc8a;
+    padding: 10px 25px 10px 20px
 }
-
 .fastyle .sidebar ul li.not-saved:after {
-	content: '';
-	width: 7px;
-	height: 7px;
-	background: #f58d4b;
-	display: inline-block;
-	border-radius: 999em;
-	position: absolute;
-	top: 13px;
-	right: 14px;
+    content: '';
+    width: 7px;
+    height: 7px;
+    background: #f58d4b;
+    display: inline-block;
+    border-radius: 999em;
+    position: absolute;
+    top: 13px;
+    right: 14px
 }
-
 .fastyle .sidebar ul li[data-status="modified"] {
-	color: #62734a;
+    color: #62734a
 }
-
 .fastyle .sidebar ul li[data-status="modified"].active {
-	color: #badc8a;
+    color: #badc8a
 }
-
 .fastyle .sidebar ul li[data-status="original"] {
-	color: #485ea5;
+    color: #485ea5
 }
-
 .fastyle .sidebar ul li[data-status="original"].active {
-	color: #7a98f7;
+    color: #7a98f7
 }
-
 .fastyle .sidebar ul li .icon-attention {
-	color: #adaf7b;
+    color: #adaf7b
 }
-
 .fastyle .sidebar ul li.active .icon-attention {
-	color: #fff077;
+    color: #fff077
 }
-
 .fastyle .sidebar ul li .action {
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	font-size: 12px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 12px
 }
-
-.fastyle .sidebar [name="search"] {
-	padding: 12px;
-	margin: 0;
-	-webkit-appearance: none;
-	border: 1px solid rgba(255,255,255,.1);
-	background: rgba(255,255,255,.1);
-	color: #fff;
-	outline: none;
-	width: 100%;
-	box-sizing: border-box;
-}
-
 .fastyle .sidebar li.header {
-	padding: 12px;
-	margin: 0;
-	background: #1c2939;
-	color: #7e8c98;
-	font-size: 9px;
-	text-transform: uppercase;
+    padding: 12px;
+    margin: 0;
+    background: #1c2939;
+    color: #7e8c98;
+    font-size: 9px;
+    text-transform: uppercase
 }
-
-.fastyle .sidebar li.header .deletegroup,
 .fastyle .sidebar li i[class*="icon-"] {
-	float: right;
-	font-size: 11px
+    float: right;
+    font-size: 11px;
+    margin: 0 0 0 5px
 }
-
+.fastyle .sidebar li.header .deletegroup {
+    color: #d04750
+}
 .fastyle .sidebar li.header+ul {
-	display: none
+    display: none
 }
-
 .fastyle .sidebar li.header.expanded+ul {
-	display: block
+    display: block
 }
-
 .fastyle:after {
-	content: "";
-	display: block;
-	clear: both
+    content: "";
+    display: block;
+    clear: both
 }
-
 .fastyle .bar {
-	background: #1c2939;
-	color: #fff;
-	display: table;
-	width: 100%;
+    background: #1c2939;
+    color: #fff;
+    display: table;
+    width: 100%
 }
-
 .fastyle .bar > * {
-	display: table-cell;
-	vertical-align: middle;
+    display: table-cell;
+    vertical-align: middle
 }
-
 .fastyle .bar + div {
-	clear: both;
+    clear: both
 }
-
 .fastyle .bar .sidebar {
-	height: auto;
-	float: none
+    height: auto;
+    float: none
 }
-
 .fastyle .bar .label {
-	width: 40%;
-	font-size: 15px;
-	padding: 0 20px
+    width: 40%;
+    font-size: 15px;
+    padding: 0 20px
 }
-
 .fastyle .bar .label .date {
-	font-size: 11px;
-	margin-left: 10px;
-	color: #999
+    font-size: 11px;
+    margin-left: 10px;
+    color: #999
 }
-
 .fastyle .bar .actions {
-	padding: 0 25px;
-	text-align: right;
+    padding: 0 25px;
+    text-align: right
 }
-
 .fastyle .bar .actions .button {
-	padding: 4px 8px;
-	background: rgb(42, 65, 80);
-	border-radius: 3px;
-	margin: 0 4px;
-	display: inline-block;
-	cursor: pointer;
-	color: #7e8488
+    padding: 4px 8px;
+    background: rgb(42, 65, 80);
+    border-radius: 3px;
+    margin: 0 4px;
+    display: inline-block;
+    cursor: pointer;
+    color: #7e8488
 }
-
-.fastyle .bar .actions i {
-	margin: 0 0 0 20px;
-	cursor: pointer
+.fastyle .bar .actions > i {
+    margin: 0 0 0 20px;
+    cursor: pointer
 }
-
-.fastyle .bar .actions .button.quickmode.enabled {
-	background: #73ab57;
-	color: #fff
-}
-
 .fastyle .sidebar .nothing-found,
-.fastyle .bar .actions .button:not(.quickmode) {
-	display: none
+.fastyle .bar .actions .button:not(.visible) {
+    display: none
 }
-
-.fastyle .bar[data-status] .actions .button {
-	display: inline-block
+.fastyle .bar[data-status="modified"] .actions .revert {
+    color: #fff;
+    background: #1f4661;
+    display: inline-block
 }
-
-.fastyle .bar[data-status="modified"] .actions .revert,
 .fastyle .bar[data-status="original"] .actions .delete {
-	color: #fff;
-	background: #1f4661
+    color: #fff;
+    background: #a54848;
+    display: inline-block
 }
-
-.fastyle .bar[data-status="original"] .actions .delete {
-	background: #a54848
+.fastyle .bar .actions .add {
+    color: #fff;
+    background: #73ab57
 }
+.fastyle .bar .actions .button.quickmode.enabled {
+    color: #fff;
+    background: #aba657
+}
+/* Inputs */
 
+.fastyle input[type="textbox"] {
+    padding: 12px;
+    margin: 0;
+    -webkit-appearance: none;
+    border: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box
+}
+.fastyle .actions input[type="textbox"] {
+    width: 35%;
+    padding: 4px 12px
+}
+.fastyle .actions input[type="textbox"] + span {
+    margin-left: 0!important;
+    border-radius: 0 3px 3px 0!important
+}
 /* CodeMirror overlay */
+
 .CodeMirror .overlay {
-	width: 100%;
-	height: 100%;
-	background: rgba(0,0,0,.15);
-	position: absolute;
-	top: 0;
-	left: 0;
-	z-index: 9999;
-	border-radius: 6px;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .15);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    border-radius: 6px
 }
-
 /* jGrowl */
-.jGrowl {
-	position: absolute
-}
 
+.jGrowl {
+    position: absolute
+}
 .jGrowl-notification.ui-state-highlight,
 .jGrowl-notification.ui-state-error {
     border: none;
@@ -345,34 +312,32 @@ li.header:before {
     border-radius: 3px;
     padding-left: 55px;
     position: relative;
+    line-height: 1.6
 }
-
 .jGrowl-notification .jGrowl-close {
     border: none;
     padding: 0;
     margin: 0;
     background: none;
-    color: inherit;
+    color: inherit
 }
-
 .jGrowl-notification.ui-state-highlight:before,
 .jGrowl-notification.ui-state-error:before {
-  display: block;
-  text-align: center;
-  background: #71c341;
-  color: #fff;
-  width: 30px;
-  height: 30px;
-  border-radius: 999em;
-  line-height: 30px;
-  font-size: 16px;
-  float: left;
-  margin: 0 10px 0 0;
-  position: absolute;
-  top: 15px;
-  left: 10px;
+    display: block;
+    text-align: center;
+    background: #71c341;
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    border-radius: 999em;
+    line-height: 30px;
+    font-size: 16px;
+    float: left;
+    margin: 0 10px 0 0;
+    position: absolute;
+    top: 15px;
+    left: 10px
 }
-
 .jGrowl-notification.ui-state-error:before {
-  background: #c34156;
+    background: #c34156
 }

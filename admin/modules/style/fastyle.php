@@ -19,6 +19,12 @@ $template_sets[-1]['sid'] = -1;
 		
 $themes = cache_themes();
 
+// Get template sets
+$query = $db->simple_select("templatesets", "*", "", ['order_by' => 'title', 'order_dir' => 'ASC']);
+while ($template_set = $db->fetch_array($query)) {
+	$template_sets[$template_set['sid']] = $template_set;
+}
+
 // Restrucure the theme array to something we can "loop-de-loop" with
 foreach ($themes as $key => $theme) {
 	
@@ -88,7 +94,7 @@ if (isset($mybb->input['api'])) {
 			
 		}
 		else {
-			fastyle_message('Error: resource not found');
+			fastyle_message('Resource not found', 'error');
 		}
 	
 	}
@@ -106,7 +112,7 @@ if (isset($mybb->input['api'])) {
 	
 		// Does the template not exist?
 		if (!$template) {
-			fastyle_message('This template does not exist');
+			fastyle_message($lang->error_invalid_template, 'error');
 		}
 			
 		// Revert the template
@@ -136,7 +142,7 @@ if (isset($mybb->input['api'])) {
 	
 		// Does the template not exist?
 		if (!$template) {
-			fastyle_message($lang->error_invalid_template);
+			fastyle_message($lang->error_invalid_template, 'error');
 		}
 	
 		// Delete the template
@@ -156,7 +162,7 @@ if (isset($mybb->input['api'])) {
 		$query = $db->simple_select("templategroups", "*", "gid='{$gid}'");
 	
 		if (!$db->num_rows($query)) {
-			fastyle_message($lang->error_missing_template_group);
+			fastyle_message($lang->error_missing_template_group, 'error');
 		}
 	
 		$template_group = $db->fetch_array($query);
@@ -171,12 +177,74 @@ if (isset($mybb->input['api'])) {
 		
 	}
 	
-}
+	// Add template group
+	if ($mybb->input['action'] == 'addgroup') {
+		
+		if (!trim($mybb->input['title'])) {
+			fastyle_message($lang->error_missing_set_title, 'error');
+		}
+		
+		$gid = $db->insert_query("templatesets", ['title' => $db->escape_string($mybb->input['title'])]);
 
-// Get template sets
-$query = $db->simple_select("templatesets", "*", "", ['order_by' => 'title', 'order_dir' => 'ASC']);
-while ($template_set = $db->fetch_array($query)) {
-	$template_sets[$template_set['sid']] = $template_set;
+		// Log admin action
+		log_admin_action($gid, $mybb->input['title']);
+
+		fastyle_message($lang->success_template_set_saved);
+		
+	}
+	
+	// Add template
+	if ($mybb->input['action'] == 'add') {
+	
+		if (empty($mybb->input['title'])) {
+			$errors[] = $lang->error_missing_set_title;
+		}
+		else {
+			
+			$query = $db->simple_select("templates", "COUNT(tid) as count", "title='" . $db->escape_string($mybb->input['title']) . "' AND (sid = '-2' OR sid = '{$sid}')");
+			
+			if ($db->fetch_field($query, "count") > 0) {
+				$errors[] = $lang->error_already_exists;
+			}
+			
+		}
+
+		if (!isset($template_sets[$sid])) {
+			$errors[] = $lang->error_invalid_set;
+		}
+
+		// Are we trying to do malicious things in our template?
+		if (check_template($mybb->input['template'])) {
+			$errors[] = $lang->error_security_problem;
+		}
+		
+		if ($errors) {
+			fastyle_message(implode("\n", $errors), 'error');
+		}
+
+		$template_array = [
+			'title' => $db->escape_string($mybb->input['title']),
+			'sid' => $sid,
+			'template' => $db->escape_string(rtrim($mybb->input['template'])),
+			'version' => $db->escape_string($mybb->version_code),
+			'status' => '',
+			'dateline' => TIME_NOW
+		];
+
+		$tid = $db->insert_query("templates", $template_array);
+
+		// Log admin action
+		log_admin_action($tid, $mybb->input['title'], $sid, $template_sets[$sid]);
+		
+		$data = [
+			'message' => $lang->sprintf($lang->fastyle_success_template_saved, $template_array['title']),
+			'tid' => $tid
+		];
+
+		fastyle_message($data);
+		
+	}
+	
 }
 
 // Get this theme's associated template set
@@ -398,7 +466,7 @@ if ($tid or $sid) {
 		}
 		
 		$resourcelist .= '<li class="header icon">Stylesheets</li>';
-		$resourcelist .= '<ul data-type="stylesheets">';
+		$resourcelist .= '<ul data-type="stylesheets" data-prefix="stylesheets">';
 	
 		foreach ($ordered_stylesheets as $filename => $style) {
 			
@@ -557,7 +625,7 @@ if ($tid or $sid) {
 	if ($sid == -1 and !empty($template_groups[-1]['templates'])) {
 		
 		foreach ($template_groups[-1]['templates'] as $template) {
-			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-original>{$template['title']}<span class='action icon-'></span></li>";
+			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-original>{$template['title']}</li>";
 		}
 		
 	}
@@ -569,7 +637,7 @@ if ($tid or $sid) {
 			$title = str_replace(' Templates', '', $group['title']);
 			
 			// We can delete this group
-			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<span class="deletegroup icon-cancel"></span>' : '';
+			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="deletegroup icon-cancel"></i>' : '';
 			
 			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
 						
@@ -592,7 +660,7 @@ if ($tid or $sid) {
 						$originalOrModified = ' data-status="original"';
 					}
 					
-					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}<span class='action icon-'></span></li>";
+					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}</li>";
 					
 				}
 				
@@ -629,9 +697,10 @@ if ($tid or $sid) {
 			<span class="date"></span>
 		</div>
 		<div class="actions">
-			<span class="button revert">Revert</span>
-			<span class="button delete">Delete</span>
-			<span class="button quickmode">Quick mode</span>
+			<input type="textbox" name="title" /><span class="button add visible" data-mode="add">Add</span>
+			<span class="button revert" data-mode="revert">Revert</span>
+			<span class="button delete" data-mode="delete">Delete</span>
+			<span class="button quickmode visible">Quick mode</span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>

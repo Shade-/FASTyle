@@ -140,11 +140,7 @@ function fastyle_templates_edit()
 		}
 		
 		if ($errors) {
-			
-			$errors = implode("\n", $errors);
-			
-			fastyle_message($errors, 'error');
-			
+			fastyle_message(implode("\n", $errors), 'error');
 		}
 		
 	}

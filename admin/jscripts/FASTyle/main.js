@@ -10,6 +10,7 @@ var FASTyle = {
 	resources: {},
 	postKey: '',
 	quickMode: false,
+	resourcesList: {},
 
 	init: function(sid, tid) {
 
@@ -22,7 +23,7 @@ var FASTyle = {
 		if (tid > 0) {
 			FASTyle.tid = tid;
 		}
-		
+
 		// Notification defaults
 		$.jGrowl.defaults.appendTo = ".fastyle";
 		$.jGrowl.defaults.position = "bottom-right";
@@ -66,6 +67,39 @@ var FASTyle = {
 		// Expand/collapse
 		FASTyle.dom.sidebar.find('.header').on('click', function(e) {
 			return $(this).toggleClass('expanded');
+		});
+
+		// Build a virtual array of stylesheets and templates
+		$.each(FASTyle.dom.sidebar.find('[data-prefix], [data-title]'), function(k, item) {
+
+			var prefix = item.getAttribute('data-prefix');
+			var title = item.getAttribute('data-title');
+
+			if (prefix) {
+
+				if (prefix == -1) {
+					prefix = 'ungrouped';
+				}
+
+				FASTyle.resourcesList[prefix] = [];
+
+			}
+
+			if (title) {
+
+				prefix = title.split('_');
+				prefix = prefix[0];
+
+				if (title.indexOf('.css') > -1) {
+					prefix = 'stylesheets';
+				} else if (typeof FASTyle.resourcesList[prefix] === 'undefined') {
+					prefix = 'ungrouped';
+				}
+
+				FASTyle.resourcesList[prefix].push(title);
+
+			}
+
 		});
 
 		FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
@@ -128,14 +162,16 @@ var FASTyle = {
 		}
 
 		// Load resource
-		FASTyle.dom.sidebar.find('ul [data-title]').on('click', function(e) {
+		FASTyle.dom.sidebar.on('click', 'ul [data-title]', function(e) {
 
 			e.preventDefault();
 
 			var name = $(this).attr('data-title');
 
-			FASTyle.storeCurrentResourceInCache();
+			// Save the current resource's status
+			FASTyle.saveCurrentResource();
 
+			// Load the new one
 			if (name != FASTyle.currentResource.title) {
 				FASTyle.loadResource(name);
 			}
@@ -193,19 +229,19 @@ var FASTyle = {
 
 		});
 
-		// Revert/delete
+		// Revert/delete/add
 		FASTyle.dom.bar.find('.actions span').on('click', function(e) {
 
 			e.preventDefault();
 
 			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
-			var mode = ($(this).hasClass('revert')) ? 'revert' : 'delete';
+			var mode = $(this).attr('data-mode');
 
 			if ((tab.attr('data-status') == 'modified' && mode == 'delete') || (tab.attr('data-status') == 'original' && mode == 'revert')) {
 				return false;
 			}
 
-			if (!FASTyle.quickMode) {
+			if (!FASTyle.quickMode && ['revert', 'delete'].indexOf(mode) > -1) {
 
 				var confirm = window.confirm('Are you sure you want to ' + mode + ' this template?');
 				if (confirm != true) {
@@ -223,25 +259,73 @@ var FASTyle = {
 				'sid': FASTyle.sid
 			};
 
+			if (mode == 'add') {
+
+				data.template = '';
+				data.title = FASTyle.dom.bar.find('input[name="title"]').val().trim();
+
+				if (!data.title) {
+					return false;
+				}
+
+			}
+
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
 
+				// Error?
+				if (response.error) {
+					return $.jGrowl(response.message, {
+						themeState: 'error'
+					});
+				}
+
 				$.jGrowl(response.message);
+
+				// Template added
+				if (mode == 'add') {
+
+					var index = FASTyle.findResourceGroup(data.title);
+					var position = FASTyle.addToResourceList(data.title);
+					var prevTitle = (position > 0) ? FASTyle.resourcesList[index][position - 1] : FASTyle.resourcesList[index][position + 1];
+
+					// Finally show the new template!
+					var prevElem = FASTyle.dom.sidebar.find('[data-title="' + prevTitle + '"]');
+					var newElem = prevElem.clone();
+
+					newElem.attr('data-status', 'original').attr('data-title', data.title).text(data.title);
+
+					tab = (position > 0) ? newElem.insertAfter(prevElem) : newElem.insertBefore(prevElem);
+
+					FASTyle.addResourceToCache(data.title, '', Math.round(new Date().getTime() / 1000));
+					FASTyle.loadResource(data.title);
+
+				}
+				// Template reverted
+				else {
+					tab.removeAttr('data-status');
+				}
+
+				// Template deleted
+				if (mode == 'delete') {
+
+					tab.remove();
+					FASTyle.removeResourceFromCache(data.title);
+
+					var group = FASTyle.findResourceGroup(data.title);
+					var newIndex = FASTyle.removeFromResourceList(data.title);
+					return FASTyle.loadResource(FASTyle.resourcesList[group][newIndex]);
+
+				}
 
 				if (response.tid) {
 					tab.attr('data-tid', Number(response.tid));
 				}
 
-				tab.removeAttr('data-status');
-
-				if (mode == 'delete') {
-					tab.remove();
-				}
-
-				FASTyle.dom.bar.removeAttr('data-status');
-
-				if (mode == 'delete' || !response.template) {
+				if (!response.template) {
 					response.template = '';
 				}
+
+				FASTyle.syncBarStatus();
 
 				// Prevents the tab to be marked as "not saved"
 				FASTyle.switching = true;
@@ -255,7 +339,7 @@ var FASTyle = {
 		});
 
 		// Delete template group
-		FASTyle.dom.sidebar.find('.deletegroup').on('click', function(e) {
+		FASTyle.dom.sidebar.on('click', '.deletegroup', function(e) {
 
 			e.preventDefault();
 
@@ -275,7 +359,7 @@ var FASTyle = {
 				'api': 1,
 				'my_post_key': FASTyle.postKey,
 				'action': 'deletegroup',
-				'gid': $(this).parent('[data-gid]').attr('data-gid')
+				'gid': parseInt($(this).parent('[data-gid]').attr('data-gid'))
 			};
 
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
@@ -328,7 +412,10 @@ var FASTyle = {
 
 		FASTyle.switching = true;
 
-		FASTyle.markAsActive(name, true);
+		// Set this resource internally
+		FASTyle.setCurrentResource(name, dateline);
+
+		FASTyle.markAsActive(name);
 
 		var tab = FASTyle.dom.sidebar.find('[data-title="' + name + '"]');
 
@@ -389,32 +476,14 @@ var FASTyle = {
 			FASTyle.dom.textarea.focus();
 		}
 
-		// Stop the spinner
-		$('.CodeMirror .overlay').hide();
-
-		// Set this resource internally
-		FASTyle.currentResource = {
-			'title': name
-		};
-
 		// Remember tab
 		Cookie.set('active-resource-' + FASTyle.sid, name);
-
-		// Update the title
-		FASTyle.dom.bar.find('.label .name').text(name);
-
-		// Update last edited
-		if (FASTyle.utils.exists(tab.attr('data-status')) && dateline) {
-			FASTyle.updateDatelineLabel(dateline);
-		} else {
-			FASTyle.removeDatelineLabel();
-		}
 
 		return true;
 
 	},
 
-	markAsActive: function(name, active) {
+	markAsActive: function(name) {
 
 		if (!name.length) return false;
 
@@ -436,37 +505,72 @@ var FASTyle = {
 			FASTyle.dom.sidebar.scrollTop(tabPosition);
 		}
 
-		// Update the bar status
-		if (FASTyle.utils.exists(tab.attr('data-status'))) {
-			FASTyle.dom.bar.attr('data-status', tab.attr('data-status'));
+		FASTyle.syncBarStatus();
+
+		return tab.addClass('active');
+
+	},
+
+	syncBarStatus: function() {
+
+		var title = FASTyle.currentResource.title;
+		var currentTab = FASTyle.dom.sidebar.find('[data-title="' + title + '"]');
+
+		if (FASTyle.utils.exists(currentTab.attr('data-status'))) {
+
+			FASTyle.dom.bar.attr('data-status', currentTab.attr('data-status')).find('.label .name').text(title);
+			FASTyle.updateDatelineLabel(FASTyle.currentResource.dateline);
+
 		} else {
-			FASTyle.dom.bar.removeAttr('data-status');
+
+			FASTyle.dom.bar.removeAttr('data-status').find('.label .name').text(title);
+			FASTyle.removeDatelineLabel();
+
 		}
 
-		tab.addClass('active');
+	},
+
+	setCurrentResource: function(name) {
+
+		if (!name) {
+			return false;
+		}
+
+		FASTyle.currentResource = FASTyle.resources[name];
 
 	},
 
-	storeCurrentResourceInCache: function() {
-		return (FASTyle.currentResource.title) ? FASTyle.storeResourceInCache(FASTyle.currentResource.title, FASTyle.getEditorContent()) : false;
+	saveCurrentResource: function() {
+		return (FASTyle.currentResource.title) ? FASTyle.addResourceToCache(FASTyle.currentResource.title, FASTyle.getEditorContent()) : false;
 	},
 
-	storeResourceInCache: function(name, content) {
+	addResourceToCache: function(name, content, dateline) {
 
 		name = name.trim();
 
-		FASTyle.resources[name] = {
-			'content': content,
-			'dateline': FASTyle.currentResource.dateline
-		};
+		if (typeof FASTyle.resources[name] == 'undefined') {
+			FASTyle.resources[name] = {};
+		}
+
+		FASTyle.resources[name].title = name;
+		FASTyle.resources[name].content = content;
+
+		// Update the last edited dateline, if provided
+		if (dateline) {
+			FASTyle.resources[name].dateline = dateline;
+		}
 
 		// Save the current editor status
 		if (FASTyle.useEditor) {
+
 			FASTyle.resources[name].history = FASTyle.dom.editor.getHistory();
 			FASTyle.resources[name].scrollInfo = FASTyle.dom.editor.getScrollInfo();
 			FASTyle.resources[name].cursorPosition = FASTyle.dom.editor.getCursor();
 			FASTyle.resources[name].selections = FASTyle.dom.editor.listSelections();
+
 		}
+
+		return FASTyle.resources[name];
 
 	},
 
@@ -474,7 +578,7 @@ var FASTyle = {
 
 		name = name.trim();
 
-		delete FASTyle.resources[name];
+		return delete FASTyle.resources[name];
 
 	},
 
@@ -492,7 +596,12 @@ var FASTyle = {
 		$('.CodeMirror .overlay').show();
 
 		if (typeof t !== 'undefined')  {
+				
+			// Stop the spinner
+			$('.CodeMirror .overlay').hide();
+			
 			return FASTyle.loadResourceInDOM(name, t.content, t.dateline);
+			
 		} else {
 
 			var data = {
@@ -505,7 +614,20 @@ var FASTyle = {
 			}
 
 			return FASTyle.sendRequest('POST', 'index.php', data, (response) => {
-				return FASTyle.loadResourceInDOM(name, response.content, response.dateline);
+				
+				// Stop the spinner
+				$('.CodeMirror .overlay').hide();
+				
+				// Error?
+				if (response.error) {
+					return $.jGrowl(response.message, {
+						themeState: 'error'
+					});
+				}
+
+				FASTyle.addResourceToCache(name, response.content, response.dateline);
+				FASTyle.loadResourceInDOM(name, response.content, response.dateline);
+
 			});
 
 		}
@@ -536,12 +658,11 @@ var FASTyle = {
 				'display': 'inline-block',
 				'vertical-align': 'top'
 			});
-	
+
 			// Replace the button with the spinner container
 			saveButton.replaceWith(spinnerContainer);
 
-		}
-		else {
+		} else {
 			var spinnerContainer = $('<div />');
 		}
 
@@ -662,12 +783,60 @@ var FASTyle = {
 	},
 
 	updateDatelineLabel: function(dateline) {
-		FASTyle.dom.bar.find('.label .date').html('Last edited: ' + FASTyle.utils.processDateline(dateline));
-		FASTyle.currentResource.dateline = dateline;
+		return FASTyle.dom.bar.find('.label .date').html('Last edited: ' + FASTyle.utils.processDateline(dateline));
 	},
 
 	removeDatelineLabel: function() {
 		return FASTyle.dom.bar.find('.label .date').empty();
+	},
+
+	findResourceGroup: function(title) {
+
+		var split = title.split('_');
+		var group = split[0];
+
+		// Stylesheet
+		if (title.indexOf('.css') > -1) {
+			group = 'stylesheets';
+		}
+		// Ungrouped template
+		else if (typeof FASTyle.resourcesList[group] === 'undefined') {
+			group = 'ungrouped';
+		}
+
+		return group;
+
+	},
+
+	addToResourceList: function(title) {
+
+		var group = FASTyle.findResourceGroup(title);
+
+		FASTyle.resourcesList[group].push(title);
+
+		// Sort alphabetically
+		FASTyle.resourcesList[group].sort();
+
+		return FASTyle.resourcesList[group].indexOf(title);
+
+	},
+
+	removeFromResourceList: function(title) {
+
+		var group = FASTyle.findResourceGroup(title);
+		var index = FASTyle.resourcesList[group].indexOf(title);
+
+		if (index < 0) {
+			return false;
+		}
+
+		delete FASTyle.resourcesList[group][index];
+
+		// Sort alphabetically
+		FASTyle.resourcesList[group].sort();
+
+		return (index > 0) ? index - 1 : index;
+
 	},
 
 	utils: {
