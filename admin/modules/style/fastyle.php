@@ -125,12 +125,48 @@ if (isset($mybb->input['api'])) {
 		$query = $db->simple_select('templates', 'tid,template', "title = '" . $title . "' AND sid = -2");
 		$template = $db->fetch_array($query);
 
-		fastyle_message(['message' => $lang->success_template_reverted, 'tid' => $template['tid'], 'template' => $template['template']]);
+		fastyle_message(['message' => $lang->success_template_reverted, 'tid' => $template['tid'], 'content' => $template['template']]);
 		
 	}
 	
 	// Delete template
 	if ($mybb->input['action'] == 'delete') {
+		
+		if ($mybb->input['type'] == 'stylesheet') {
+		
+			if (!$theme['tid']) {
+				fastyle_message($lang->error_invalid_theme, 'error');
+			}
+			
+			$parent_list = make_parent_theme_list($theme['tid']);
+			$parent_list = implode(',', $parent_list);
+			if (!$parent_list) {
+				$parent_list = 1;
+			}
+
+			$query = $db->simple_select("themestylesheets", "*", "name='" . $title . "' AND tid IN ({$parent_list})", ['order_by' => 'tid', 'order_dir' => 'desc', 'limit' => 1]);
+			$stylesheet = $db->fetch_array($query);
+		
+			// Does the theme not exist? or are we trying to delete the master?
+			if (!$stylesheet['sid'] or $stylesheet['tid'] == 1) {
+				fastyle_message($lang->error_invalid_stylesheet, 'error');
+			}
+
+			$db->delete_query("themestylesheets", "sid='{$stylesheet['sid']}'", 1);
+			@unlink(MYBB_ROOT."cache/themes/theme{$theme['tid']}/{$stylesheet['cachefile']}");
+	
+			$filename_min = str_replace('.css', '.min.css', $stylesheet['cachefile']);
+			@unlink(MYBB_ROOT."cache/themes/theme{$theme['tid']}/{$filename_min}");
+	
+			// Update the CSS file list for this theme
+			update_theme_stylesheet_list($theme['tid'], $theme, true);
+	
+			// Log admin action
+			log_admin_action($stylesheet['sid'], $stylesheet['name'], $theme['tid'], htmlspecialchars_uni($theme['name']));
+	
+			fastyle_message($lang->success_stylesheet_deleted);
+			
+		}
 	
 		$query = $db->query("
 			SELECT t.*, s.title as set_title
@@ -193,15 +229,59 @@ if (isset($mybb->input['api'])) {
 		
 	}
 	
-	// Add template
+	// Add resource
 	if ($mybb->input['action'] == 'add') {
+		
+		// Stylesheet
+		if ($mybb->input['type'] == 'stylesheet') {
+			
+			// Remove special characters
+			$mybb->input['title'] = preg_replace('#([^a-z0-9-_\.]+)#i', '', $mybb->input['title']);
+			if (!$mybb->input['title'] or $mybb->input['title'] == ".css") {
+				fastyle_message($lang->error_missing_stylesheet_name, 'error');
+			}
 	
+			// Get 30 chars only because we don't want more than that
+			$mybb->input['title'] = my_substr($mybb->input['title'], 0, 30);
+			
+			// Does not end with '.css'
+			if (get_extension($mybb->input['title']) != "css") {
+				fastyle_message($lang->sprintf($lang->error_missing_stylesheet_extension, $mybb->input['title']), 'error');
+			}
+
+			// Add Stylesheet
+			$insert_array = [
+				'name' => $db->escape_string($mybb->input['title']),
+				'tid' => $tid,
+				'attachedto' => '',
+				'stylesheet' => $db->escape_string($mybb->input['stylesheet']),
+				'cachefile' => $db->escape_string(str_replace('/', '', $mybb->input['title'])),
+				'lastmodified' => TIME_NOW
+			];
+
+			$sid = $db->insert_query("themestylesheets", $insert_array);
+
+			if (!cache_stylesheet($theme['tid'], str_replace('/', '', $mybb->input['title']), $mybb->input['title'])) {
+				$db->update_query("themestylesheets", ['cachefile' => "css.php?stylesheet={$sid}"], "sid='{$sid}'", 1);
+			}
+
+			// Update the CSS file list for this theme
+			update_theme_stylesheet_list($theme['tid'], $theme, true);
+
+			// Log admin action
+			log_admin_action($sid, $mybb->input['title'], $theme['tid'], htmlspecialchars_uni($theme['name']));
+
+			fastyle_message($lang->success_stylesheet_added);
+
+		}
+		
+		// Template
 		if (empty($mybb->input['title'])) {
 			$errors[] = $lang->error_missing_set_title;
 		}
 		else {
 			
-			$query = $db->simple_select("templates", "COUNT(tid) as count", "title='" . $db->escape_string($mybb->input['title']) . "' AND (sid = '-2' OR sid = '{$sid}')");
+			$query = $db->simple_select("templates", "COUNT(tid) as count", "title='" . $title . "' AND (sid = '-2' OR sid = '{$sid}')");
 			
 			if ($db->fetch_field($query, "count") > 0) {
 				$errors[] = $lang->error_already_exists;
@@ -223,7 +303,7 @@ if (isset($mybb->input['api'])) {
 		}
 
 		$template_array = [
-			'title' => $db->escape_string($mybb->input['title']),
+			'title' => $title,
 			'sid' => $sid,
 			'template' => $db->escape_string(rtrim($mybb->input['template'])),
 			'version' => $db->escape_string($mybb->version_code),
@@ -466,7 +546,7 @@ if ($tid or $sid) {
 		}
 		
 		$resourcelist .= '<li class="header icon">Stylesheets</li>';
-		$resourcelist .= '<ul data-type="stylesheets" data-prefix="stylesheets">';
+		$resourcelist .= '<ul data-prefix="stylesheets">';
 	
 		foreach ($ordered_stylesheets as $filename => $style) {
 			
@@ -576,7 +656,7 @@ if ($tid or $sid) {
 				}
 	
 				if ($attached_to) {
-					$attached_to = "<small>{$lang->attached_to} {$attached_to}</small>";
+					$attached_to = $lang->attached_to . $attached_to;
 				}
 	
 				if (count($colors)) {
@@ -598,21 +678,21 @@ if ($tid or $sid) {
 						
 					}
 	
-					$attached_to = "<small>{$lang->attached_to} ".$lang->sprintf($lang->colors_attached_to)." {$color_list}</small>";
+					$attached_to = $lang->attached_to . $lang->sprintf($lang->colors_attached_to) . ' ' . $color_list;
 					
 				}
 	
 				// Orphaned! :(
 				if ($attached_to == '') {
-					$attached_to = "<small>{$lang->attached_to_nothing}</small>";
+					$attached_to = $lang->attached_to_nothing;
 				}
 				
 			}
 			else {
-				$attached_to = "<small>{$lang->attached_to_all_pages}</small>";
+				$attached_to = $lang->attached_to_all_pages;
 			}
 			
-			$resourcelist .= "<li data-title='{$filename}'{$modified}>{$filename}{$inherited}<br>{$attached_to}</li>";
+			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}'>{$filename}{$inherited}</li>";
 		
 		}
 		
@@ -688,19 +768,18 @@ if ($tid or $sid) {
 	$textarea = $form->generate_text_area('editor', '', ['id' => 'editor', 'style' => 'width: 100%; height: 500px']);
 	$content = <<<HTML
 <div class="fastyle">
-	<div class="bar">
+	<div class="bar top">
 		<div class="sidebar">
 			<ul><li class="header search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
 		</div>
 		<div class="label">
-			<span class="name"></span>
-			<span class="date"></span>
+			<span class="title"></span>
+			<span class="dateline meta"></span>
+			<span class="attachedto meta"></span>
 		</div>
 		<div class="actions">
-			<input type="textbox" name="title" /><span class="button add visible" data-mode="add">Add</span>
 			<span class="button revert" data-mode="revert">Revert</span>
 			<span class="button delete" data-mode="delete">Delete</span>
-			<span class="button quickmode visible">Quick mode</span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>
@@ -711,6 +790,12 @@ if ($tid or $sid) {
 		</div>
 		<div class="form_row">
 			$textarea
+		</div>
+	</div>
+	<div class="bar bottom">
+		<div class="actions">
+			<input type="textbox" name="title" /><span class="button add visible" data-mode="add">Add</span>
+			<span class="button quickmode visible">Quick mode</span>
 		</div>
 	</div>
 </div>

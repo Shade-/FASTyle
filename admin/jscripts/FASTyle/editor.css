@@ -79,22 +79,22 @@ li.header:before {
     height: 100%
 }
 .fastyle.full .sidebar {
-    height: calc(100vh - 63px)
+    height: calc(100vh - 126px);
 }
 .CodeMirror {
     height: 500px!important;
     width: 100%!important
 }
 .fastyle.full .CodeMirror {
-    height: calc(100vh - 63px)!important
+    height: calc(100vh - 126px)!important;
 }
 .fastyle .form_row {
     width: 80%;
     float: left;
     margin: 0;
-    padding: 0 20px 20px;
+    padding: 0 20px;
     box-sizing: border-box;
-    background: #1c2939
+    background: #1c2939;
 }
 .fastyle .sidebar {
     width: 20%;
@@ -102,9 +102,9 @@ li.header:before {
     padding: 0;
     box-sizing: border-box;
     position: relative;
-    height: 520px;
+    height: 500px;
     background: #1c2939;
-    overflow-y: auto
+    overflow-y: auto;
 }
 .fastyle .sidebar > * {
     margin: 10px 0;
@@ -147,16 +147,20 @@ li.header:before {
     top: 13px;
     right: 14px
 }
-.fastyle .sidebar ul li[data-status="modified"] {
+.fastyle .sidebar ul li[data-status="modified"],
+.fastyle .sidebar ul li[status="modified"] {
     color: #62734a
 }
-.fastyle .sidebar ul li[data-status="modified"].active {
+.fastyle .sidebar ul li[data-status="modified"].active,
+.fastyle .sidebar ul li[status="modified"].active {
     color: #badc8a
 }
-.fastyle .sidebar ul li[data-status="original"] {
+.fastyle .sidebar ul li[data-status="original"],
+.fastyle .sidebar ul li[status="original"] {
     color: #485ea5
 }
-.fastyle .sidebar ul li[data-status="original"].active {
+.fastyle .sidebar ul li[data-status="original"].active,
+.fastyle .sidebar ul li[status="original"].active {
     color: #7a98f7
 }
 .fastyle .sidebar ul li .icon-attention {
@@ -216,11 +220,11 @@ li.header:before {
     float: none
 }
 .fastyle .bar .label {
-    width: 40%;
+    width: 65%;
     font-size: 15px;
-    padding: 0 20px
+    padding: 0 20px;
 }
-.fastyle .bar .label .date {
+.fastyle .bar .label .meta {
     font-size: 11px;
     margin-left: 10px;
     color: #999
@@ -228,6 +232,9 @@ li.header:before {
 .fastyle .bar .actions {
     padding: 0 25px;
     text-align: right
+}
+.fastyle .bar.bottom .actions {
+    padding: 20px 25px
 }
 .fastyle .bar .actions .button {
     padding: 4px 8px;
@@ -246,12 +253,14 @@ li.header:before {
 .fastyle .bar .actions .button:not(.visible) {
     display: none
 }
-.fastyle .bar[data-status="modified"] .actions .revert {
+.fastyle .bar[data-status="modified"] .actions .revert,
+.fastyle .bar[status="modified"] .actions .revert {
     color: #fff;
     background: #1f4661;
     display: inline-block
 }
-.fastyle .bar[data-status="original"] .actions .delete {
+.fastyle .bar[data-status="original"] .actions .delete,
+.fastyle .bar[status="original"] .actions .delete {
     color: #fff;
     background: #a54848;
     display: inline-block
@@ -278,7 +287,7 @@ li.header:before {
     box-sizing: border-box
 }
 .fastyle .actions input[type="textbox"] {
-    width: 35%;
+    width: 25%;
     padding: 4px 12px
 }
 .fastyle .actions input[type="textbox"] + span {

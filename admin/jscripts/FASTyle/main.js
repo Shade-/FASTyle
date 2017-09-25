@@ -27,6 +27,15 @@ var FASTyle = {
 		// Notification defaults
 		$.jGrowl.defaults.appendTo = ".fastyle";
 		$.jGrowl.defaults.position = "bottom-right";
+		$.jGrowl.defaults.closer = false;
+		$.jGrowl.openDuration = 300;
+		$.jGrowl.animateOpen = {
+			opacity: 1
+		};
+		$.jGrowl.closeDuration = 300;
+		$.jGrowl.animateClose = {
+			opacity: 0
+		};
 
 		// Set the spinner default options
 		FASTyle.spinner.opts = {
@@ -78,7 +87,7 @@ var FASTyle = {
 			var title = item.getAttribute('data-title');
 
 			if (prefix) {
-				
+
 				prefix = prefix.toLowerCase();
 
 				if (!prefix) {
@@ -109,6 +118,19 @@ var FASTyle = {
 		FASTyle.spinner = new Spinner(FASTyle.spinner.opts).spin();
 		FASTyle.useEditor = (typeof editor !== 'undefined') ? true : false;
 		FASTyle.dom.editor = (FASTyle.useEditor) ? editor : null;
+
+		// Disable spaces in search and title inputs
+		FASTyle.dom.bar.find('input[type="textbox"]').on({
+
+			keydown: function(e) {
+				if (e.which === 32) return false;
+			},
+
+			change: function() {
+				this.value = this.value.replace(/\s/g, "_");
+			}
+
+		});
 
 		// Load overlay
 		if (FASTyle.useEditor)  {
@@ -170,7 +192,7 @@ var FASTyle = {
 
 			e.preventDefault();
 
-			var name = $(this).attr('data-title');
+			var name = $(this).data('title');
 
 			// Save the current resource's status
 			FASTyle.saveCurrentResource();
@@ -239,9 +261,9 @@ var FASTyle = {
 			e.preventDefault();
 
 			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
-			var mode = $(this).attr('data-mode');
+			var mode = $(this).data('mode');
 
-			if ((tab.attr('data-status') == 'modified' && mode == 'delete') || (tab.attr('data-status') == 'original' && mode == 'revert')) {
+			if ((tab.data('status') == 'modified' && mode == 'delete') || (tab.data('status') == 'original' && mode == 'revert')) {
 				return false;
 			}
 
@@ -255,17 +277,15 @@ var FASTyle = {
 			}
 
 			var data = {
-				'module': 'style-fastyle',
-				'api': 1,
-				'my_post_key': FASTyle.postKey,
-				'action': mode,
-				'title': tab.attr('data-title'),
-				'sid': FASTyle.sid
+				module: 'style-fastyle',
+				api: 1,
+				my_post_key: FASTyle.postKey,
+				title: tab.data('title')
 			};
 
 			if (mode == 'add') {
 
-				data.template = '';
+				data.content = '';
 				data.title = FASTyle.dom.bar.find('input[name="title"]').val().trim();
 
 				if (!data.title) {
@@ -273,6 +293,22 @@ var FASTyle = {
 				}
 
 			}
+
+			data.type = (data.title.indexOf('.css') > -1) ? 'stylesheet' : 'template';
+
+			if (data.type == 'stylesheet') {
+
+				data.tid = FASTyle.tid;
+
+				if (mode == 'revert') {
+					mode = 'delete';
+				}
+
+			} else {
+				data.sid = FASTyle.sid;
+			}
+
+			data.action = mode;
 
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
 
@@ -285,7 +321,7 @@ var FASTyle = {
 
 				$.jGrowl(response.message);
 
-				// Template added
+				// Resource added
 				if (mode == 'add') {
 
 					var index = FASTyle.findResourceGroup(data.title);
@@ -296,7 +332,16 @@ var FASTyle = {
 					var prevElem = FASTyle.dom.sidebar.find('[data-title="' + prevTitle + '"]');
 					var newElem = prevElem.clone();
 
-					newElem.attr('data-status', 'original').attr('data-title', data.title).text(data.title);
+					var status = (data.type == 'stylesheet') ? 'modified' : 'original';
+					var attributes = {
+						'status': status,
+						'title': data.title
+					};
+
+					newElem.data(attributes).text(data.title);
+					$.each(newElem.data(), function(k, v) {
+						return newElem.attr('data-' + k, v);
+					});
 
 					tab = (position > 0) ? newElem.insertAfter(prevElem) : newElem.insertBefore(prevElem);
 
@@ -304,12 +349,12 @@ var FASTyle = {
 					FASTyle.loadResource(data.title);
 
 				}
-				// Template reverted
+				// Resource reverted
 				else {
-					tab.removeAttr('data-status');
+					tab.removeData('status').removeAttr('data-status').removeAttr('status');
 				}
 
-				// Template deleted
+				// Resource deleted
 				if (mode == 'delete') {
 
 					tab.remove();
@@ -318,21 +363,21 @@ var FASTyle = {
 					var group = FASTyle.findResourceGroup(data.title);
 					var newIndex = FASTyle.removeFromResourceList(data.title);
 					var newResource = FASTyle.resourcesList[group][newIndex];
-					
+
 					if (typeof newResource === 'undefined') {
 						newResource = 'postbit';
 					}
-					
+
 					return FASTyle.loadResource(newResource);
 
 				}
 
 				if (response.tid) {
-					tab.attr('data-tid', Number(response.tid));
+					tab.data('tid', Number(response.tid)).attr('tid', Number(response.tid));
 				}
 
-				if (!response.template) {
-					response.template = '';
+				if (!response.content) {
+					response.content = '';
 				}
 
 				FASTyle.syncBarStatus();
@@ -341,7 +386,7 @@ var FASTyle = {
 				FASTyle.switching = true;
 
 				if (tab.hasClass('active')) {
-					return (FASTyle.useEditor) ? FASTyle.dom.editor.setValue(response.template) : FASTyle.dom.textarea.val(response.template);
+					return (FASTyle.useEditor) ? FASTyle.dom.editor.setValue(response.content) : FASTyle.dom.textarea.val(response.content);
 				}
 
 			});
@@ -369,7 +414,7 @@ var FASTyle = {
 				'api': 1,
 				'my_post_key': FASTyle.postKey,
 				'action': 'deletegroup',
-				'gid': parseInt($(this).parent('[data-gid]').attr('data-gid'))
+				'gid': parseInt($(this).parent('[data-gid]').data('gid'))
 			};
 
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
@@ -523,20 +568,23 @@ var FASTyle = {
 
 	syncBarStatus: function() {
 
-		var title = FASTyle.currentResource.title;
-		var currentTab = FASTyle.dom.sidebar.find('[data-title="' + title + '"]');
+		// Clear existing attributes
+		$.map(['dateline', 'status', 'attachedto', 'dateline'], function(item) {
+			return FASTyle.dom.bar.removeAttr(item);
+		});
 
-		if (FASTyle.utils.exists(currentTab.attr('data-status'))) {
+		var currentTab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
+		var attributes = currentTab.data();
 
-			FASTyle.dom.bar.attr('data-status', currentTab.attr('data-status')).find('.label .name').text(title);
-			FASTyle.updateDatelineLabel(FASTyle.currentResource.dateline);
+		attributes.dateline = (FASTyle.utils.exists(currentTab.data('status'))) ? 'Last edited: ' + FASTyle.utils.processDateline(FASTyle.currentResource.dateline) : '';
 
-		} else {
+		FASTyle.dom.bar.find('.label > *').empty();
 
-			FASTyle.dom.bar.removeAttr('data-status').find('.label .name').text(title);
-			FASTyle.removeDatelineLabel();
+		$.each(attributes, function(key, value) {
+			return FASTyle.dom.bar.find('.' + key).text(value);
+		});
 
-		}
+		return FASTyle.dom.bar.data(attributes).attr(attributes);
 
 	},
 
@@ -606,12 +654,12 @@ var FASTyle = {
 		$('.CodeMirror .overlay').show();
 
 		if (typeof t !== 'undefined')  {
-				
+
 			// Stop the spinner
 			$('.CodeMirror .overlay').hide();
-			
+
 			return FASTyle.loadResourceInDOM(name, t.content, t.dateline);
-			
+
 		} else {
 
 			var data = {
@@ -624,10 +672,10 @@ var FASTyle = {
 			}
 
 			return FASTyle.sendRequest('POST', 'index.php', data, (response) => {
-				
+
 				// Stop the spinner
 				$('.CodeMirror .overlay').hide();
-				
+
 				// Error?
 				if (response.error) {
 					return $.jGrowl(response.message, {
@@ -705,9 +753,8 @@ var FASTyle = {
 			}
 
 			// Modify this resource's status
-			if (FASTyle.sid != -1 && !FASTyle.utils.exists(currentTab.attr('data-status'))) {
-				currentTab.attr('data-status', 'modified');
-				FASTyle.dom.bar.attr('data-status', 'modified');
+			if (FASTyle.sid != -1 && !FASTyle.utils.exists(currentTab.data('status'))) {
+				currentTab.data('status', 'modified').attr('status', 'modified');
 			}
 
 			// Remove the "not saved" marker
@@ -717,14 +764,14 @@ var FASTyle = {
 
 			// Notify the user
 			$.jGrowl(response.message);
-			
+
 			// Update internal cache
 			FASTyle.addResourceToCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));
 			FASTyle.syncBarStatus();
 
 			// Eventually handle the updated tid (fixes templates not saving through multiple calls when a template hasn't been edited before)
 			if (response.tid && data.action == 'edit_template') {
-				currentTab.attr('data-tid', Number(response.tid));
+				currentTab.data('tid', Number(response.tid)).attr('tid', Number(response.tid));
 			}
 
 		});
@@ -739,6 +786,7 @@ var FASTyle = {
 
 		params.ajax = 1;
 		params.my_post_key = FASTyle.postKey;
+		params.title = FASTyle.currentResource.title;
 
 		var content = FASTyle.getEditorContent();
 
@@ -758,12 +806,11 @@ var FASTyle = {
 
 			params.module = 'style-templates';
 			params.action = 'edit_template';
-			params.title = FASTyle.currentResource.title;
 			params.sid = FASTyle.sid;
 			params.template = content;
 
 			// This is NOT the theme ID, but the template ID!
-			params.tid = parseInt($('[data-title="' + params.title + '"]').attr('data-tid'));
+			params.tid = parseInt($('[data-title="' + params.title + '"]').data('tid'));
 
 		}
 
@@ -791,14 +838,6 @@ var FASTyle = {
 
 	getEditorContent: function() {
 		return (FASTyle.useEditor) ? FASTyle.dom.editor.getValue() : FASTyle.dom.textarea.val();
-	},
-
-	updateDatelineLabel: function(dateline) {
-		return FASTyle.dom.bar.find('.label .date').html('Last edited: ' + FASTyle.utils.processDateline(dateline));
-	},
-
-	removeDatelineLabel: function() {
-		return FASTyle.dom.bar.find('.label .date').empty();
 	},
 
 	findResourceGroup: function(title) {
@@ -880,11 +919,10 @@ var FASTyle = {
 
 			if (!dateline || !FASTyle.utils.exists(dateline)) {
 				date = new Date();
-			}
-			else {
+			} else {
 				date = new Date(dateline * 1000);
 			}
-			
+
 			var now = Math.round(new Date().getTime() / 1000);
 
 			var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -897,45 +935,45 @@ var FASTyle = {
 			}
 			// Relative date
 			else if (dateline > todayMidnight) {
-				
+
 				var diff = now - dateline;
 				var minute = 60;
-				var hour = minute*60;
-				var day = hour*24;
-				
+				var hour = minute * 60;
+				var day = hour * 24;
+
 				// Just now
 				if (diff < 60) {
-					
+
 					if (diff < 2) {
 						return '1 second ago';
 					}
-					
+
 					return diff + ' seconds ago';
-					
+
 				}
 				// Minutes ago
 				else if (diff < hour) {
-					
-					if (diff < minute*2) {
+
+					if (diff < minute * 2) {
 						return '1 minute ago';
 					}
-					
+
 					return Math.floor(diff / minute) + ' minutes ago';
-					
+
 				}
 				// Hours ago
 				else if (diff < day) {
-					
-					if (diff < hour*2) {
+
+					if (diff < hour * 2) {
 						return '1 hour ago';
 					}
-					
+
 					return Math.floor(diff / hour) + ' hours ago';
-					
+
 				}
-				
+
 				return 'Today, ' + hourTime;
-				
+
 			}
 
 			var string = (date.getDate() + " " + monthNames[date.getMonth()]);
