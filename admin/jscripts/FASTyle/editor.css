@@ -220,7 +220,7 @@ li.header:before {
     float: none
 }
 .fastyle .bar .label {
-    width: 65%;
+    width: 60%;
     font-size: 15px;
     padding: 0 20px;
 }
@@ -254,7 +254,9 @@ li.header:before {
     display: none
 }
 .fastyle .bar[data-status="modified"] .actions .revert,
-.fastyle .bar[status="modified"] .actions .revert {
+.fastyle .bar[status="modified"] .actions .revert,
+.fastyle .bar[data-status="modified"] .actions .diff,
+.fastyle .bar[status="modified"] .actions .diff {
     color: #fff;
     background: #1f4661;
     display: inline-block
@@ -288,7 +290,8 @@ li.header:before {
 }
 .fastyle .actions input[type="textbox"] {
     width: 25%;
-    padding: 4px 12px
+    padding: 4px 12px;
+    border-radius: 3px 0 0 3px;
 }
 .fastyle .actions input[type="textbox"] + span {
     margin-left: 0!important;

@@ -508,7 +508,7 @@ if ($tid or $sid) {
 				$inherited_themes[$inherited_theme['tid']] = $inherited_theme['name'];
 			}
 			
-			$query = $db->simple_select("themestylesheets", "*", "", array('order_by' => 'sid DESC, tid', 'order_dir' => 'desc'));
+			$query = $db->simple_select("themestylesheets", "*", "", ['order_by' => 'sid DESC, tid', 'order_dir' => 'desc']);
 			while ($theme_stylesheet = $db->fetch_array($query)) {
 				
 				if (!isset($theme_stylesheets[$theme_stylesheet['name']]) && in_array($theme_stylesheet['tid'], $inherited_load)) {
@@ -778,6 +778,7 @@ if ($tid or $sid) {
 			<span class="attachedto meta"></span>
 		</div>
 		<div class="actions">
+			<span class="button diff" data-mode="diff">Diff</span>
 			<span class="button revert" data-mode="revert">Revert</span>
 			<span class="button delete" data-mode="delete">Delete</span>
 			<i class="icon-resize-full fullpage"></i>

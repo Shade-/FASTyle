@@ -279,6 +279,7 @@ var FASTyle = {
 			var data = {
 				module: 'style-fastyle',
 				api: 1,
+				ajax: 1,
 				my_post_key: FASTyle.postKey,
 				title: tab.data('title')
 			};
@@ -311,15 +312,10 @@ var FASTyle = {
 			data.action = mode;
 
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
-
-				// Error?
+				
 				if (response.error) {
-					return $.jGrowl(response.message, {
-						themeState: 'error'
-					});
+					return false;
 				}
-
-				$.jGrowl(response.message);
 
 				// Resource added
 				if (mode == 'add') {
@@ -417,9 +413,7 @@ var FASTyle = {
 				'gid': parseInt($(this).parent('[data-gid]').data('gid'))
 			};
 
-			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
-				return $.jGrowl(response.message);
-			});
+			return FASTyle.sendRequest('post', 'index.php', data);
 
 		});
 
@@ -675,12 +669,9 @@ var FASTyle = {
 
 				// Stop the spinner
 				$('.CodeMirror .overlay').hide();
-
-				// Error?
+				
 				if (response.error) {
-					return $.jGrowl(response.message, {
-						themeState: 'error'
-					});
+					return false;
 				}
 
 				FASTyle.addResourceToCache(name, response.content, response.dateline);
@@ -737,20 +728,17 @@ var FASTyle = {
 
 		FASTyle.sendRequest('POST', 'index.php', data, (response) => {
 
-			var currentTab = FASTyle.dom.sidebar.find('.active');
-
 			// Stop the spinner
 			spinner.stop();
 
 			// Restore the button
 			saveButtonContainer.html(saveButtonHtml);
-
-			// Error?
+			
 			if (response.error) {
-				return $.jGrowl(response.message, {
-					themeState: 'error'
-				});
+				return false;
 			}
+
+			var currentTab = FASTyle.dom.sidebar.find('.active');
 
 			// Modify this resource's status
 			if (FASTyle.sid != -1 && !FASTyle.utils.exists(currentTab.data('status'))) {
@@ -761,9 +749,6 @@ var FASTyle = {
 			if (FASTyle.dom.sidebar.length) {
 				currentTab.removeClass('not-saved');
 			}
-
-			// Notify the user
-			$.jGrowl(response.message);
 
 			// Update internal cache
 			FASTyle.addResourceToCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));
@@ -827,7 +812,31 @@ var FASTyle = {
 		});
 
 		$.when(FASTyle.request).done(function(output, t) {
-			return (typeof callback === 'function' && t == 'success') ? callback.apply(this, [JSON.parse(output)]) : false;
+			
+			var response = JSON.parse(output);
+
+			// Need to login again
+			if (response.errors == 'login') {
+				return window.location.reload(false);
+			}
+			
+			// Apply callback
+			if (typeof callback === 'function' && t == 'success') {
+				callback.apply(this, [response]);
+			}
+			
+			// Handle response errors
+			if (response.error) {
+				
+				return $.jGrowl(response.message, {
+					themeState: 'error'
+				});
+				
+			}
+
+			// Show success message
+			return (response.message) ? $.jGrowl(response.message) : false;
+			
 		});
 
 	},
