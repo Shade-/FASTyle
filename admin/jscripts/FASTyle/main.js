@@ -137,15 +137,13 @@ var AutoSave = {};
 
 			});
 
-			// Load editor
-			if (this.useEditor) {
-				this.loadNormalEditor();
-			}
-
 			// Determine localStorage support
 			if (typeof Storage === 'undefined') {
 				this.useLocalStorage = 0;
 			}
+			
+			// Load the editor
+			this.loadNormalEditor();
 
 			// Load the previous editor state
 			var currentStorage = this.readLocalStorage();
@@ -156,20 +154,8 @@ var AutoSave = {};
 				// No previous state known
 			}
 
-			// Mark tabs as not saved when edited
-			if (this.useEditor) {
-
-				this.dom.editor.on('changes', function(a, b, event) {
-
-					if (!FASTyle.switching) {
-						FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved');
-					} else {
-						FASTyle.switching = 0;
-					}
-
-				});
-
-			} else {
+			// Mark tabs as not saved when edited (just for textareas: the editor handler must be attached every time it's initialized)
+			if (!this.useEditor) {
 
 				this.dom.textarea.on('keydown', function(e) {
 					if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -190,11 +176,7 @@ var AutoSave = {};
 				FASTyle.saveCurrentResource();
 
 				// Load the new one
-				if (name != FASTyle.currentResource.title) {
-					FASTyle.loadResource(name);
-				}
-
-				return false;
+				return (name != FASTyle.currentResource.title) ? FASTyle.loadResource(name) : false;
 
 			});
 
@@ -217,8 +199,10 @@ var AutoSave = {};
 				var found = FASTyle.dom.sidebar.find('[data-title*="' + val + '"]');
 
 				if (found.length) {
+					
 					notFoundElement.hide();
 					found.show().closest('ul').show().prev('.header').addClass('expanded').show();
+					
 				} else {
 					notFoundElement.show();
 				}
@@ -255,20 +239,6 @@ var AutoSave = {};
 				return (active) ? $(this).removeClass('icon-resize-full').addClass('icon-resize-small') : $(this).removeClass('icon-resize-small').addClass('icon-resize-full');
 
 			});
-			
-			try {
-				
-				if (currentStorage[this.sid].fullPage) {
-					
-					this.dom.mainContainer.toggleClass('full');
-					this.dom.bar.find('.actions .fullpage').removeClass('icon-resize-full').addClass('icon-resize-small');
-					
-				}
-				
-			}
-			catch (e) {
-				// This set does not have any previous state known
-			}
 
 			// Revert/delete/add/diff
 			this.dom.bar.find('.actions span').on('click', function(e) {
@@ -286,7 +256,7 @@ var AutoSave = {};
 				// Switch back to normal mode
 				if (mode == 'diff') {
 
-					if (FASTyle.diffMode) {
+					if ($this.hasClass('active')) {
 						return FASTyle.loadNormalEditor();
 					} else if (FASTyle.currentResource.original) {
 						return FASTyle.loadDiffMode(FASTyle.currentResource.original);
@@ -422,6 +392,21 @@ var AutoSave = {};
 				});
 
 			});
+			
+			// Apply the previous editor status
+			try {
+				
+				if (currentStorage[this.sid].fullPage) {
+					
+					this.dom.mainContainer.toggleClass('full');
+					this.dom.bar.find('.actions .fullpage').removeClass('icon-resize-full').addClass('icon-resize-small');
+					
+				}
+				
+			}
+			catch (e) {
+				// This set does not have any previous state known
+			}
 
 			// Delete template group
 			this.dom.sidebar.on('click', '.deletegroup', function(e) {
@@ -502,66 +487,66 @@ var AutoSave = {};
 
 			var tab = this.dom.sidebar.find('[data-title="' + name + '"]');
 
-			this.dom.sidebar.find(':not([data-title="' + name + '"])').removeClass('active');
-
 			// Switch resource in editor/textarea
 			if (this.useEditor) {
 
 				// Return to normal view
-				if (this.diffMode == true) {
+				if (this.diffMode) {
 					this.loadNormalEditor();
 				}
 
 				// Switch mode if we have to
-				if (name.indexOf('.css') > -1) {
-
-					if (this.dom.editor.getOption('mode') != 'text/css') {
-						this.dom.editor.setOption('mode', 'text/css');
-					}
-
-				} else {
-
-					if (this.dom.editor.getOption('mode') != 'text/html') {
-						this.dom.editor.setOption('mode', 'text/html');
-					}
-
+				var newMode = (name.indexOf('.css') > -1) ? 'text/css' : 'text/html';
+				
+				if (this.dom.editor.getOption('mode') != newMode) {
+					this.dom.editor.setOption('mode', newMode);
 				}
 
 				this.dom.editor.setValue(content);
 				this.dom.editor.focus();
 				this.dom.editor.clearHistory();
 
-				var templateOptions = this.resources[name];
+				var resourceOptions = this.resources[name];
 
 				// Set the previously-saved editor status
-				if (typeof templateOptions !== 'undefined') {
+				try {
 
 					// Edit history
-					if (templateOptions.history) {
-						this.dom.editor.setHistory(templateOptions.history);
+					if (resourceOptions.history) {
+						this.dom.editor.setHistory(resourceOptions.history);
 					}
 
 					// Scrolling position and editor dimensions
-					if (templateOptions.scrollInfo) {
-						this.dom.editor.scrollTo(templateOptions.scrollInfo.left, templateOptions.scrollInfo.top);
-						this.dom.editor.setSize(templateOptions.scrollInfo.clientWidth, templateOptions.scrollInfo.clientHeight);
+					if (resourceOptions.scrollInfo) {
+						this.dom.editor.scrollTo(resourceOptions.scrollInfo.left, resourceOptions.scrollInfo.top);
+						this.dom.editor.setSize(resourceOptions.scrollInfo.clientWidth, resourceOptions.scrollInfo.clientHeight);
 					}
 
 					// Cursor position
-					if (templateOptions.cursorPosition) {
-						this.dom.editor.setCursor(templateOptions.cursorPosition);
+					if (resourceOptions.cursorPosition) {
+						this.dom.editor.setCursor(resourceOptions.cursorPosition);
 					}
 
 					// Selections
-					if (templateOptions.selections) {
-						this.dom.editor.setSelections(templateOptions.selections);
+					if (resourceOptions.selections) {
+						this.dom.editor.setSelections(resourceOptions.selections);
+					}
+					
+					// Diff mode
+					if (resourceOptions.diffMode) {
+						this.loadDiffMode(this.currentResource.original);
 					}
 
 				}
+				catch (e) {
+					// resourceOptions == undefined
+				}
 
 			} else {
+				
 				this.dom.textarea.val(content);
 				this.dom.textarea.focus();
+				
 			}
 
 			// Remember tab
@@ -573,10 +558,20 @@ var AutoSave = {};
 
 		markAsActive: function(name) {
 
-			if (!name.length) return false;
+			if (!name.length) {
+				return false;
+			}
 
-			// Find this tab and group
+			// Find this tab
 			var tab = this.dom.sidebar.find('[data-title="' + name + '"]');
+			
+			if (!tab.length) {
+				return false;
+			}
+			
+			// Remove any other active tab
+			this.dom.sidebar.find('.active').removeClass('active');
+			
 			var group = tab.closest('ul').prev('.header');
 
 			// Is this group not already expanded?
@@ -653,11 +648,18 @@ var AutoSave = {};
 
 			// Save the current editor status
 			if (this.useEditor) {
+				
+				try {
 
-				this.resources[name].history = this.dom.editor.getHistory();
-				this.resources[name].scrollInfo = this.dom.editor.getScrollInfo();
-				this.resources[name].cursorPosition = this.dom.editor.getCursor();
-				this.resources[name].selections = this.dom.editor.listSelections();
+					this.resources[name].history = this.dom.editor.getHistory();
+					this.resources[name].scrollInfo = this.dom.editor.getScrollInfo();
+					this.resources[name].cursorPosition = this.dom.editor.getCursor();
+					this.resources[name].selections = this.dom.editor.listSelections();
+					
+				}
+				catch (e) {
+					// this.dom.editor is not defined
+				}
 
 			}
 
@@ -674,6 +676,10 @@ var AutoSave = {};
 		},
 
 		loadDiffMode: function(original) {
+			
+			if (!this.useEditor) {
+				return false;
+			}
 
 			if (!original) {
 				original = '';
@@ -687,7 +693,15 @@ var AutoSave = {};
 			var mode = (this.currentResource.title.indexOf('.css') > -1) ? 'text/css' : 'text/html';
 
 			// Save the original value to the cache
-			this.resources[this.currentResource.title].original = original;
+			try {
+				
+				this.resources[this.currentResource.title].original = original;
+				this.resources[this.currentResource.title].diffMode = 1;
+			
+			}
+			catch (e) {
+				// currentResource == undefined
+			}
 
 			// Load the merge view instance
 			this.dom.editor = CodeMirror.MergeView(this.dom.mergeView[0], {
@@ -711,14 +725,30 @@ var AutoSave = {};
 			this.dom.textarea.parents('form').on('submit', function() {
 				return FASTyle.dom.textarea.val(FASTyle.getEditorContent());
 			});
+			
+			this.dom.editor.on('changes', function(a, b, event) {
 
-			this.diffMode = true;
+				return (!FASTyle.switching) ?
+					FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved') :
+					(FASTyle.switching = 0);
+
+			});
+
+			this.diffMode = 1;
+			
+			this.addToLocalStorage({
+				diffMode: 1
+			});
 
 			return this.dom.bar.find('.diff').addClass('active');
 
 		},
 
 		loadNormalEditor: function() {
+			
+			if (!this.useEditor) {
+				return false;
+			}
 
 			// Populate textarea with the current editor value
 			this.dom.textarea.val(this.getEditorContent());
@@ -727,6 +757,14 @@ var AutoSave = {};
 
 			// Destroy the diff view
 			this.dom.mergeView.empty();
+			
+			// Remove the current resource from the internal cache
+			try {
+				this.resources[this.currentResource.title].diffMode = 0;
+			}
+			catch (e) {
+				// currentResource == undefined
+			}
 
 			// Load the standard editor from our textarea
 			this.dom.editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
@@ -740,12 +778,24 @@ var AutoSave = {};
 				theme: "material",
 				keyMap: "sublime"
 			});
+			
+			this.dom.editor.on('changes', function(a, b, event) {
+
+				return (!FASTyle.switching) ?
+					FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved') :
+					(FASTyle.switching = 0);
+
+			});
 
 			// Load overlay
 			this.spinner.spin();
 			$('<div class="overlay" />').append(this.spinner.el).hide().prependTo('.CodeMirror');
 
-			this.diffMode = false;
+			this.diffMode = 0;
+			
+			this.addToLocalStorage({
+				diffMode: 0
+			});
 
 			return this.dom.bar.find('.diff').removeClass('active');
 
@@ -782,7 +832,7 @@ var AutoSave = {};
 					'title': name
 				}
 
-				return this.sendRequest('POST', 'index.php', data, (response) => {
+				return this.sendRequest('post', 'index.php', data, (response) => {
 
 					// Stop the spinner
 					$('.CodeMirror .overlay').hide();
@@ -843,7 +893,7 @@ var AutoSave = {};
 
 			var data = FASTyle.buildRequestData();
 
-			FASTyle.sendRequest('POST', 'index.php', data, (response) => {
+			FASTyle.sendRequest('post', 'index.php', data, (response) => {
 
 				// Stop the spinner
 				spinner.stop();
