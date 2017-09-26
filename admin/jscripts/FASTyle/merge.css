@@ -1,106 +1,227 @@
 .CodeMirror-merge {
-  position: relative;
-  white-space: pre;
-  height: 500px;
+    position: relative;
+    white-space: pre;
+    height: 470px;
 }
-
-.CodeMirror-merge-2pane .CodeMirror-merge-pane { width: 47%; }
-.CodeMirror-merge-2pane .CodeMirror-merge-gap {width: 6%;}
-.CodeMirror-merge-3pane .CodeMirror-merge-pane { width: 31%; }
-.CodeMirror-merge-3pane .CodeMirror-merge-gap { width: 3.5%; }
-
+.CodeMirror-merge .CodeMirror {
+    height: 470px!important;
+}
+.CodeMirror-merge-2pane .CodeMirror-merge-pane {
+    width: 47%;
+}
+.CodeMirror-merge-2pane .CodeMirror-merge-gap {
+    width: 6%;
+}
+.CodeMirror-merge-3pane .CodeMirror-merge-pane {
+    width: 31%;
+}
+.CodeMirror-merge-3pane .CodeMirror-merge-gap {
+    width: 3.5%;
+}
 .CodeMirror-merge-pane {
-  display: inline-block;
-  white-space: normal;
-  vertical-align: top;
+    display: inline-block;
+    white-space: normal;
+    vertical-align: top;
 }
 .CodeMirror-merge-pane-rightmost {
-  position: absolute;
-  right: 0px;
-  z-index: 1;
+    position: absolute;
+    right: 0px;
+    z-index: 1;
 }
-
 .CodeMirror-merge-gap {
-  z-index: 2;
-  display: inline-block;
-  height: 100%;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
-  box-sizing: border-box;
+    z-index: 2;
+    display: inline-block;
+    height: 100%;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
 }
-
 .CodeMirror-merge-scrolllock-wrap {
-  position: absolute;
-  bottom: 0; left: 50%;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
 }
 .CodeMirror-merge-scrolllock {
-  position: relative;
-  left: -50%;
-  cursor: pointer;
-  color: #4ae8c6;
-  line-height: 1;
+    position: relative;
+    left: -50%;
+    cursor: pointer;
+    color: #4ae8c6;
+    line-height: 1;
 }
-
-.CodeMirror-merge-copybuttons-left, .CodeMirror-merge-copybuttons-right {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  line-height: 1;
+.CodeMirror-merge-copybuttons-left,
+.CodeMirror-merge-copybuttons-right {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    line-height: 1;
 }
-
 .CodeMirror-merge-copy {
-  position: absolute;
-  cursor: pointer;
-  color: #fff;
-  z-index: 3;
-  margin-top: 4px;
+    position: absolute;
+    cursor: pointer;
+    color: #fff;
+    z-index: 3;
+    margin-top: 4px;
 }
-
 .CodeMirror-merge-copy-reverse {
-  position: absolute;
-  cursor: pointer;
-  color: #44c;
+    position: absolute;
+    cursor: pointer;
+    color: #44c;
 }
-
-.CodeMirror-merge-copybuttons-left .CodeMirror-merge-copy { left: 2px; }
-.CodeMirror-merge-copybuttons-right .CodeMirror-merge-copy {right: 5px;}
-
-.CodeMirror-merge-r-inserted, .CodeMirror-merge-l-inserted {
-  background: #aace76;
-  color: #424242;
+#mergeview .label {
+    height: 30px;
+    text-align: center;
+    color: #fff;
+    text-transform: uppercase;
 }
-
-.CodeMirror-merge-r-deleted, .CodeMirror-merge-l-deleted {
-  background: #ce7676;
-  color: #424242;
+#mergeview .label > div {
+    float: left;
+    width: 47%;
+    padding-left: 47px;
+    box-sizing: border-box;
 }
-
-.CodeMirror-merge-r-chunk { background: rgba(255, 255, 255, 0.1) }
-.CodeMirror-merge-r-connect {fill: rgba(255, 255, 255, 0.1);stroke-width: 1px;}
-
-.CodeMirror-merge-l-chunk { background: #eef; }
-.CodeMirror-merge-l-chunk-start { border-top: 1px solid #88e; }
-.CodeMirror-merge-l-chunk-end { border-bottom: 1px solid #88e; }
-.CodeMirror-merge-l-connect { fill: #eef; stroke: #88e; stroke-width: 1px; }
-
-.CodeMirror-merge-l-chunk.CodeMirror-merge-r-chunk { background: #dfd; }
-.CodeMirror-merge-l-chunk-start.CodeMirror-merge-r-chunk-start { border-top: 1px solid #4e4; }
-.CodeMirror-merge-l-chunk-end.CodeMirror-merge-r-chunk-end { border-bottom: 1px solid #4e4; }
-
+#mergeview .label > div:last-child {
+    float: right
+}
+.CodeMirror-merge-copybuttons-left .CodeMirror-merge-copy {
+    left: 2px;
+}
+.CodeMirror-merge-copybuttons-right .CodeMirror-merge-copy {
+    right: 5px;
+}
+.CodeMirror-merge-r-inserted,
+.CodeMirror-merge-l-inserted {
+    background: #aace76;
+    color: #424242;
+}
+.CodeMirror-merge-r-deleted,
+.CodeMirror-merge-l-deleted {
+    background: #ce7676;
+    color: #424242;
+}
+.CodeMirror-merge-r-chunk {
+    background: rgba(255, 255, 255, 0.1)
+}
+.CodeMirror-merge-r-connect {
+    fill: rgba(255, 255, 255, 0.1);
+    stroke-width: 1px;
+}
+.CodeMirror-merge-l-chunk {
+    background: #eef;
+}
+.CodeMirror-merge-l-chunk-start {
+    border-top: 1px solid #88e;
+}
+.CodeMirror-merge-l-chunk-end {
+    border-bottom: 1px solid #88e;
+}
+.CodeMirror-merge-l-connect {
+    fill: #eef;
+    stroke: #88e;
+    stroke-width: 1px;
+}
+.CodeMirror-merge-l-chunk.CodeMirror-merge-r-chunk {
+    background: #dfd;
+}
+.CodeMirror-merge-l-chunk-start.CodeMirror-merge-r-chunk-start {
+    border-top: 1px solid #4e4;
+}
+.CodeMirror-merge-l-chunk-end.CodeMirror-merge-r-chunk-end {
+    border-bottom: 1px solid #4e4;
+}
 .CodeMirror-merge-collapsed-widget:before {
-  content: "(...)";
+    content: "(...)";
 }
 .CodeMirror-merge-collapsed-widget {
-  cursor: pointer;
-  color: #88b;
-  background: #eef;
-  border: 1px solid #ddf;
-  font-size: 90%;
-  padding: 0 3px;
-  border-radius: 4px;
+    cursor: pointer;
+    color: #88b;
+    background: #eef;
+    border: 1px solid #ddf;
+    font-size: 90%;
+    padding: 0 3px;
+    border-radius: 4px;
 }
-.CodeMirror-merge-collapsed-line .CodeMirror-gutter-elt { display: none; }
+.CodeMirror-merge-collapsed-line .CodeMirror-gutter-elt {
+    display: none;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-keyword,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-keyword {
+    color: #7c2ab3;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-operator,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-operator {
+    color: #424242;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-variable-2,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-variable-2 {
+    color: #0e887c;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-variable-3,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-variable-3 {
+    color: #82B1FF;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-builtin,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-builtin {
+    color: #DECB6B;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-atom,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-atom {
+    color: #a51a0c;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-number,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-number {
+    color: #f33421;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-def,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-def {
+    color: #565656;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-string,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-string {
+    color: #476f0e;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-string-2,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-string-2 {
+    color: #80CBC4;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-comment,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-comment {
+    color: #244c5f;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-variable,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-variable {
+    color: #2d518a;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-meta,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-meta {
+    color: #027369;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-attribute,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-attribute {
+    color: #61440f;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-property,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-property {
+    color: #216f51;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-qualifier,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-qualifier {
+    color: #887101;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-variable-3,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-variable-3 {
+    color: #DECB6B;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-error,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-error {
+    color: #424242;
+    background: #aace76;
+}
+.cm-s-material .CodeMirror-merge-r-inserted.cm-tag,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-tag {
+    color: #d0566b;
+    background: none
+}

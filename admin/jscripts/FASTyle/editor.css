@@ -68,6 +68,10 @@ li.header:before {
     position: relative;
     top: 1px
 }
+.CodeMirror {
+    height: 500px!important;
+    width: 100%!important
+}
 .fastyle {
     position: relative
 }
@@ -81,13 +85,12 @@ li.header:before {
 .fastyle.full .sidebar {
     height: calc(100vh - 126px);
 }
-.CodeMirror {
-    height: 500px!important;
-    width: 100%!important
-}
-.fastyle.full .CodeMirror,
-.fastyle.full .CodeMirror-merge {
+.fastyle.full .CodeMirror {
     height: calc(100vh - 126px)!important;
+}
+.fastyle.full .CodeMirror-merge,
+.fastyle.full .CodeMirror-merge .CodeMirror {
+    height: calc(100vh - 156px)!important;
 }
 .fastyle .form_row {
     width: 80%;

@@ -823,24 +823,6 @@ HTML;
 	$form->output_submit_wrapper($buttons);
 
 	$form->end();
-
-	if ($admin_options['codepress'] != 0) {
-		
-		echo '<script type="text/javascript">
-			var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
-				lineNumbers: true,
-				lineWrapping: true,
-				foldGutter: true,
-				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-				indentWithTabs: true,
-				indentUnit: 4,
-				mode: "text/html",
-				theme: "material",
-				keyMap: "sublime"
-			});
-		</script>';
-		
-	}
 	
 	echo fastyle_load_javascript($sid, $tid);
 
