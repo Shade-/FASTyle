@@ -73,6 +73,8 @@ var FASTyle = {
 		FASTyle.dom.mainContainer = $('.fastyle');
 		FASTyle.dom.bar = FASTyle.dom.mainContainer.find('.bar');
 
+		FASTyle.dom.mergeView = $('<div id="mergeview" />').insertAfter(FASTyle.dom.textarea.get(0));
+
 		// Expand/collapse
 		FASTyle.dom.sidebar.find('.header').on('click', function(e) {
 			return $(this).toggleClass('expanded');
@@ -255,16 +257,28 @@ var FASTyle = {
 
 		});
 
-		// Revert/delete/add
+		// Revert/delete/add/diff
 		FASTyle.dom.bar.find('.actions span').on('click', function(e) {
 
 			e.preventDefault();
 
+			var $this = $(this);
 			var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
-			var mode = $(this).data('mode');
+			var mode = $this.data('mode');
 
 			if ((tab.data('status') == 'modified' && mode == 'delete') || (tab.data('status') == 'original' && mode == 'revert')) {
 				return false;
+			}
+
+			// Switch back to normal mode
+			if (mode == 'diff') {
+
+				if (FASTyle.diffMode) {
+					return FASTyle.loadNormalEditor();
+				} else if (FASTyle.currentResource.original) {
+					return FASTyle.loadDiffMode(FASTyle.currentResource.original);
+				}
+
 			}
 
 			if (!FASTyle.quickMode && ['revert', 'delete'].indexOf(mode) > -1) {
@@ -312,13 +326,13 @@ var FASTyle = {
 			data.action = mode;
 
 			return FASTyle.sendRequest('post', 'index.php', data, (response) => {
-				
+
 				if (response.error) {
 					return false;
 				}
 
 				// Resource added
-				if (mode == 'add') {
+				if (data.action == 'add') {
 
 					var index = FASTyle.findResourceGroup(data.title);
 					var position = FASTyle.addToResourceList(data.title);
@@ -345,13 +359,14 @@ var FASTyle = {
 					FASTyle.loadResource(data.title);
 
 				}
+
 				// Resource reverted
-				else {
+				if (data.action == 'revert') {
 					tab.removeData('status').removeAttr('data-status').removeAttr('status');
 				}
 
 				// Resource deleted
-				if (mode == 'delete') {
+				if (data.action == 'delete') {
 
 					tab.remove();
 					FASTyle.removeResourceFromCache(data.title);
@@ -368,6 +383,12 @@ var FASTyle = {
 
 				}
 
+				// Diff
+				if (data.action == 'diff' && FASTyle.useEditor) {
+					return FASTyle.loadDiffMode(response.content);
+				}
+
+				// Resource added or reverted
 				if (response.tid) {
 					tab.data('tid', Number(response.tid)).attr('tid', Number(response.tid));
 				}
@@ -472,6 +493,11 @@ var FASTyle = {
 
 		// Switch resource in editor/textarea
 		if (FASTyle.useEditor) {
+
+			// Return to normal view
+			if (FASTyle.diffMode == true) {
+				FASTyle.loadNormalEditor();
+			}
 
 			// Switch mode if we have to
 			if (name.indexOf('.css') > -1) {
@@ -634,6 +660,72 @@ var FASTyle = {
 
 	},
 
+	loadDiffMode: function(original) {
+
+		// Destroy the current CodeMirror instance
+		FASTyle.dom.editor.toTextArea();
+
+		FASTyle.dom.textarea.hide();
+
+		var mode = (FASTyle.currentResource.title.indexOf('.css') > -1) ? 'text/css' : 'text/html';
+
+		// Save the original value to the cache
+		FASTyle.resources[FASTyle.currentResource.title].original = original;
+
+		// Load the merge view instance
+		FASTyle.dom.editor = CodeMirror.MergeView(FASTyle.dom.mergeView[0], {
+			orig: original,
+			value: FASTyle.dom.textarea.val(),
+			lineNumbers: true,
+			lineWrapping: true,
+			foldGutter: true,
+			gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+			indentWithTabs: true,
+			indentUnit: 4,
+			mode: mode,
+			theme: "material",
+			keyMap: "sublime"
+		}).editor();
+
+		FASTyle.dom.textarea.parents('form').on('submit', function() {
+			return FASTyle.dom.textarea.val(FASTyle.getEditorContent());
+		});
+
+		FASTyle.diffMode = true;
+
+		return FASTyle.dom.bar.find('.diff').addClass('active');
+
+	},
+
+	loadNormalEditor: function() {
+
+		// Populate textarea with the current editor value
+		FASTyle.dom.textarea.val(FASTyle.getEditorContent());
+
+		var mode = (FASTyle.currentResource.title.indexOf('.css') > -1) ? 'text/css' : 'text/html';
+
+		// Destroy the diff view
+		FASTyle.dom.mergeView.empty();
+
+		// Load the standard editor from our textarea
+		FASTyle.dom.editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+			lineNumbers: true,
+			lineWrapping: true,
+			foldGutter: true,
+			gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+			indentWithTabs: true,
+			indentUnit: 4,
+			mode: mode,
+			theme: "material",
+			keyMap: "sublime"
+		});
+
+		FASTyle.diffMode = false;
+
+		return FASTyle.dom.bar.find('.diff').removeClass('active');
+
+	},
+
 	loadResource: function(name, type) {
 
 		name = name.trim();
@@ -669,7 +761,7 @@ var FASTyle = {
 
 				// Stop the spinner
 				$('.CodeMirror .overlay').hide();
-				
+
 				if (response.error) {
 					return false;
 				}
@@ -733,7 +825,7 @@ var FASTyle = {
 
 			// Restore the button
 			saveButtonContainer.html(saveButtonHtml);
-			
+
 			if (response.error) {
 				return false;
 			}
@@ -812,31 +904,31 @@ var FASTyle = {
 		});
 
 		$.when(FASTyle.request).done(function(output, t) {
-			
+
 			var response = JSON.parse(output);
 
 			// Need to login again
 			if (response.errors == 'login') {
 				return window.location.reload(false);
 			}
-			
+
 			// Apply callback
 			if (typeof callback === 'function' && t == 'success') {
 				callback.apply(this, [response]);
 			}
-			
+
 			// Handle response errors
 			if (response.error) {
-				
+
 				return $.jGrowl(response.message, {
 					themeState: 'error'
 				});
-				
+
 			}
 
 			// Show success message
 			return (response.message) ? $.jGrowl(response.message) : false;
-			
+
 		});
 
 	},

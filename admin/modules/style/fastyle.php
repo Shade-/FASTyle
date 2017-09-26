@@ -213,6 +213,16 @@ if (isset($mybb->input['api'])) {
 		
 	}
 	
+	// Diff mode
+	if ($mybb->input['action'] == 'diff') {
+		
+		$query = $db->simple_select("templates", "template", "title='".$title."' AND sid='-2'");
+		$masterTemplate = $db->fetch_field($query, 'template');
+		
+		fastyle_message(['content' => $masterTemplate]);
+		
+	}
+	
 	// Add template group
 	if ($mybb->input['action'] == 'addgroup') {
 		
@@ -358,6 +368,9 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/sublime.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/merge.js"></script>
+<link href="./jscripts/FASTyle/merge.css" rel="stylesheet">
 <link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">
 <link href="./jscripts/FASTyle/editor.css" rel="stylesheet">
 <link href="./jscripts/FASTyle/material.css" rel="stylesheet">';

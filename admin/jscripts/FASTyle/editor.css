@@ -85,7 +85,8 @@ li.header:before {
     height: 500px!important;
     width: 100%!important
 }
-.fastyle.full .CodeMirror {
+.fastyle.full .CodeMirror,
+.fastyle.full .CodeMirror-merge {
     height: calc(100vh - 126px)!important;
 }
 .fastyle .form_row {
@@ -260,6 +261,9 @@ li.header:before {
     color: #fff;
     background: #1f4661;
     display: inline-block
+}
+.fastyle .bar .actions .diff.active {
+    background: #7056cc
 }
 .fastyle .bar[data-status="original"] .actions .delete,
 .fastyle .bar[status="original"] .actions .delete {
