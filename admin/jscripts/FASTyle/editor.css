@@ -338,18 +338,22 @@ li.header:before {
 }
 /* CodeMirror search dialog */
 
-.fastyle .button.prev,
-.fastyle .button.next {
+.fastyle .CodeMirror-dialog .button {
     height: 19px;
     vertical-align: top;
     background: #d6d6d6;
     margin: 0;
     border-radius: 3px 0 0 3px;
-    color: #37414c;
+    color: #515d6b;
+    font-family: 'Lucida Grande', Tahoma, Verdana, Arial, sans-serif;
+    font-size: 11px
 }
-.fastyle .button.next {
+.fastyle .CodeMirror-dialog .button:last-of-type {
     border-radius: 0 3px 3px 0;
     border-left: 1px solid #7f8b9a;
+}
+.fastyle .CodeMirror-dialog div:last-child {
+    margin-top: 10px
 }
 .fastyle .button.prev:before,
 .fastyle .button.next:before {

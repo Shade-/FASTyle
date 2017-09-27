@@ -753,11 +753,7 @@ var FASTyle = {};
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
-				keyMap: "sublime",
-				extraKeys: {
-					'Ctrl-F': 'findPersistent',
-					'Cmd-F': 'findPersistent'
-				}
+				keyMap: "sublime"
 			}).editor();
 
 			// Reapply the previous editor status
@@ -812,11 +808,7 @@ var FASTyle = {};
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
-				keyMap: "sublime",
-				extraKeys: {
-					'Ctrl-F': 'findPersistent',
-					'Cmd-F': 'findPersistent'
-				}
+				keyMap: "sublime"
 			});
 
 			this.dom.editor.on('changes', function(a, b, event) {
