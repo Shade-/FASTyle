@@ -206,6 +206,7 @@ li.header:before {
     display: block;
     clear: both
 }
+/* Bar */
 .fastyle .bar {
     background: #1c2939;
     color: #fff;
@@ -240,7 +241,7 @@ li.header:before {
 .fastyle .bar.bottom .actions {
     padding: 20px 25px
 }
-.fastyle .bar .actions .button {
+.fastyle .button {
     padding: 4px 8px;
     background: rgb(42, 65, 80);
     border-radius: 3px;
@@ -252,6 +253,12 @@ li.header:before {
 .fastyle .bar .actions > i {
     margin: 0 0 0 20px;
     cursor: pointer
+}
+.fastyle .button.current {
+	background: #5786ab
+}
+.fastyle .button.original {
+	background: #ab5780
 }
 .fastyle .sidebar .nothing-found,
 .fastyle .bar .actions .button:not(.visible) {

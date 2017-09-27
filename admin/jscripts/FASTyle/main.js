@@ -1,4 +1,4 @@
-var AutoSave = {};
+var FASTyle = {};
 (function($, window, document) {
 
 	FASTyle = {
@@ -16,6 +16,7 @@ var AutoSave = {};
 		resourcesList: {},
 		useEditor: 1,
 		useLocalStorage: 1,
+		currentEditorStatus: {},
 
 		init: function(sid, tid) {
 
@@ -141,7 +142,7 @@ var AutoSave = {};
 			if (typeof Storage === 'undefined') {
 				this.useLocalStorage = 0;
 			}
-			
+
 			// Load the editor
 			this.loadNormalEditor();
 
@@ -199,10 +200,10 @@ var AutoSave = {};
 				var found = FASTyle.dom.sidebar.find('[data-title*="' + val + '"]');
 
 				if (found.length) {
-					
+
 					notFoundElement.hide();
 					found.show().closest('ul').show().prev('.header').addClass('expanded').show();
-					
+
 				} else {
 					notFoundElement.show();
 				}
@@ -228,10 +229,10 @@ var AutoSave = {};
 				if (FASTyle.useEditor) {
 					FASTyle.dom.editor.refresh();
 				}
-				
+
 				// Remember this editor state across page loads
 				var active = ($(this).hasClass('icon-resize-full')) ? 1 : 0;
-				
+
 				FASTyle.addToLocalStorage({
 					fullPage: active
 				});
@@ -253,12 +254,23 @@ var AutoSave = {};
 					return false;
 				}
 
-				// Switch back to normal mode
 				if (mode == 'diff') {
 
+					// Switch back to normal mode
 					if ($this.hasClass('active')) {
+
+						// Remove the current resource's diffMode flag from the internal cache
+						try {
+							this.resources[this.currentResource.title].diffMode = 0;
+						} catch (e) {
+							// currentResource == undefined
+						}
+
 						return FASTyle.loadNormalEditor();
-					} else if (FASTyle.currentResource.original) {
+
+					}
+					// Switch to diff mode using the cached value
+					else if (FASTyle.currentResource.original) {
 						return FASTyle.loadDiffMode(FASTyle.currentResource.original);
 					}
 
@@ -292,9 +304,9 @@ var AutoSave = {};
 
 				}
 
-				data.type = (data.title.indexOf('.css') > -1) ? 'stylesheet' : 'template';
+				var type = (data.title.indexOf('.css') > -1) ? 'stylesheet' : 'template';
 
-				if (data.type == 'stylesheet') {
+				if (type == 'stylesheet') {
 
 					data.tid = FASTyle.tid;
 
@@ -321,11 +333,11 @@ var AutoSave = {};
 						var position = FASTyle.addToResourceList(data.title);
 						var prevTitle = (position > 0) ? FASTyle.resourcesList[index][position - 1] : FASTyle.resourcesList[index][position + 1];
 
-						// Finally show the new template!
+						// Finally show the new resource
 						var prevElem = FASTyle.dom.sidebar.find('[data-title="' + prevTitle + '"]');
 						var newElem = prevElem.clone();
 
-						var status = (data.type == 'stylesheet') ? 'modified' : 'original';
+						var status = (type == 'stylesheet') ? 'modified' : 'original';
 						var attributes = {
 							'status': status,
 							'title': data.title
@@ -338,14 +350,21 @@ var AutoSave = {};
 
 						tab = (position > 0) ? newElem.insertAfter(prevElem) : newElem.insertBefore(prevElem);
 
-						FASTyle.addResourceToCache(data.title, '', Math.round(new Date().getTime() / 1000));
+						FASTyle.addToResourceCache(data.title, '', Math.round(new Date().getTime() / 1000));
 						FASTyle.loadResource(data.title);
 
 					}
 
 					// Resource reverted
 					if (data.action == 'revert') {
+
 						tab.removeData('status').removeAttr('data-status').removeAttr('status');
+
+						// Since we reverted this resource, the diff mode is useless
+						if (FASTyle.diffMode) {
+							FASTyle.loadNormalEditor();
+						}
+
 					}
 
 					// Resource deleted
@@ -392,19 +411,18 @@ var AutoSave = {};
 				});
 
 			});
-			
+
 			// Apply the previous editor status
 			try {
-				
+
 				if (currentStorage[this.sid].fullPage) {
-					
+
 					this.dom.mainContainer.toggleClass('full');
 					this.dom.bar.find('.actions .fullpage').removeClass('icon-resize-full').addClass('icon-resize-small');
-					
+
 				}
-				
-			}
-			catch (e) {
+
+			} catch (e) {
 				// This set does not have any previous state known
 			}
 
@@ -497,7 +515,7 @@ var AutoSave = {};
 
 				// Switch mode if we have to
 				var newMode = (name.indexOf('.css') > -1) ? 'text/css' : 'text/html';
-				
+
 				if (this.dom.editor.getOption('mode') != newMode) {
 					this.dom.editor.setOption('mode', newMode);
 				}
@@ -506,47 +524,13 @@ var AutoSave = {};
 				this.dom.editor.focus();
 				this.dom.editor.clearHistory();
 
-				var resourceOptions = this.resources[name];
-
-				// Set the previously-saved editor status
-				try {
-
-					// Edit history
-					if (resourceOptions.history) {
-						this.dom.editor.setHistory(resourceOptions.history);
-					}
-
-					// Scrolling position and editor dimensions
-					if (resourceOptions.scrollInfo) {
-						this.dom.editor.scrollTo(resourceOptions.scrollInfo.left, resourceOptions.scrollInfo.top);
-						this.dom.editor.setSize(resourceOptions.scrollInfo.clientWidth, resourceOptions.scrollInfo.clientHeight);
-					}
-
-					// Cursor position
-					if (resourceOptions.cursorPosition) {
-						this.dom.editor.setCursor(resourceOptions.cursorPosition);
-					}
-
-					// Selections
-					if (resourceOptions.selections) {
-						this.dom.editor.setSelections(resourceOptions.selections);
-					}
-					
-					// Diff mode
-					if (resourceOptions.diffMode) {
-						this.loadDiffMode(this.currentResource.original);
-					}
-
-				}
-				catch (e) {
-					// resourceOptions == undefined
-				}
+				this.applyEditorStatus();
 
 			} else {
-				
+
 				this.dom.textarea.val(content);
 				this.dom.textarea.focus();
-				
+
 			}
 
 			// Remember tab
@@ -564,14 +548,14 @@ var AutoSave = {};
 
 			// Find this tab
 			var tab = this.dom.sidebar.find('[data-title="' + name + '"]');
-			
+
 			if (!tab.length) {
 				return false;
 			}
-			
+
 			// Remove any other active tab
 			this.dom.sidebar.find('.active').removeClass('active');
-			
+
 			var group = tab.closest('ul').prev('.header');
 
 			// Is this group not already expanded?
@@ -627,10 +611,10 @@ var AutoSave = {};
 		},
 
 		saveCurrentResource: function() {
-			return (this.currentResource.title) ? this.addResourceToCache(this.currentResource.title, this.getEditorContent()) : false;
+			return (this.currentResource.title) ? this.addToResourceCache(this.currentResource.title, this.getEditorContent()) : false;
 		},
 
-		addResourceToCache: function(name, content, dateline) {
+		addToResourceCache: function(name, content, dateline) {
 
 			name = name.trim();
 
@@ -648,19 +632,7 @@ var AutoSave = {};
 
 			// Save the current editor status
 			if (this.useEditor) {
-				
-				try {
-
-					this.resources[name].history = this.dom.editor.getHistory();
-					this.resources[name].scrollInfo = this.dom.editor.getScrollInfo();
-					this.resources[name].cursorPosition = this.dom.editor.getCursor();
-					this.resources[name].selections = this.dom.editor.listSelections();
-					
-				}
-				catch (e) {
-					// this.dom.editor is not defined
-				}
-
+				this.saveEditorStatus();
 			}
 
 			return this.resources[name];
@@ -675,8 +647,61 @@ var AutoSave = {};
 
 		},
 
+		saveEditorStatus: function() {
+
+			try {
+
+				this.resources[this.currentResource.title].history = this.dom.editor.getHistory();
+				this.resources[this.currentResource.title].scrollInfo = this.dom.editor.getScrollInfo();
+				this.resources[this.currentResource.title].cursorPosition = this.dom.editor.getCursor();
+				this.resources[this.currentResource.title].selections = this.dom.editor.listSelections();
+
+			} catch (e) {
+				// currentResource == undefined or resources[currentResource] == undefined
+			}
+
+		},
+
+		applyEditorStatus: function() {
+
+			var resourceOptions = this.resources[this.currentResource.title];
+
+			try {
+
+				// Edit history
+				if (resourceOptions.history) {
+					this.dom.editor.setHistory(resourceOptions.history);
+				}
+
+				// Scrolling position and editor dimensions
+				if (resourceOptions.scrollInfo) {
+					this.dom.editor.scrollTo(resourceOptions.scrollInfo.left, resourceOptions.scrollInfo.top);
+					this.dom.editor.setSize(resourceOptions.scrollInfo.clientWidth, resourceOptions.scrollInfo.clientHeight);
+				}
+
+				// Cursor position
+				if (resourceOptions.cursorPosition) {
+					this.dom.editor.setCursor(resourceOptions.cursorPosition);
+				}
+
+				// Selections
+				if (resourceOptions.selections) {
+					this.dom.editor.setSelections(resourceOptions.selections);
+				}
+
+				// Diff mode
+				if (resourceOptions.diffMode && !this.diffMode && resourceOptions.original) {
+					this.loadDiffMode(resourceOptions.original);
+				}
+
+			} catch (e) {
+				// resourceOptions == undefined
+			}
+
+		},
+
 		loadDiffMode: function(original) {
-			
+
 			if (!this.useEditor) {
 				return false;
 			}
@@ -684,6 +709,11 @@ var AutoSave = {};
 			if (!original) {
 				original = '';
 			}
+
+			this.diffMode = 1;
+
+			// Save before destroying
+			this.saveEditorStatus();
 
 			// Destroy the current CodeMirror instance
 			this.dom.editor.toTextArea();
@@ -694,12 +724,11 @@ var AutoSave = {};
 
 			// Save the original value to the cache
 			try {
-				
+
 				this.resources[this.currentResource.title].original = original;
 				this.resources[this.currentResource.title].diffMode = 1;
-			
-			}
-			catch (e) {
+
+			} catch (e) {
 				// currentResource == undefined
 			}
 
@@ -719,13 +748,16 @@ var AutoSave = {};
 				keyMap: "sublime"
 			}).editor();
 
+			// Reapply the previous editor status
+			this.applyEditorStatus();
+
 			// Add the labels
-			this.dom.mergeView.prepend('<div class="label"><div>Current</div><div>Original</div></div>');
+			this.dom.mergeView.prepend('<div class="label"><div><span class="button current">Current</span></div><div><span class="button original">Original</span></div></div>');
 
 			this.dom.textarea.parents('form').on('submit', function() {
 				return FASTyle.dom.textarea.val(FASTyle.getEditorContent());
 			});
-			
+
 			this.dom.editor.on('changes', function(a, b, event) {
 
 				return (!FASTyle.switching) ?
@@ -734,8 +766,6 @@ var AutoSave = {};
 
 			});
 
-			this.diffMode = 1;
-			
 			this.addToLocalStorage({
 				diffMode: 1
 			});
@@ -745,7 +775,7 @@ var AutoSave = {};
 		},
 
 		loadNormalEditor: function() {
-			
+
 			if (!this.useEditor) {
 				return false;
 			}
@@ -753,18 +783,12 @@ var AutoSave = {};
 			// Populate textarea with the current editor value
 			this.dom.textarea.val(this.getEditorContent());
 
+			this.saveEditorStatus();
+
 			var mode = (typeof this.currentResource.title !== 'undefined' && this.currentResource.title.indexOf('.css') > -1) ? 'text/css' : 'text/html';
 
 			// Destroy the diff view
 			this.dom.mergeView.empty();
-			
-			// Remove the current resource from the internal cache
-			try {
-				this.resources[this.currentResource.title].diffMode = 0;
-			}
-			catch (e) {
-				// currentResource == undefined
-			}
 
 			// Load the standard editor from our textarea
 			this.dom.editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
@@ -778,7 +802,7 @@ var AutoSave = {};
 				theme: "material",
 				keyMap: "sublime"
 			});
-			
+
 			this.dom.editor.on('changes', function(a, b, event) {
 
 				return (!FASTyle.switching) ?
@@ -787,12 +811,14 @@ var AutoSave = {};
 
 			});
 
+			this.applyEditorStatus();
+
+			this.diffMode = 0;
+
 			// Load overlay
 			this.spinner.spin();
 			$('<div class="overlay" />').append(this.spinner.el).hide().prependTo('.CodeMirror');
 
-			this.diffMode = 0;
-			
 			this.addToLocalStorage({
 				diffMode: 0
 			});
@@ -801,15 +827,11 @@ var AutoSave = {};
 
 		},
 
-		loadResource: function(name, type) {
+		loadResource: function(name) {
 
 			name = name.trim();
 
 			var t = this.resources[name];
-
-			if (!type) {
-				type = (name.indexOf('.css') > -1) ? 'stylesheet' : 'template';
-			}
 
 			// Launch the spinner
 			$('.CodeMirror .overlay').show();
@@ -824,12 +846,12 @@ var AutoSave = {};
 			} else {
 
 				var data = {
-					'api': 1,
-					'module': 'style-fastyle',
-					'get': type,
-					'sid': this.sid,
-					'tid': this.tid,
-					'title': name
+					api: 1,
+					module: 'style-fastyle',
+					action: 'get',
+					sid: this.sid,
+					tid: this.tid,
+					title: name
 				}
 
 				return this.sendRequest('post', 'index.php', data, (response) => {
@@ -841,7 +863,7 @@ var AutoSave = {};
 						return false;
 					}
 
-					FASTyle.addResourceToCache(name, response.content, response.dateline);
+					FASTyle.addToResourceCache(name, response.content, response.dateline);
 					FASTyle.loadResourceInDOM(name, response.content, response.dateline);
 
 				});
@@ -918,7 +940,7 @@ var AutoSave = {};
 				}
 
 				// Update internal cache
-				FASTyle.addResourceToCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));
+				FASTyle.addToResourceCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));
 				FASTyle.syncBarStatus();
 
 				// Eventually handle the updated tid (fixes templates not saving through multiple calls when a template hasn't been edited before)
@@ -1040,8 +1062,10 @@ var AutoSave = {};
 
 			this.resourcesList[group].push(title);
 
-			// Sort alphabetically
-			this.resourcesList[group].sort();
+			// Sort alphabetically if it's a template
+			if (title.indexOf('.css') == -1) {
+				this.resourcesList[group].sort();
+			}
 
 			return this.resourcesList[group].indexOf(title);
 
@@ -1058,8 +1082,10 @@ var AutoSave = {};
 
 			delete this.resourcesList[group][index];
 
-			// Sort alphabetically
-			this.resourcesList[group].sort();
+			// Sort alphabetically if it's a template
+			if (title.indexOf('.css') == -1) {
+				this.resourcesList[group].sort();
+			}
 
 			return (index > 0) ? index - 1 : index;
 

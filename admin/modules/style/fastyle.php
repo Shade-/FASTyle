@@ -47,43 +47,39 @@ $sid = (int) $mybb->input['sid'];
 if (isset($mybb->input['api'])) {
 	
 	$title = $db->escape_string($mybb->input['title']);
+	$mode = (get_extension($mybb->input['title']) != 'css') ? 'templates' : 'stylesheets';
 	
 	// Get stylesheet/template
-	if ($mybb->input['get']) {
-	
-		switch ($mybb->input['get']) {
+	if ($mybb->input['action'] == 'get') {
 			
-			case 'template':
+		if ($mode == 'templates') {
+		
+			$query = $db->simple_select('templates', 'template, tid, dateline',
+				'title = \'' . $title . '\' AND (sid = -2 OR sid = ' . $sid . ')',
+				['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
+			$template = $db->fetch_array($query);
 			
-				$query = $db->simple_select('templates', 'template, tid, dateline',
-					'title = \'' . $title . '\' AND (sid = -2 OR sid = ' . $sid . ')',
-					['order_by' => 'sid', 'order_dir' => 'desc', 'limit' => 1]);
-				$template = $db->fetch_array($query);
-				
-				$content = $template['template'];
-				$id = $template['tid'];
-				$dateline = $template['dateline'];
-				
-				break;
+			$content = $template['template'];
+			$id = $template['tid'];
+			$dateline = $template['dateline'];
 			
-			case 'stylesheet':
+		}	
+		else {
+		
+			$parent_list = make_parent_theme_list($theme['tid']);
+			$parent_list = implode(',', $parent_list);
+			if (!$parent_list) {
+				$parent_list = 1;
+			}
+		
+			$query = $db->simple_select("themestylesheets", "*",
+				"name='" . $title . "' AND tid IN ({$parent_list})",
+				['order_by' => 'tid', 'order_dir' => 'desc', 'limit' => 1]);
+			$stylesheet = $db->fetch_array($query);
 			
-				$parent_list = make_parent_theme_list($theme['tid']);
-				$parent_list = implode(',', $parent_list);
-				if (!$parent_list) {
-					$parent_list = 1;
-				}
-			
-				$query = $db->simple_select("themestylesheets", "*",
-					"name='" . $title . "' AND tid IN ({$parent_list})",
-					['order_by' => 'tid', 'order_dir' => 'desc', 'limit' => 1]);
-				$stylesheet = $db->fetch_array($query);
-				
-				$content = $stylesheet['stylesheet'];
-				$id = $stylesheet['sid'];
-				$dateline = $stylesheet['lastmodified'];
-				
-				break;
+			$content = $stylesheet['stylesheet'];
+			$id = $stylesheet['sid'];
+			$dateline = $stylesheet['lastmodified'];
 			
 		}
 			
@@ -132,7 +128,7 @@ if (isset($mybb->input['api'])) {
 	// Delete template
 	if ($mybb->input['action'] == 'delete') {
 		
-		if ($mybb->input['type'] == 'stylesheet') {
+		if ($mode == 'stylesheets') {
 		
 			if (!$theme['tid']) {
 				fastyle_message($lang->error_invalid_theme, 'error');
@@ -216,10 +212,24 @@ if (isset($mybb->input['api'])) {
 	// Diff mode
 	if ($mybb->input['action'] == 'diff') {
 		
-		$query = $db->simple_select("templates", "template", "title='".$title."' AND sid='-2'");
-		$masterTemplate = $db->fetch_field($query, 'template');
+		if ($mode == 'templates') {
+			
+			$query = $db->simple_select("templates", "template", "title='".$title."' AND sid='-2'");
+			$content = $db->fetch_field($query, 'template');
+			
+		}
+		else {
+			
+			$query = $db->simple_select('themestylesheets', 'stylesheet', "name='".$title."' AND tid='1'");
+			$content = $db->fetch_field($query, 'stylesheet');
+			
+		}
 		
-		fastyle_message(['content' => $masterTemplate]);
+		if (!$content) {
+			fastyle_message(['error' => 'Resource not found']);
+		}
+		
+		fastyle_message(['content' => $content]);
 		
 	}
 	
@@ -243,7 +253,7 @@ if (isset($mybb->input['api'])) {
 	if ($mybb->input['action'] == 'add') {
 		
 		// Stylesheet
-		if ($mybb->input['type'] == 'stylesheet') {
+		if ($mode == 'stylesheets') {
 			
 			// Remove special characters
 			$mybb->input['title'] = preg_replace('#([^a-z0-9-_\.]+)#i', '', $mybb->input['title']);
@@ -253,11 +263,6 @@ if (isset($mybb->input['api'])) {
 	
 			// Get 30 chars only because we don't want more than that
 			$mybb->input['title'] = my_substr($mybb->input['title'], 0, 30);
-			
-			// Does not end with '.css'
-			if (get_extension($mybb->input['title']) != "css") {
-				fastyle_message($lang->sprintf($lang->error_missing_stylesheet_extension, $mybb->input['title']), 'error');
-			}
 
 			// Add Stylesheet
 			$insert_array = [
@@ -367,11 +372,12 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/comment.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/sublime.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/merge.js"></script>
-<link href="./jscripts/FASTyle/merge.css" rel="stylesheet">
 <link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">
+<link href="./jscripts/FASTyle/merge.css" rel="stylesheet">
 <link href="./jscripts/FASTyle/editor.css" rel="stylesheet">
 <link href="./jscripts/FASTyle/material.css" rel="stylesheet">';
 

@@ -277,8 +277,8 @@
       cm.scrollIntoView();
     });
   };
-
-  cmds[map[ctrl + "/"] = "toggleCommentIndented"] = function(cm) {
+  // Should map to CTRL+/, but it seems CodeMirror can't handle the "/" char automatically (SHIFT+7)
+  cmds[map["Shift-" + ctrl + "7"] = "toggleCommentIndented"] = function(cm) {
     cm.toggleComment({ indent: true });
   }
 
@@ -608,6 +608,6 @@
   map[ctrl + "H"] = "replace";
   map["F3"] = "findNext";
   map["Shift-F3"] = "findPrev";
-
+  
   CodeMirror.normalizeKeyMap(map);
 });

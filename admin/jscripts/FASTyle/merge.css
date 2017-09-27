@@ -74,14 +74,18 @@
 #mergeview .label {
     height: 30px;
     text-align: center;
-    color: #fff;
     text-transform: uppercase;
 }
 #mergeview .label > div {
     float: left;
     width: 47%;
     padding-left: 47px;
-    box-sizing: border-box;
+    box-sizing: border-box
+}
+#mergeview .button {
+    color: #fff;
+    cursor: auto;
+    font-size: 11px
 }
 #mergeview .label > div:last-child {
     float: right
@@ -216,12 +220,12 @@
     color: #DECB6B;
 }
 .cm-s-material .CodeMirror-merge-r-inserted.cm-error,
-.cm-s-material .CodeMirror-merge-r-deleted.cm-error {
+.cm-s-material .CodeMirror-merge-r-inserted.cm-tag {
     color: #424242;
     background: #aace76;
 }
-.cm-s-material .CodeMirror-merge-r-inserted.cm-tag,
+.cm-s-material .CodeMirror-merge-r-deleted.cm-error,
 .cm-s-material .CodeMirror-merge-r-deleted.cm-tag {
-    color: #d0566b;
-    background: none
+    color: #424242;
+    background: #ce7676;
 }
