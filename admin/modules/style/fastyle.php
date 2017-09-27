@@ -365,10 +365,10 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/css/css.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-<link href="./jscripts/codemirror/addon/dialog/dialog-mybb.css" rel="stylesheet">
+<link href="./jscripts/FASTyle/dialog.css" rel="stylesheet">
+<script type="text/javascript" src="./jscripts/FASTyle/search.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
-<script type="text/javascript" src="./jscripts/codemirror/addon/search/search.js?ver=1808"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>

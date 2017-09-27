@@ -160,7 +160,7 @@ var FASTyle = {};
 
 				this.dom.textarea.on('keydown', function(e) {
 					if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-						FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not_saved');
+						FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved');
 					}
 				});
 
@@ -211,11 +211,15 @@ var FASTyle = {};
 			});
 
 			// Quick mode
-			this.dom.bar.find('.actions span.quickmode').on('click', function(e) {
+			this.dom.bar.find('.actions .quickmode').on('click', function(e) {
 
 				e.stopImmediatePropagation();
 
 				FASTyle.quickMode = (FASTyle.quickMode == true) ? false : true;
+
+				FASTyle.addToLocalStorage({
+					quickMode: FASTyle.quickMode
+				});
 
 				return $(this).toggleClass('enabled');
 
@@ -261,7 +265,7 @@ var FASTyle = {};
 
 						// Remove the current resource's diffMode flag from the internal cache
 						try {
-							this.resources[this.currentResource.title].diffMode = 0;
+							FASTyle.resources[FASTyle.currentResource.title].diffMode = 0;
 						} catch (e) {
 							// currentResource == undefined
 						}
@@ -420,6 +424,10 @@ var FASTyle = {};
 					this.dom.mainContainer.toggleClass('full');
 					this.dom.bar.find('.actions .fullpage').removeClass('icon-resize-full').addClass('icon-resize-small');
 
+				}
+
+				if (currentStorage[this.sid].quickMode) {
+					this.dom.bar.find('.quickmode').trigger('click');
 				}
 
 			} catch (e) {
@@ -745,7 +753,11 @@ var FASTyle = {};
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
-				keyMap: "sublime"
+				keyMap: "sublime",
+				extraKeys: {
+					'Ctrl-F': 'findPersistent',
+					'Cmd-F': 'findPersistent'
+				}
 			}).editor();
 
 			// Reapply the previous editor status
@@ -800,7 +812,11 @@ var FASTyle = {};
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
-				keyMap: "sublime"
+				keyMap: "sublime",
+				extraKeys: {
+					'Ctrl-F': 'findPersistent',
+					'Cmd-F': 'findPersistent'
+				}
 			});
 
 			this.dom.editor.on('changes', function(a, b, event) {

@@ -63,6 +63,21 @@ li.expanded.header:not(.search):before {
 .jGrowl-notification.ui-state-highlight:before {
     content: "\69"
 }
+.icon-flash:before {
+    content: "\6a";
+}
+.icon-down-open-big:before {
+    content: "\6b";
+}
+.icon-up-open-big:before {
+    content: "\6c";
+}
+.icon-left-open-big:before {
+    content: "\6d";
+}
+.icon-right-open-big:before {
+    content: "\6e";
+}
 li.header:before {
     margin-right: 5px;
     position: relative;
@@ -207,6 +222,7 @@ li.header:before {
     clear: both
 }
 /* Bar */
+
 .fastyle .bar {
     background: #1c2939;
     color: #fff;
@@ -255,10 +271,10 @@ li.header:before {
     cursor: pointer
 }
 .fastyle .button.current {
-	background: #5786ab
+    background: #5786ab
 }
 .fastyle .button.original {
-	background: #ab5780
+    background: #ab5780
 }
 .fastyle .sidebar .nothing-found,
 .fastyle .bar .actions .button:not(.visible) {
@@ -322,6 +338,25 @@ li.header:before {
     left: 0;
     z-index: 9999;
     border-radius: 6px
+}
+/* CodeMirror search dialog */
+
+.fastyle .button.prev,
+.fastyle .button.next {
+    height: 19px;
+    vertical-align: top;
+    background: #d6d6d6;
+    margin: 0;
+    border-radius: 3px 0 0 3px;
+    color: #37414c;
+}
+.fastyle .button.next {
+    border-radius: 0 3px 3px 0;
+    border-left: 1px solid #7f8b9a;
+}
+.fastyle .button.prev:before,
+.fastyle .button.next:before {
+    line-height: 20px;
 }
 /* jGrowl */
 

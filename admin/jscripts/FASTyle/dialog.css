@@ -1,0 +1,58 @@
+.CodeMirror-dialog {
+  position: absolute;
+  right: 0;
+  background: #1F4661;
+  z-index: 15;
+  padding: .1em .8em;
+  overflow: hidden;
+  color: #fff;
+}
+
+.CodeMirror-dialog-top {
+  border: 1px solid #656e77;
+  top: 0;
+  background: #515d6b;
+  padding: 10px 20px;
+  width: auto;
+  border-radius: 4px;
+}
+
+.CodeMirror-search-label,
+.CodeMirror-search-hint {
+  display: none
+}
+
+.CodeMirror-dialog-bottom {
+  border-top: 1px solid #3E7087;
+  bottom: 0;
+}
+
+.CodeMirror-dialog input {
+  padding: 6px 12px;
+  margin: 0;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  outline: none;
+  width: 100%;
+  min-width: 300px;
+  box-sizing: border-box;
+}
+
+.CodeMirror-dialog input::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+  color: #b1b1b1;
+}
+.CodeMirror-dialog input::-moz-placeholder { /* Firefox 19+ */
+  color: #b1b1b1;
+}
+.CodeMirror-dialog input:-ms-input-placeholder { /* IE 10+ */
+  color: #b1b1b1;
+}
+.CodeMirror-dialog input:-moz-placeholder { /* Firefox 18- */
+  color: #b1b1b1;
+}
+
+.CodeMirror-dialog button {
+  font-size: 70%;
+}
