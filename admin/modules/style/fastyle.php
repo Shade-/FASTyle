@@ -366,6 +366,7 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/mode/css/css.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
 <link href="./jscripts/FASTyle/dialog.css" rel="stylesheet">
+<script type="text/javascript" src="./jscripts/FASTyle/mark-selection.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/search.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
