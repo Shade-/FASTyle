@@ -233,9 +233,6 @@ li.header:before {
     display: table-cell;
     vertical-align: middle
 }
-.fastyle .bar + div {
-    clear: both
-}
 .fastyle .bar .sidebar {
     height: auto;
     float: none

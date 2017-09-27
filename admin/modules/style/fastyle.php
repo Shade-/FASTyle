@@ -782,10 +782,8 @@ if ($tid or $sid) {
 	
 	$form = new Form("index.php", "post", "fastyle_editor");
 	
-	$form_container = new FormContainer();
-	
 	$textarea = $form->generate_text_area('editor', '', ['id' => 'editor', 'style' => 'width: 100%; height: 500px']);
-	$content = <<<HTML
+	echo <<<HTML
 <div class="fastyle">
 	<div class="bar top">
 		<div class="sidebar">
@@ -820,9 +818,6 @@ if ($tid or $sid) {
 	</div>
 </div>
 HTML;
-	
-	$form_container->output_row("", "", $content);
-	$form_container->end();
 
 	$buttons[] = $form->generate_submit_button($lang->save_continue, ['name' => 'continue']);
 
