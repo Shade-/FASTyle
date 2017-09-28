@@ -216,6 +216,12 @@ li.header:before {
 .fastyle .sidebar li.header.expanded+ul {
     display: block
 }
+.fastyle .sidebar li+ul .header {
+    padding-left: 23px
+}
+.fastyle .sidebar li+ul ul {
+    padding-left: 20px
+}
 .fastyle:after {
     content: "";
     display: block;

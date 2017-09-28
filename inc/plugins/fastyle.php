@@ -43,21 +43,7 @@ function fastyle_is_installed()
 
 function fastyle_install()
 {
-	global $cache, $PL, $mybb;
-	
-	if (!file_exists(PLUGINLIBRARY)) {
-		flash_message('FASTyle requires PluginLibrary to be installed.', "error");
-		admin_redirect("index.php?module=config-plugins");
-	}
-	
-	$PL or require_once PLUGINLIBRARY;
-	
-	$PL->edit_core('fastyle', $mybb->config['admin_dir'] . '/modules/style/templates.php', [
-		[
-			'search' => '$form_container->output_row($lang->template_set, $lang->template_set_desc, $form->generate_select_box(\'sid\', $template_sets, $sid));',
-			'before' => '$plugins->run_hooks("admin_style_templates_edit_template_fastyle");'
-		]
-	], true);
+	global $cache, $mybb;
 	
 	// Create cache
 	$info                         = fastyle_info();
@@ -73,16 +59,7 @@ function fastyle_install()
 
 function fastyle_uninstall()
 {
-	global $cache, $PL;
-	
-	if (!file_exists(PLUGINLIBRARY)) {
-		flash_message('FASTyle requires PluginLibrary to be uninstalled.', "error");
-		admin_redirect("index.php?module=config-plugins");
-	}
-	
-	$PL or require_once PLUGINLIBRARY;
-	
-	$PL->edit_core('fastyle', 'admin/modules/style/templates.php', [], true);
+	global $cache;
 	
 	// Delete the plugin from cache
 	$info         = fastyle_info();

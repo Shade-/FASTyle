@@ -88,7 +88,7 @@ var FASTyle = {};
 
 			this.resourcesList['ungrouped'] = [];
 
-			// Build a virtual array of stylesheets and templates
+			// Build a virtual array of resources
 			$.each(this.dom.sidebar.find('[data-prefix], [data-title]'), function(k, item) {
 
 				var prefix = item.getAttribute('data-prefix');
@@ -111,8 +111,12 @@ var FASTyle = {};
 					prefix = title.split('_');
 					prefix = prefix[0].toLowerCase();
 
-					if (title.indexOf('.css') > -1) {
+					var ext = FASTyle.getExtension(title);
+
+					if (ext == 'css') {
 						prefix = 'stylesheets';
+					} else if (ext == 'js') {
+						prefix = 'javascripts';
 					} else if (typeof FASTyle.resourcesList[prefix] === 'undefined') {
 						prefix = 'ungrouped';
 					}
@@ -177,7 +181,7 @@ var FASTyle = {};
 				FASTyle.saveCurrentResource();
 
 				// Load the new one
-				return (name != FASTyle.currentResource.title) ? FASTyle.loadResource(name) : false;
+				return FASTyle.loadResource(name);
 
 			});
 
@@ -202,7 +206,7 @@ var FASTyle = {};
 				if (found.length) {
 
 					notFoundElement.hide();
-					found.show().closest('ul').show().prev('.header').addClass('expanded').show();
+					found.show().parents('ul').show().prev('.header').addClass('expanded').show();
 
 				} else {
 					notFoundElement.show();
@@ -244,6 +248,19 @@ var FASTyle = {};
 				return (active) ? $(this).removeClass('icon-resize-full').addClass('icon-resize-small') : $(this).removeClass('icon-resize-small').addClass('icon-resize-full');
 
 			});
+
+			// Add shortcut
+			this.dom.bar.find('.actions input[type="textbox"][name="title"]').on('keydown', function(e) {
+
+				if (e.keyCode != 13) {
+					return true;
+				}
+
+				e.preventDefault();
+
+				return $(this).siblings('.add').trigger('click');
+
+			})
 
 			// Revert/delete/add/diff
 			this.dom.bar.find('.actions span').on('click', function(e) {
@@ -294,7 +311,7 @@ var FASTyle = {};
 					api: 1,
 					ajax: 1,
 					my_post_key: FASTyle.postKey,
-					title: tab.data('title')
+					title: FASTyle.currentResource.title
 				};
 
 				if (mode == 'add') {
@@ -308,8 +325,8 @@ var FASTyle = {};
 
 				}
 
-				var type = (data.title.indexOf('.css') > -1) ? 'stylesheet' : 'template';
-
+				// Determine type
+				var type = (FASTyle.getExtension(data.title) == 'css') ? 'stylesheet' : false;
 				if (type == 'stylesheet') {
 
 					data.tid = FASTyle.tid;
@@ -347,7 +364,10 @@ var FASTyle = {};
 							'title': data.title
 						};
 
-						newElem.data(attributes).text(data.title);
+						// "/" chars are special chars used to create subfolders
+						var text = (FASTyle.getExtension(data.title) == 'js') ? data.title.slice(data.title.lastIndexOf('/') + 1) : data.title;
+
+						newElem.data(attributes).text(text);
 						$.each(newElem.data(), function(k, v) {
 							return newElem.attr('data-' + k, v);
 						});
@@ -391,7 +411,27 @@ var FASTyle = {};
 
 					// Diff
 					if (data.action == 'diff' && FASTyle.useEditor) {
+
+						// Identical
+						if (response.content == FASTyle.currentResource.content) {
+
+							// We don't need the status indicator anymore
+							tab.removeData('status').removeAttr('data-status').removeAttr('status');
+							FASTyle.syncBarStatus();
+
+							// Save the original value to the cache
+							try {
+								FASTyle.resources[FASTyle.currentResource.title].original = original;
+							} catch (e) {
+								// currentResource == undefined
+							}
+
+							return FASTyle.message('This resource is identical to its original counterpart.', true);
+
+						}
+
 						return FASTyle.loadDiffMode(response.content);
+
 					}
 
 					// Resource added or reverted
@@ -502,6 +542,55 @@ var FASTyle = {};
 
 		},
 
+		loadResource: function(name) {
+
+			name = name.trim();
+
+			if (name == this.currentResource.title) {
+				return false;
+			}
+
+			var t = this.resources[name];
+
+			// Launch the spinner
+			$('.CodeMirror .overlay').show();
+
+			if (typeof t !== 'undefined')  {
+
+				// Stop the spinner
+				$('.CodeMirror .overlay').hide();
+
+				return this.loadResourceInDOM(name, t.content, t.dateline);
+
+			} else {
+
+				var data = {
+					api: 1,
+					module: 'style-fastyle',
+					action: 'get',
+					sid: this.sid,
+					tid: this.tid,
+					title: name
+				}
+
+				return this.sendRequest('post', 'index.php', data, (response) => {
+
+					// Stop the spinner
+					$('.CodeMirror .overlay').hide();
+
+					if (response.error) {
+						return false;
+					}
+
+					FASTyle.addToResourceCache(name, response.content, response.dateline);
+					FASTyle.loadResourceInDOM(name, response.content, response.dateline);
+
+				});
+
+			}
+
+		},
+
 		loadResourceInDOM: function(name, content, dateline) {
 
 			this.switching = 1;
@@ -510,8 +599,6 @@ var FASTyle = {};
 			this.setCurrentResource(name, dateline);
 
 			this.markAsActive(name);
-
-			var tab = this.dom.sidebar.find('[data-title="' + name + '"]');
 
 			// Switch resource in editor/textarea
 			if (this.useEditor) {
@@ -522,7 +609,8 @@ var FASTyle = {};
 				}
 
 				// Switch mode if we have to
-				var newMode = (name.indexOf('.css') > -1) ? 'text/css' : 'text/html';
+				var ext = this.getExtension(name);
+				var newMode = (ext == 'css') ? 'text/css' : (ext == 'js') ? 'text/javascript' : 'text/html';
 
 				if (this.dom.editor.getOption('mode') != newMode) {
 					this.dom.editor.setOption('mode', newMode);
@@ -564,7 +652,7 @@ var FASTyle = {};
 			// Remove any other active tab
 			this.dom.sidebar.find('.active').removeClass('active');
 
-			var group = tab.closest('ul').prev('.header');
+			var group = tab.parents('ul').prev('.header');
 
 			// Is this group not already expanded?
 			if (!group.hasClass('expanded')) {
@@ -596,7 +684,7 @@ var FASTyle = {};
 			var currentTab = this.dom.sidebar.find('[data-title="' + this.currentResource.title + '"]');
 			var attributes = currentTab.data();
 
-			attributes.dateline = (this.utils.exists(currentTab.data('status'))) ? 'Last edited: ' + this.utils.processDateline(this.currentResource.dateline) : '';
+			attributes.dateline = (this.exists(currentTab.data('status'))) ? 'Last edited: ' + this.processDateline(this.currentResource.dateline) : '';
 
 			this.dom.bar.find('.label > *').empty();
 
@@ -728,7 +816,8 @@ var FASTyle = {};
 
 			this.dom.textarea.hide();
 
-			var mode = (this.currentResource.title.indexOf('.css') > -1) ? 'text/css' : 'text/html';
+			var ext = this.getExtension(this.currentResource.title);
+			var mode = (ext == 'css') ? 'text/css' : (ext == 'js') ? 'text/javascript' : 'text/html';
 
 			// Save the original value to the cache
 			try {
@@ -793,7 +882,13 @@ var FASTyle = {};
 
 			this.saveEditorStatus();
 
-			var mode = (typeof this.currentResource.title !== 'undefined' && this.currentResource.title.indexOf('.css') > -1) ? 'text/css' : 'text/html';
+			var mode = 'text/html';
+			if (typeof this.currentResource.title !== 'undefined') {
+
+				var ext = this.getExtension(this.currentResource.title);
+				mode = (ext == 'css') ? 'text/css' : (ext == 'js') ? 'text/javascript' : 'text/html';
+
+			}
 
 			// Destroy the diff view
 			this.dom.mergeView.empty();
@@ -832,51 +927,6 @@ var FASTyle = {};
 			});
 
 			return this.dom.bar.find('.diff').removeClass('active');
-
-		},
-
-		loadResource: function(name) {
-
-			name = name.trim();
-
-			var t = this.resources[name];
-
-			// Launch the spinner
-			$('.CodeMirror .overlay').show();
-
-			if (typeof t !== 'undefined')  {
-
-				// Stop the spinner
-				$('.CodeMirror .overlay').hide();
-
-				return this.loadResourceInDOM(name, t.content, t.dateline);
-
-			} else {
-
-				var data = {
-					api: 1,
-					module: 'style-fastyle',
-					action: 'get',
-					sid: this.sid,
-					tid: this.tid,
-					title: name
-				}
-
-				return this.sendRequest('post', 'index.php', data, (response) => {
-
-					// Stop the spinner
-					$('.CodeMirror .overlay').hide();
-
-					if (response.error) {
-						return false;
-					}
-
-					FASTyle.addToResourceCache(name, response.content, response.dateline);
-					FASTyle.loadResourceInDOM(name, response.content, response.dateline);
-
-				});
-
-			}
 
 		},
 
@@ -938,7 +988,7 @@ var FASTyle = {};
 				var currentTab = FASTyle.dom.sidebar.find('.active');
 
 				// Modify this resource's status
-				if (FASTyle.sid != -1 && !FASTyle.utils.exists(currentTab.data('status'))) {
+				if (FASTyle.sid != -1 && !FASTyle.exists(currentTab.data('status'))) {
 					currentTab.data('status', 'modified').attr('status', 'modified');
 				}
 
@@ -971,9 +1021,10 @@ var FASTyle = {};
 			params.title = this.currentResource.title;
 
 			var content = this.getEditorContent();
+			var ext = this.getExtension(params.title);
 
 			// Stylesheet
-			if (this.currentResource.title.indexOf('.css') > -1) {
+			if (ext == 'css') {
 
 				params.module = 'style-themes';
 				params.action = 'edit_stylesheet';
@@ -981,6 +1032,15 @@ var FASTyle = {};
 				params.tid = this.tid;
 				params.file = this.currentResource.title;
 				params.stylesheet = content;
+
+			}
+			// Scripts
+			else if (ext == 'js') {
+
+				params.module = 'style-fastyle';
+				params.action = 'edit_javascript';
+				params.content = content;
+				params.api = 1;
 
 			}
 			// Templates
@@ -992,7 +1052,7 @@ var FASTyle = {};
 				params.template = content;
 
 				// This is NOT the theme ID, but the template ID!
-				params.tid = parseInt($('[data-title="' + params.title + '"]').data('tid'));
+				params.tid = parseInt($('[data-title="' + this.currentResource.title + '"]').data('tid'));
 
 			}
 
@@ -1024,15 +1084,11 @@ var FASTyle = {};
 
 				// Handle response errors
 				if (response.error) {
-
-					return $.jGrowl(response.message, {
-						themeState: 'error'
-					});
-
+					return FASTyle.message(response.message, true);
 				}
 
 				// Show success message
-				return (response.message) ? $.jGrowl(response.message) : false;
+				return (response.message) ? FASTyle.message(response.message) : false;
 
 			});
 
@@ -1052,8 +1108,11 @@ var FASTyle = {};
 			var group = split[0].toLowerCase();
 
 			// Stylesheet
-			if (title.indexOf('.css') > -1) {
+			var ext = this.getExtension(title);
+			if (ext == 'css') {
 				group = 'stylesheets';
+			} else if (ext == 'js') {
+				group = 'javascripts';
 			}
 			// Ungrouped template
 			else if (typeof this.resourcesList[group] === 'undefined') {
@@ -1067,11 +1126,12 @@ var FASTyle = {};
 		addToResourceList: function(title) {
 
 			var group = this.findResourceGroup(title);
+			var ext = this.getExtension(title);
 
 			this.resourcesList[group].push(title);
 
-			// Sort alphabetically if it's a template
-			if (title.indexOf('.css') == -1) {
+			// Sort alphabetically if it's a template or script
+			if (!ext || ext == 'js') {
 				this.resourcesList[group].sort();
 			}
 
@@ -1080,6 +1140,8 @@ var FASTyle = {};
 		},
 
 		removeFromResourceList: function(title) {
+
+			var ext = this.getExtension(title);
 
 			var group = this.findResourceGroup(title);
 			var index = this.resourcesList[group].indexOf(title);
@@ -1090,8 +1152,8 @@ var FASTyle = {};
 
 			delete this.resourcesList[group][index];
 
-			// Sort alphabetically if it's a template
-			if (title.indexOf('.css') == -1) {
+			// Sort alphabetically if it's a template or script
+			if (!ext || ext == 'js') {
 				this.resourcesList[group].sort();
 			}
 
@@ -1099,107 +1161,103 @@ var FASTyle = {};
 
 		},
 
-		utils: {
-
-			removeItemFromArray: function(array, value) {
-				if (Array.isArray(value)) { // For multi remove
-					for (var i = array.length - 1; i >= 0; i--) {
-						for (var j = value.length - 1; j >= 0; j--) {
-							if (array[i] == value[j]) {
-								array.splice(i, 1);
-							};
-						}
-					}
-				} else { // For single remove
-					for (var i = array.length - 1; i >= 0; i--) {
-						if (array[i] == value) {
+		removeItemFromArray: function(array, value) {
+			if (Array.isArray(value)) { // For multi remove
+				for (var i = array.length - 1; i >= 0; i--) {
+					for (var j = value.length - 1; j >= 0; j--) {
+						if (array[i] == value[j]) {
 							array.splice(i, 1);
-						}
+						};
 					}
 				}
-			},
-
-			exists: function(data) {
-				return (typeof data === 'undefined' || data == false) ? false : true;
-			},
-
-			processDateline: function(dateline, type) {
-
-				var date;
-
-				if (!dateline || !this.exists(dateline)) {
-					date = new Date();
-				} else {
-					date = new Date(dateline * 1000);
-				}
-
-				var now = Math.round(new Date().getTime() / 1000);
-
-				var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-				var todayMidnight = new Date().setHours(0, 0, 0, 0) / 1000;
-				var yesterdayMidnight = todayMidnight - (24 * 60 * 60);
-				var hourTime = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
-
-				if (dateline > yesterdayMidnight && dateline < todayMidnight) {
-					return 'Yesterday, ' + hourTime;
-				}
-				// Relative date
-				else if (dateline > todayMidnight) {
-
-					var diff = now - dateline;
-					var minute = 60;
-					var hour = minute * 60;
-					var day = hour * 24;
-
-					// Just now
-					if (diff < 60) {
-
-						if (diff < 2) {
-							return '1 second ago';
-						}
-
-						return diff + ' seconds ago';
-
+			} else { // For single remove
+				for (var i = array.length - 1; i >= 0; i--) {
+					if (array[i] == value) {
+						array.splice(i, 1);
 					}
-					// Minutes ago
-					else if (diff < hour) {
+				}
+			}
+		},
 
-						if (diff < minute * 2) {
-							return '1 minute ago';
-						}
+		exists: function(variable) {
+			return (typeof variable !== 'undefined' && variable != null && variable) ? true : false;
+		},
 
-						return Math.floor(diff / minute) + ' minutes ago';
+		processDateline: function(dateline, type) {
 
-					}
-					// Hours ago
-					else if (diff < day) {
+			var date;
 
-						if (diff < hour * 2) {
-							return '1 hour ago';
-						}
+			if (!dateline || !this.exists(dateline)) {
+				date = new Date();
+			} else {
+				date = new Date(dateline * 1000);
+			}
 
-						return Math.floor(diff / hour) + ' hours ago';
+			var now = Math.round(new Date().getTime() / 1000);
 
+			var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+			var todayMidnight = new Date().setHours(0, 0, 0, 0) / 1000;
+			var yesterdayMidnight = todayMidnight - (24 * 60 * 60);
+			var hourTime = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
+
+			if (dateline > yesterdayMidnight && dateline < todayMidnight) {
+				return 'Yesterday, ' + hourTime;
+			}
+			// Relative date
+			else if (dateline > todayMidnight) {
+
+				var diff = now - dateline;
+				var minute = 60;
+				var hour = minute * 60;
+				var day = hour * 24;
+
+				// Just now
+				if (diff < 60) {
+
+					if (diff < 2) {
+						return '1 second ago';
 					}
 
-					return 'Today, ' + hourTime;
+					return diff + ' seconds ago';
+
+				}
+				// Minutes ago
+				else if (diff < hour) {
+
+					if (diff < minute * 2) {
+						return '1 minute ago';
+					}
+
+					return Math.floor(diff / minute) + ' minutes ago';
+
+				}
+				// Hours ago
+				else if (diff < day) {
+
+					if (diff < hour * 2) {
+						return '1 hour ago';
+					}
+
+					return Math.floor(diff / hour) + ' hours ago';
 
 				}
 
-				var string = (date.getDate() + " " + monthNames[date.getMonth()]);
-				var year = date.getFullYear();
-
-				if (year != new Date().getFullYear()) {
-					string += ' ' + year;
-				}
-
-				if (type == 'day') {
-					return string;
-				}
-
-				return string + ', ' + hourTime;
+				return 'Today, ' + hourTime;
 
 			}
+
+			var string = (date.getDate() + " " + monthNames[date.getMonth()]);
+			var year = date.getFullYear();
+
+			if (year != new Date().getFullYear()) {
+				string += ' ' + year;
+			}
+
+			if (type == 'day') {
+				return string;
+			}
+
+			return string + ', ' + hourTime;
 
 		},
 
@@ -1256,6 +1314,20 @@ var FASTyle = {};
 
 			localStorage.FASTyle = JSON.stringify(current);
 
+		},
+
+		getExtension: function(name) {
+
+			var ext = name.substr(name.lastIndexOf('.') + 1);
+
+			return (ext == name) ? '' : ext;
+
+		},
+
+		message: function(message, error) {
+			return (!error) ? $.jGrowl(message) : $.jGrowl(message, {
+				themeState: 'error'
+			});
 		}
 
 	}

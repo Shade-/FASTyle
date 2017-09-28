@@ -110,7 +110,7 @@
 	}
 
 	var queryDialog =
-		'<div><input type="text" style="width: 10em" class="CodeMirror-search-field" placeholder="Search" /> <span class="prev icon-left-open-big button"></span><span class="next icon-right-open-big button"></span></div>' +
+		'<div><input type="text" style="width: 10em" class="CodeMirror-search-field" placeholder="Search plain or /regex/" /> <span class="prev icon-left-open-big button"></span><span class="next icon-right-open-big button"></span></div>' +
 		'<div><input type="text" style="width: 10em" class="CodeMirror-search-replace" placeholder="Replacement" /> <span class="button replace">Replace</span><span class="button replace all">All</span></div>';
 
 	function startSearch(cm, state, query) {
@@ -144,10 +144,13 @@
 				}
 				if (hiding) hiding.style.opacity = 1
 				findNext(cm, event.shiftKey, function(_, to) {
-					var dialog
+					var dialog, cursorCoords, dialogCoords
 					if (document.querySelector &&
 						(dialog = cm.display.wrapper.querySelector(".CodeMirror-dialog")) &&
-						dialog.getBoundingClientRect().bottom - 4 > cm.cursorCoords(to, "window").top)
+						(cursorCoords = cm.cursorCoords(to, "window")) &&
+						(dialogCoords = dialog.getBoundingClientRect()) &&
+						dialogCoords.bottom - 4 > cursorCoords.top &&
+						dialogCoords.left < cursorCoords.right)
 						(hiding = dialog).style.opacity = .4
 				})
 			};
@@ -202,7 +205,7 @@
 				var all = ($(this).hasClass('all')) ? true : false;
 
 				var text = parseString($('.CodeMirror-dialog .CodeMirror-search-replace').val());
-				var query = $('.CodeMirror-dialog .CodeMirror-search-field').val();
+				var query = parseQuery($('.CodeMirror-dialog .CodeMirror-search-field').val());
 				if (all) {
 					replaceAll(cm, query, text);
 				} else {
