@@ -17,6 +17,28 @@ var FASTyle = {};
 		useEditor: 1,
 		useLocalStorage: 1,
 		currentEditorStatus: {},
+		lang: {
+			confirm: {
+				'delete': 'Are you sure you want to delete {1}?',
+				'revert': 'Are you sure you want to revert {1}?',
+				'group': 'Are you sure you want to delete this whole template group?',
+				'enableQuickMode': 'Quick mode allows you to perform actions without confirmation dialogs. Are you sure you want to enable quick mode?'
+			},
+			identical: 'This resource is identical to its original counterpart.',
+			lastEditedPrefix: 'Last edited: ',
+			current: 'Current',
+			original: 'Original',
+			date: {
+				secondSingle: '1 second ago',
+				secondsPlural: ' seconds ago',
+				minuteSingle: '1 minute ago',
+				minutesPlural: ' minutes ago',
+				hourSingle: '1 hour ago',
+				hoursPlural: ' hours ago',
+				today: 'Today, ',
+				yesterday: 'Yesterday, '
+			}
+		},
 
 		init: function(sid, tid) {
 
@@ -219,6 +241,11 @@ var FASTyle = {};
 
 				e.stopImmediatePropagation();
 
+				var confirm = (FASTyle.exists(currentStorage[FASTyle.sid]) && !currentStorage[FASTyle.sid].quickMode) ? window.confirm(FASTyle.lang.confirm.enableQuickMode) : true;
+				if (confirm != true) {
+					return false;
+				}
+
 				FASTyle.quickMode = (FASTyle.quickMode == true) ? false : true;
 
 				FASTyle.addToLocalStorage({
@@ -299,7 +326,7 @@ var FASTyle = {};
 
 				if (!FASTyle.quickMode && ['revert', 'delete'].indexOf(mode) > -1) {
 
-					var confirm = window.confirm('Are you sure you want to ' + mode + ' this template?');
+					var confirm = window.confirm(FASTyle.lang.confirm[mode].replace('{1}', FASTyle.currentResource.title));
 					if (confirm != true) {
 						return false;
 					}
@@ -426,7 +453,7 @@ var FASTyle = {};
 								// currentResource == undefined
 							}
 
-							return FASTyle.message('This resource is identical to its original counterpart.', true);
+							return FASTyle.message(FASTyle.lang.identical, true);
 
 						}
 
@@ -481,7 +508,7 @@ var FASTyle = {};
 
 				if (!FASTyle.quickMode) {
 
-					var confirm = window.confirm('Are you sure you want to delete this whole template group?');
+					var confirm = window.confirm(FASTyle.lang.confirm.group);
 					if (confirm != true) {
 						return false;
 					}
@@ -509,13 +536,6 @@ var FASTyle = {};
 					return FASTyle.save.call(this, e);
 				});
 			}
-
-			/*var edit_settings = $('#change');
-			if (edit_settings.length) {
-				edit_settings.submit(function(e) {
-					return FASTyle.save.call(this, e);
-				});
-			}*/
 
 			// Add shortcuts
 			$(window).bind('keydown', function(event) {
@@ -684,7 +704,7 @@ var FASTyle = {};
 			var currentTab = this.dom.sidebar.find('[data-title="' + this.currentResource.title + '"]');
 			var attributes = currentTab.data();
 
-			attributes.dateline = (this.exists(currentTab.data('status'))) ? 'Last edited: ' + this.processDateline(this.currentResource.dateline) : '';
+			attributes.dateline = (this.exists(currentTab.data('status'))) ? this.lang.lastEditedPrefix + this.processDateline(this.currentResource.dateline) : '';
 
 			this.dom.bar.find('.label > *').empty();
 
@@ -849,7 +869,7 @@ var FASTyle = {};
 			this.applyEditorStatus();
 
 			// Add the labels
-			this.dom.mergeView.prepend('<div class="label"><div><span class="button current">Current</span></div><div><span class="button original">Original</span></div></div>');
+			this.dom.mergeView.prepend('<div class="label"><div><span class="button current">' + this.lang.current + '</span></div><div><span class="button original">' + this.lang.original + '</span></div></div>');
 
 			this.dom.textarea.parents('form').on('submit', function() {
 				return FASTyle.dom.textarea.val(FASTyle.getEditorContent());
@@ -1201,7 +1221,7 @@ var FASTyle = {};
 			var hourTime = ('0' + date.getHours()).slice(-2) + ":" + ('0' + date.getMinutes()).slice(-2);
 
 			if (dateline > yesterdayMidnight && dateline < todayMidnight) {
-				return 'Yesterday, ' + hourTime;
+				return this.lang.date.yesterday + hourTime;
 			}
 			// Relative date
 			else if (dateline > todayMidnight) {
@@ -1215,34 +1235,34 @@ var FASTyle = {};
 				if (diff < 60) {
 
 					if (diff < 2) {
-						return '1 second ago';
+						return this.lang.date.secondSingle;
 					}
 
-					return diff + ' seconds ago';
+					return diff + this.lang.date.secondsPlural;
 
 				}
 				// Minutes ago
 				else if (diff < hour) {
 
 					if (diff < minute * 2) {
-						return '1 minute ago';
+						return this.lang.date.minuteSingle;
 					}
 
-					return Math.floor(diff / minute) + ' minutes ago';
+					return Math.floor(diff / minute) + this.lang.date.minutesPlural;
 
 				}
 				// Hours ago
 				else if (diff < day) {
 
 					if (diff < hour * 2) {
-						return '1 hour ago';
+						return this.lang.date.hourSingle;
 					}
 
-					return Math.floor(diff / hour) + ' hours ago';
+					return Math.floor(diff / hour) + this.lang.date.hoursPlural;
 
 				}
 
-				return 'Today, ' + hourTime;
+				return this.lang.date.today + hourTime;
 
 			}
 
