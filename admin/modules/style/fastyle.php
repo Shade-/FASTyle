@@ -869,6 +869,69 @@ if ($tid or $sid) {
 		$resourcelist .= '</ul>';
 
 	}
+	
+	// Templates
+	$resourcelist .= "<li class='header icon'>Templates</li>";
+	$resourcelist .= "<ul>";
+
+	// Global templates
+	if ($sid == -1 and !empty($template_groups[-1]['templates'])) {
+
+		foreach ($template_groups[-1]['templates'] as $template) {
+			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-status='original'>{$template['title']}</li>";
+		}
+
+	}
+	// Regular set
+	else {
+
+		foreach ($template_groups as $prefix => $group) {
+
+			$title = str_replace(' Templates', '', $group['title']);
+
+			// We can delete this group
+			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="deletegroup icon-cancel"></i>' : '';
+
+			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
+
+			// Templates for this group exist
+			if (isset($group['templates']) and count($group['templates']) > 0) {
+
+				$templates = $group['templates'];
+				ksort($templates);
+
+				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'>";
+
+				foreach ($templates as $template) {
+
+					$originalOrModified = '';
+
+					if (isset($template['modified']) && $template['modified'] == true) {
+						$originalOrModified = ' data-status="modified"';
+					}
+					else if (isset($template['original']) && $template['original'] == false) {
+						$originalOrModified = ' data-status="original"';
+					}
+
+					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}</li>";
+
+				}
+
+				$resourcelist .= '</ul>';
+
+			}
+			// No templates in this group
+			else {
+				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'><li>{$lang->fastyle_no_templates_available}</li></ul>";
+			}
+
+			$resourcelist .= '</li>';
+
+		}
+
+	}
+
+	$resourcelist .= '</ul>';
 
 	// JavaScripts
 	$resourcelist .= "<li class='header icon'>JavaScripts</li>";
@@ -940,13 +1003,17 @@ if ($tid or $sid) {
 				}
 
 			}
-
-			// If this directory is not empty, add its files and subdirs
-			if (!empty($_files)) {
-
+			
+			if (!empty($folders)) {
+				
 				foreach ((array) $folders as $folder) {
 					$resourcelist .= $folder;
 				}
+				
+			}
+
+			// If this directory is not empty, add its files and subdirs
+			if (!empty($_files)) {
 
 				foreach ((array) $_files as $file) {
 					$resourcelist .= $file;
@@ -965,68 +1032,6 @@ if ($tid or $sid) {
 	}
 
 	$resourcelist .= "</ul>";
-	$resourcelist .= "<li class='header icon'>Templates</li>";
-	$resourcelist .= "<ul>";
-
-	// Template list
-	// Global templates
-	if ($sid == -1 and !empty($template_groups[-1]['templates'])) {
-
-		foreach ($template_groups[-1]['templates'] as $template) {
-			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-status='original'>{$template['title']}</li>";
-		}
-
-	}
-	// Regular set
-	else {
-
-		foreach ($template_groups as $prefix => $group) {
-
-			$title = str_replace(' Templates', '', $group['title']);
-
-			// We can delete this group
-			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="deletegroup icon-cancel"></i>' : '';
-
-			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
-
-			// Templates for this group exist
-			if (isset($group['templates']) and count($group['templates']) > 0) {
-
-				$templates = $group['templates'];
-				ksort($templates);
-
-				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'>";
-
-				foreach ($templates as $template) {
-
-					$originalOrModified = '';
-
-					if (isset($template['modified']) && $template['modified'] == true) {
-						$originalOrModified = ' data-status="modified"';
-					}
-					else if (isset($template['original']) && $template['original'] == false) {
-						$originalOrModified = ' data-status="original"';
-					}
-
-					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}</li>";
-
-				}
-
-				$resourcelist .= '</ul>';
-
-			}
-			// No templates in this group
-			else {
-				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'><li>{$lang->fastyle_no_templates_available}</li></ul>";
-			}
-
-			$resourcelist .= '</li>';
-
-		}
-
-	}
-
-	$resourcelist .= '</ul>';
 
 	$form = new Form("index.php", "post", "fastyle_editor");
 
