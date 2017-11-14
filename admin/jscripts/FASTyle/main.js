@@ -104,9 +104,9 @@ var FASTyle = {};
 			this.dom.switcher = this.dom.mainContainer.find('.switcher .content .swiper-wrapper');
 
 			this.dom.mergeView = $('#mergeview');
-			
+
 			// Switcher slider
-			this.swiper = new Swiper ('.fastyle .switcher .content', {
+			this.swiper = new Swiper('.fastyle .switcher .content', {
 				navigation: {
 					nextEl: '.swiper-button-next',
 					prevEl: '.swiper-button-prev',
@@ -115,8 +115,8 @@ var FASTyle = {};
 				slidesPerGroup: 5,
 				keyboard: true,
 				spaceBetween: 5
-		    });
-			
+			});
+
 			// Switcher close tabs handler
 			this.dom.switcher.on('click', '.delete', function(e) {
 
@@ -127,9 +127,9 @@ var FASTyle = {};
 
 				// Load the new one
 				FASTyle.switcher.remove($(this).closest('[data-title]').data('title'));
-				
+
 				return false;
-				
+
 			});
 
 			// Expand/collapse
@@ -139,7 +139,10 @@ var FASTyle = {};
 
 			this.resourcesList['ungrouped'] = [];
 
-			this.dom.sidebar.find('li i.icon-attention').tipsy({gravity: 's', opacity: 1});
+			this.dom.sidebar.find('li i.icon-attention').tipsy({
+				gravity: 's',
+				opacity: 1
+			});
 
 			// Build a virtual array of resources
 			$.each(this.dom.sidebar.find('[data-prefix], [data-title]'), function(k, item) {
@@ -171,7 +174,7 @@ var FASTyle = {};
 					} else if (ext == 'js') {
 						prefix = 'javascripts';
 					}
-					
+
 					if (typeof FASTyle.resourcesList[prefix] === 'undefined') {
 						prefix = 'ungrouped';
 					}
@@ -237,10 +240,10 @@ var FASTyle = {};
 				return FASTyle.loadResource($(this).data('title'));
 
 			});
-			
+
 			// Load resource from the switcher
 			this.dom.switcher.on('click', '[data-title]', function(e) {
-				
+
 				e.preventDefault();
 
 				// Save the current resource's status
@@ -248,7 +251,7 @@ var FASTyle = {};
 
 				// Load the new one
 				return FASTyle.loadResource($(this).data('title'));
-				
+
 			});
 
 			var notFoundElement = this.dom.sidebar.find('.nothing-found');
@@ -284,7 +287,7 @@ var FASTyle = {};
 			this.dom.bar.find('.actions .quickmode').on('click', function(e) {
 
 				e.stopImmediatePropagation();
-				
+
 				var currentStorage = FASTyle.readLocalStorage();
 
 				var confirm = (!FASTyle.quickMode && FASTyle.exists(currentStorage[FASTyle.sid]) && !currentStorage[FASTyle.sid].quickMode) ? window.confirm(FASTyle.lang.confirm.enableQuickMode) : true;
@@ -317,7 +320,7 @@ var FASTyle = {};
 				FASTyle.addToLocalStorage({
 					fullPage: active
 				});
-				
+
 				FASTyle.swiper.update();
 
 				return (active) ? $(this).removeClass('icon-resize-full').addClass('icon-resize-small') : $(this).removeClass('icon-resize-small').addClass('icon-resize-full');
@@ -531,20 +534,18 @@ var FASTyle = {};
 				});
 
 			});
-			
+
 			// Load currently open tabs
 			try {
 				var currentOpenedTabs = currentStorage[this.sid].openedTabs;
-			}
-			catch (e) {
-			}
-			
+			} catch (e) {}
+
 			if (FASTyle.exists(currentOpenedTabs)) {
-				
+
 				$.each(currentOpenedTabs, function(k, name) {
 					FASTyle.switcher.add(name);
 				});
-				
+
 			}
 
 			// Apply the previous editor status
@@ -729,7 +730,7 @@ var FASTyle = {};
 			if (!tab.length) {
 				return false;
 			}
-			
+
 			this.switcher.add(name, true);
 
 			// Remove any other active tab
@@ -756,111 +757,104 @@ var FASTyle = {};
 			return tab.addClass('active');
 
 		},
-		
+
 		switcher: {
-		
+
 			add: function(name, active) {
-				
+
 				if (!name.length) return false;
-				
+
 				// Remove any other active tabs
 				FASTyle.dom.switcher.find('.active').removeClass('active');
-	
+
 				// Load the button in the switcher
 				var tab = FASTyle.dom.switcher.find('[data-title="' + name + '"]');
-	
+
 				if (!tab.length) {
-					
+
 					// Add this tab to the currently active tabs
 					var storage = FASTyle.readLocalStorage();
-					
+
 					try {
 						var currentOpenedTabs = storage[FASTyle.sid].openedTabs;
-					}
-					catch (e) {
-					}
-					
+					} catch (e) {}
+
 					if (!FASTyle.exists(currentOpenedTabs)) {
 						currentOpenedTabs = [];
 					}
-					
+
 					if (currentOpenedTabs.indexOf(name) == -1) {
 						currentOpenedTabs.push(name);
 					}
-					
+
 					FASTyle.addToLocalStorage({
 						openedTabs: currentOpenedTabs
 					});
-					
-					var className = (active) ? ' class="active"' : '';
-					
+
+					var className = (active) ? ' active' : '';
+
 					// Add the tab to the DOM
-					FASTyle.dom.switcher.append($('<div data-title="' + name + '"' + className + '><i class="delete icon-cancel"></i> ' + name + '</div>').addClass('swiper-slide'));
-					FASTyle.dom.switcher.scrollLeft(99999);
-					
+					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i> ' + name + '</div>');
 					FASTyle.swiper.update();
-					
+
 					return true;
-					
-				}
-				else {
+
+				} else {
 					return tab.addClass('active');
 				}
-	
+
 			},
-	
+
 			remove: function(name) {
-	
+
 				var tab = FASTyle.dom.switcher.find('[data-title="' + name + '"]');
-	
-				if (tab.length)  {
-	
+
+				if (tab.length) {
+
 					if (tab.is(':only-child')) {
 						return false;
 					}
-					
+
 					// Remove this tab from the currently active tabs
 					var storage = FASTyle.readLocalStorage();
-					
+
 					try {
 						var currentOpenedTabs = storage[FASTyle.sid].openedTabs;
-					}
-					catch (e) {
-					}
-					
+					} catch (e) {}
+
 					if (FASTyle.exists(currentOpenedTabs)) {
-						
+
 						var index = currentOpenedTabs.indexOf(name);
-						
+
 						if (index > -1) {
 							currentOpenedTabs.splice(index, 1);
 						}
-						
+
 						FASTyle.addToLocalStorage({
 							openedTabs: currentOpenedTabs
 						});
-						
+
 					}
-	
+
 					var loadNew = (tab.hasClass('active')) ? true : false;
-	
+
 					tab.remove();
 
 					FASTyle.swiper.update();
-	
+
 					// Switch to the first item if this is the active tab
 					if (loadNew) {
 						FASTyle.loadResource(FASTyle.dom.switcher.find('[data-title]:first-child').data('title'));
 					}
-	
+
 					return true;
-	
+
 				}
-	
+
 				return false;
-	
+
 			},
-			
+
 		},
 
 		syncBarStatus: function() {
@@ -1025,6 +1019,7 @@ var FASTyle = {};
 				connect: 'align',
 				lineNumbers: true,
 				lineWrapping: true,
+				collapseIdentical: true,
 				foldGutter: true,
 				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
 				indentWithTabs: true,
