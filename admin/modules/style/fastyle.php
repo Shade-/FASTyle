@@ -514,23 +514,27 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/css/css.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/mark-selection.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/search.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/mark-selection.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/search.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/comment.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/sublime.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/comment.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/sublime.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/merge.js"></script>
-<link href="./jscripts/codemirror/lib/codemirror.css" rel="stylesheet">
-<link href="./jscripts/codemirror/addon/fold/foldgutter.css" rel="stylesheet">
-<link href="./jscripts/FASTyle/dialog.css" rel="stylesheet">
-<link href="./jscripts/FASTyle/merge.css" rel="stylesheet">
-<link href="./jscripts/FASTyle/editor.css" rel="stylesheet">
-<link href="./jscripts/FASTyle/material.css" rel="stylesheet">';
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/merge.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/tipsy/tipsy.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/swiper/js/swiper.min.js"></script>
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/editor.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/tipsy/tipsy.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/codemirror/lib/codemirror.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/codemirror/addon/fold/foldgutter.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/dialog.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/merge.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />';
 
 	}
 
@@ -862,7 +866,7 @@ if ($tid or $sid) {
 				$attached_to = $lang->attached_to_all_pages;
 			}
 
-			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}'>{$filename}{$inherited}</li>";
+			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}'>{$inherited}{$filename}</li>";
 
 		}
 
@@ -890,7 +894,7 @@ if ($tid or $sid) {
 			$title = str_replace(' Templates', '', $group['title']);
 
 			// We can delete this group
-			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="deletegroup icon-cancel"></i>' : '';
+			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="delete icon-cancel"></i>' : '';
 
 			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
 
@@ -1038,10 +1042,19 @@ if ($tid or $sid) {
 	$textarea = $form->generate_text_area('editor', '', ['id' => 'editor', 'style' => 'width: 100%; height: 500px']);
 	echo <<<HTML
 <div class="fastyle">
-	<div class="bar top">
+	<div class="bar switcher">
 		<div class="sidebar">
-			<ul><li class="header search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
+			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
 		</div>
+		<div class="content">
+			<div class="swiper-wrapper">
+		    </div>
+		</div>
+	    <!-- If we need navigation buttons -->
+	    <div class="icon-left-open-big swiper-button-prev"></div>
+	    <div class="icon-right-open-big swiper-button-next"></div>
+	</div>
+	<div class="bar top">
 		<div class="label">
 			<span class="title"></span>
 			<span class="dateline meta"></span>
@@ -1051,6 +1064,8 @@ if ($tid or $sid) {
 			<span class="button diff" data-mode="diff">Diff</span>
 			<span class="button revert" data-mode="revert">Revert</span>
 			<span class="button delete" data-mode="delete">Delete</span>
+			<input type="textbox" name="title" /><span class="button add visible" data-mode="add">Add</span>
+			<span class="button quickmode visible">Quick mode</span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>
@@ -1061,12 +1076,7 @@ if ($tid or $sid) {
 		</div>
 		<div class="form_row">
 			$textarea
-		</div>
-	</div>
-	<div class="bar bottom">
-		<div class="actions">
-			<input type="textbox" name="title" /><span class="button add visible" data-mode="add">Add</span>
-			<span class="button quickmode visible">Quick mode</span>
+			<div id="mergeview"></div>
 		</div>
 	</div>
 </div>

@@ -98,14 +98,17 @@ li.header:before {
     height: 100%
 }
 .fastyle.full .sidebar {
-    height: calc(100vh - 126px);
+    height: calc(100vh - 102px);
 }
 .fastyle.full .CodeMirror {
-    height: calc(100vh - 126px)!important;
+    height: calc(100vh - 102px)!important;
 }
 .fastyle.full .CodeMirror-merge,
 .fastyle.full .CodeMirror-merge .CodeMirror {
-    height: calc(100vh - 156px)!important;
+    height: calc(100vh - 132px)!important;
+}
+.fastyle > * {
+    display: flex
 }
 .fastyle .form_row {
     width: 80%;
@@ -116,7 +119,7 @@ li.header:before {
     background: #1c2939;
 }
 .fastyle .sidebar {
-    width: 20%;
+    flex-basis: 20%;
     float: left;
     padding: 0;
     box-sizing: border-box;
@@ -207,9 +210,6 @@ li.header:before {
     font-size: 11px;
     margin: 0 0 0 5px
 }
-.fastyle .sidebar li.header .deletegroup {
-    color: #d04750
-}
 .fastyle .sidebar li.header+ul {
     display: none
 }
@@ -228,25 +228,25 @@ li.header:before {
     clear: both
 }
 /* Bar */
-
 .fastyle .bar {
     background: #1c2939;
     color: #fff;
-    display: table;
-    width: 100%
+    width: 100%;
+    padding: 12px 15px;
+    box-sizing: border-box;
 }
 .fastyle .bar > * {
-    display: table-cell;
-    vertical-align: middle
+    display: inline-flex;
+    vertical-align: middle;
+    align-items: center;
+    flex-grow: 1;
 }
 .fastyle .bar .sidebar {
     height: auto;
-    float: none
+    float: none;
 }
 .fastyle .bar .label {
-    width: 60%;
     font-size: 15px;
-    padding: 0 20px;
 }
 .fastyle .bar .label .meta {
     font-size: 11px;
@@ -254,11 +254,18 @@ li.header:before {
     color: #999
 }
 .fastyle .bar .actions {
-    padding: 0 25px;
-    text-align: right
+    padding: 0;
+    justify-content: flex-end;
+}
+.fastyle .bar.top {
+    min-height: 50px
+}
+.fastyle .bar.bottom {
+    justify-content: flex-end;
+    padding: 0;
 }
 .fastyle .bar.bottom .actions {
-    padding: 20px 25px
+    padding: 15px 25px;
 }
 .fastyle .button {
     padding: 4px 8px;
@@ -308,10 +315,67 @@ li.header:before {
     color: #fff;
     background: #aba657
 }
+/* Switcher */
+.fastyle .switcher {
+    padding: 0;
+    box-sizing: border-box;
+    background: #33404e;
+    border-bottom: 1px solid #495460;
+    position: relative
+}
+.fastyle .switcher .sidebar {
+    background: none
+}
+.fastyle .switcher .sidebar .search {
+    padding: 10px 12px;
+}
+.fastyle .bar .swiper-button-prev,
+.fastyle .bar .swiper-button-next {
+    background: none
+}
+.fastyle .bar .swiper-button-prev {
+    left: 20%;
+}
+.fastyle .switcher .content {
+    overflow: scroll;
+    box-sizing: border-box;
+    width: 80%;
+    white-space: nowrap;
+    margin: 0 50px
+}
+.fastyle .switcher .swiper-wrapper {
+    height: auto
+}
+.fastyle .switcher .content > div > div {
+    padding: 5px 8px 5px 20px;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    box-sizing: border-box;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.fastyle .switcher .content > div > div.active {
+    background: #1c2a3a;
+    border-radius: 3px;
+    color: #fff;
+}
+.fastyle .switcher .delete {
+    position: absolute;
+    top: 7px;
+    left: 5px;
+}
+.fastyle .switcher .content > div > div:only-child {
+    padding-left: 8px
+}
+.fastyle .switcher .content > div > div:only-child .delete {
+    display: none
+}
+
 /* Inputs */
 
 .fastyle input[type="textbox"] {
-    padding: 12px;
+    padding: 8px 12px;
     margin: 0;
     -webkit-appearance: none;
     border: 1px solid rgba(255, 255, 255, .1);
@@ -319,12 +383,13 @@ li.header:before {
     color: #fff;
     outline: none;
     width: 100%;
-    box-sizing: border-box
+    box-sizing: border-box;
 }
 .fastyle .actions input[type="textbox"] {
-    width: 25%;
+    width: auto;
     padding: 4px 12px;
     border-radius: 3px 0 0 3px;
+    margin-left: 5px;
 }
 .fastyle .actions input[type="textbox"] + span {
     margin-left: 0!important;
@@ -364,6 +429,11 @@ li.header:before {
 .fastyle .button.prev:before,
 .fastyle .button.next:before {
     line-height: 20px;
+}
+
+/* Misc */
+.fastyle .delete {
+    color: #d04750
 }
 /* jGrowl */
 

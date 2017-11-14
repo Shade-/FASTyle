@@ -135,7 +135,7 @@ function fastyle_templates_edit_commit()
 		log_admin_action($template['tid'], $mybb->input['title'], $mybb->input['sid'], $set['title']);
 		
 		$data = [
-			'message' => $lang->sprintf($lang->fastyle_success_template_saved, $template['title'])
+			'message' => $lang->sprintf($lang->fastyle_success_saved, $mybb->input['title'])
 		];
 		
 		// Check if the tid coming from the browser matches the one returned from the db. If it doesn't = new template,
@@ -158,7 +158,7 @@ function fastyle_themes_edit_advanced_commit()
 	
 		log_admin_action(htmlspecialchars_uni($theme['name']), $stylesheet['name']);
 		
-		fastyle_message($lang->sprintf($lang->fastyle_success_stylesheet_updated, $stylesheet['name']));
+		fastyle_message($lang->sprintf($lang->fastyle_success_saved, $stylesheet['name']));
 		
 	}
 }
@@ -202,7 +202,7 @@ function fastyle_load_javascript($sid = 0, $tid = 0)
 	
 	if ($loaded != true) {
 		$html .= <<<HTML
-<script type="text/javascript" src="jscripts/FASTyle/spin.js"></script>
+<script type="text/javascript" src="jscripts/FASTyle/spin/spin.js"></script>
 <script type="text/javascript" src="jscripts/FASTyle/main.js"></script>
 HTML;
 	}
