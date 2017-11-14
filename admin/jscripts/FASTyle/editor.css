@@ -128,11 +128,6 @@ li.header:before {
     background: #1c2939;
     overflow-y: auto;
 }
-.fastyle .sidebar > * {
-    margin: 10px 0;
-    display: inline-block;
-    position: relative
-}
 .fastyle .sidebar ul {
     width: 100%;
     padding: 0;

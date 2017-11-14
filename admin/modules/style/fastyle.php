@@ -534,7 +534,9 @@ if ($tid or $sid) {
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/dialog.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/merge.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />';
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.css">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.js"></script>';
 
 	}
 
@@ -1047,10 +1049,9 @@ if ($tid or $sid) {
 			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
 		</div>
 		<div class="content">
-			<div class="swiper-wrapper">
+			<div class="swiper-wrapper" data-simplebar>
 		    </div>
 		</div>
-	    <!-- If we need navigation buttons -->
 	    <div class="icon-left-open-big swiper-button-prev"></div>
 	    <div class="icon-right-open-big swiper-button-next"></div>
 	</div>
@@ -1070,7 +1071,7 @@ if ($tid or $sid) {
 		</div>
 	</div>
 	<div>
-		<div class="sidebar" id="sidebar">
+		<div class="sidebar" id="sidebar" data-simplebar>
 			$resourcelist
 			<ul class="nothing-found"><li>Nothing found</li></ul>
 		</div>
