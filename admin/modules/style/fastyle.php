@@ -1049,7 +1049,7 @@ if ($tid or $sid) {
 			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
 		</div>
 		<div class="content">
-			<div class="swiper-wrapper" data-simplebar>
+			<div class="swiper-wrapper">
 		    </div>
 		</div>
 	    <div class="icon-left-open-big swiper-button-prev"></div>
