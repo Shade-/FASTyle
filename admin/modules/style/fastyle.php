@@ -536,6 +536,7 @@ if ($tid or $sid) {
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro" />
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.js"></script>';
 
 	}
@@ -1046,7 +1047,7 @@ if ($tid or $sid) {
 <div class="fastyle">
 	<div class="bar switcher">
 		<div class="sidebar">
-			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" /></li></ul>
+			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" placeholder="Search asset" /></li></ul>
 		</div>
 		<div class="content">
 			<div class="swiper-wrapper">
@@ -1065,8 +1066,9 @@ if ($tid or $sid) {
 			<span class="button diff" data-mode="diff">Diff</span>
 			<span class="button revert" data-mode="revert">Revert</span>
 			<span class="button delete" data-mode="delete">Delete</span>
-			<input type="textbox" name="title" /><span class="button add visible" data-mode="add">Add</span>
-			<span class="button quickmode visible">Quick mode</span>
+			<input type="submit" class="button visible" name="continue" value="Save" />
+			<input type="textbox" name="title" /><span class="button add visible" data-mode="add"><i class="icon-plus"></i></span>
+			<span class="button quickmode visible"><i class="icon-flash"></i></span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>
@@ -1082,10 +1084,6 @@ if ($tid or $sid) {
 	</div>
 </div>
 HTML;
-
-	$buttons[] = $form->generate_submit_button($lang->save_continue, ['name' => 'continue']);
-
-	$form->output_submit_wrapper($buttons);
 
 	$form->end();
 

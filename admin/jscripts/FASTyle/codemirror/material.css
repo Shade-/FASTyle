@@ -1,26 +1,18 @@
-/*
-
-    Name:       material
-    Author:     Michael Kaminsky (http://github.com/mkaminsky11)
-
-    Original material color scheme by Mattia Astorino (https://github.com/equinusocio/material-theme)
-
-*/
-
 .cm-s-material.CodeMirror {
-    background-color: #1c2939;
+    background-color: #19213d;
     color: rgba(233, 237, 237, 1);
-    line-height: 1.8
+    line-height: 1.8;
+    font-family: 'Source Code Pro', monospace;
 }
 .cm-s-material .CodeMirror-gutters {
-    background: #1c2939;
-    color: rgb(83, 127, 126);
-    border-right: 10px solid #1c2939;
+    background: #19213d;
+    color: #535d7d;
+    border-right: 10px solid #19213d;
 }
 .cm-s-material .CodeMirror-guttermarker,
 .cm-s-material .CodeMirror-guttermarker-subtle,
 .cm-s-material .CodeMirror-linenumber {
-    color: rgb(83, 127, 126);
+    color: #535d7d;
 }
 .cm-s-material .CodeMirror-cursor {
     border-left: 1px solid #f8f8f0;

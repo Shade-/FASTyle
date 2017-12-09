@@ -114,7 +114,7 @@ var FASTyle = {};
 				slidesPerView: 5,
 				slidesPerGroup: 5,
 				keyboard: true,
-				spaceBetween: 5
+				spaceBetween: 10
 			});
 
 			// Switcher close tabs handler
@@ -141,6 +141,12 @@ var FASTyle = {};
 
 			this.dom.sidebar.find('li i.icon-attention').tipsy({
 				gravity: 's',
+				opacity: 1
+			});
+
+			this.dom.switcher.find('.swiper-slide').tipsy({
+				live: true,
+				gravity: 'n',
 				opacity: 1
 			});
 
@@ -222,7 +228,7 @@ var FASTyle = {};
 
 				this.dom.textarea.on('keydown', function(e) {
 					if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-						FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved');
+						FASTyle.dom.mainContainer.find('[data-title].active').addClass('not-saved');
 					}
 				});
 
@@ -609,7 +615,7 @@ var FASTyle = {};
 
 						// + S = save
 						case 's':
-							var submitButton = $('.submit_button[name="continue"], .submit_button[name="save"], #change .submit_button');
+							var submitButton = $('input[type="submit"][name="continue"], input[type="submit"][name="save"], #change input[type="submit"]');
 							if (submitButton.length) {
 								event.preventDefault();
 								submitButton.click();
@@ -739,9 +745,12 @@ var FASTyle = {};
 			var group = tab.parents('ul').prev('.header');
 
 			// Is this group not already expanded?
-			if (!group.hasClass('expanded')) {
-				group.addClass('expanded');
-			}
+			group.each(function() {
+				var $this = $(this);
+				if (!$this.hasClass('expanded')) {
+					$this.addClass('expanded');
+				}
+			});
 
 			// Is this group even visible?
 			var scrollingPosition = this.dom.sidebar.scrollTop();
@@ -794,7 +803,7 @@ var FASTyle = {};
 					var className = (active) ? ' active' : '';
 
 					// Add the tab to the DOM
-					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i> ' + name + '</div>');
+					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i> ' + name + '</div>');
 					FASTyle.swiper.update();
 
 					return true;
@@ -839,6 +848,9 @@ var FASTyle = {};
 					var loadNew = (tab.hasClass('active')) ? true : false;
 
 					tab.remove();
+					
+					// Remove any tooltip, which should disappear on blur (but the event doesn't fire if we close the tab)
+					$('.tipsy').remove();
 
 					FASTyle.swiper.update();
 
@@ -1042,7 +1054,7 @@ var FASTyle = {};
 			this.dom.editor.on('changes', function(a, b, event) {
 
 				return (!FASTyle.switching) ?
-					FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved') :
+					FASTyle.dom.mainContainer.find('[data-title].active').addClass('not-saved') :
 					(FASTyle.switching = 0);
 
 			});
@@ -1093,7 +1105,7 @@ var FASTyle = {};
 			this.dom.editor.on('changes', function(a, b, event) {
 
 				return (!FASTyle.switching) ?
-					FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved') :
+					FASTyle.dom.mainContainer.find('[data-title].active').addClass('not-saved') :
 					(FASTyle.switching = 0);
 
 			});
@@ -1177,9 +1189,7 @@ var FASTyle = {};
 				}
 
 				// Remove the "not saved" marker
-				if (FASTyle.dom.sidebar.length) {
-					currentTab.removeClass('not-saved');
-				}
+				FASTyle.dom.mainContainer.find('[data-title].active').removeClass('not-saved');
 
 				// Update internal cache
 				FASTyle.addToResourceCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));
@@ -1236,7 +1246,7 @@ var FASTyle = {};
 				params.template = content;
 
 				// This is NOT the theme ID, but the template ID!
-				params.tid = parseInt($('[data-title="' + this.currentResource.title + '"]').data('tid'));
+				params.tid = parseInt(this.dom.sidebar.find('[data-title="' + this.currentResource.title + '"]').data('tid'));
 
 			}
 

@@ -107,7 +107,7 @@
     color: #424242;
 }
 .CodeMirror-merge-r-chunk {
-    background: rgba(255, 255, 255, 0.1)
+    background: rgba(255, 255, 255, 0.05)
 }
 .CodeMirror-merge-r-connect {
     fill: rgba(255, 255, 255, 0.1);
