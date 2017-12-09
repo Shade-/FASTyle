@@ -1,3 +1,5 @@
+!function(t){var i=t(window);t.fn.visible=function(t,e,o){if(!(this.length<1)){var r=this.length>1?this.eq(0):this,n=r.get(0),f=i.width(),h=i.height(),o=o?o:"both",l=e===!0?n.offsetWidth*n.offsetHeight:!0;if("function"==typeof n.getBoundingClientRect){var g=n.getBoundingClientRect(),u=g.top>=0&&g.top<h,s=g.bottom>0&&g.bottom<=h,c=g.left>=0&&g.left<f,a=g.right>0&&g.right<=f,v=t?u||s:u&&s,b=t?c||a:c&&a;if("both"===o)return l&&v&&b;if("vertical"===o)return l&&v;if("horizontal"===o)return l&&b}else{var d=i.scrollTop(),p=d+h,w=i.scrollLeft(),m=w+f,y=r.offset(),z=y.top,B=z+r.height(),C=y.left,R=C+r.width(),j=t===!0?B:z,q=t===!0?z:B,H=t===!0?R:C,L=t===!0?C:R;if("both"===o)return!!l&&p>=q&&j>=d&&m>=L&&H>=w;if("vertical"===o)return!!l&&p>=q&&j>=d;if("horizontal"===o)return!!l&&m>=L&&H>=w}}}}(jQuery);
+
 var FASTyle = {};
 (function($, window, document) {
 
@@ -104,6 +106,9 @@ var FASTyle = {};
 			this.dom.switcher = this.dom.mainContainer.find('.switcher .content .swiper-wrapper');
 
 			this.dom.mergeView = $('#mergeview');
+			
+			// SimpleBar for sidebar
+			this.dom.simpleBar = new SimpleBar(this.dom.sidebar[0]);
 
 			// Switcher slider
 			this.swiper = new Swiper('.fastyle .switcher .content', {
@@ -753,12 +758,10 @@ var FASTyle = {};
 			});
 
 			// Is this group even visible?
-			var scrollingPosition = this.dom.sidebar.scrollTop();
-			var tabPosition = tab.position().top;
-			var scrollingEnd = scrollingPosition + this.dom.sidebar.outerHeight();
+			var scrollElem = $(this.dom.simpleBar.getScrollElement());
 
-			if (tabPosition < scrollingPosition || tabPosition > scrollingEnd) {
-				this.dom.sidebar.scrollTop(tabPosition);
+			if (!tab.visible()) {
+				scrollElem.scrollTop(scrollElem.scrollTop() + tab.position().top - (scrollElem.outerHeight() / 2) + (tab.outerHeight() / 2));
 			}
 
 			this.syncBarStatus();
@@ -803,7 +806,7 @@ var FASTyle = {};
 					var className = (active) ? ' active' : '';
 
 					// Add the tab to the DOM
-					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i> ' + name + '</div>');
+					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i>' + name + '</div>');
 					FASTyle.swiper.update();
 
 					return true;
@@ -844,6 +847,9 @@ var FASTyle = {};
 						});
 
 					}
+					
+					// Remove this resource from cache (forcing a reload upon next loading)
+					FASTyle.removeResourceFromCache(name);
 
 					var loadNew = (tab.hasClass('active')) ? true : false;
 
@@ -851,9 +857,12 @@ var FASTyle = {};
 					
 					// Remove any tooltip, which should disappear on blur (but the event doesn't fire if we close the tab)
 					$('.tipsy').remove();
-
+					
 					FASTyle.swiper.update();
-
+					
+					// Remove the not saved marker
+					FASTyle.dom.mainContainer.find('[data-title="' + name + '"]').removeClass('not-saved');
+					
 					// Switch to the first item if this is the active tab
 					if (loadNew) {
 						FASTyle.loadResource(FASTyle.dom.switcher.find('[data-title]:first-child').data('title'));
@@ -1189,7 +1198,7 @@ var FASTyle = {};
 				}
 
 				// Remove the "not saved" marker
-				FASTyle.dom.mainContainer.find('[data-title].active').removeClass('not-saved');
+				FASTyle.dom.mainContainer.find('[data-title="' + data.title + '"]').removeClass('not-saved');
 
 				// Update internal cache
 				FASTyle.addToResourceCache(data.title, FASTyle.getEditorContent(), Math.round(new Date().getTime() / 1000));

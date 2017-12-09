@@ -431,14 +431,15 @@ li.header:before {
 /* CodeMirror search dialog */
 
 .fastyle .CodeMirror-dialog .button {
-    height: 19px;
+    height: 17px;
     vertical-align: top;
     background: #d6d6d6;
     margin: 0;
     border-radius: 3px 0 0 3px;
     color: #515d6b;
     font-family: 'Lucida Grande', Tahoma, Verdana, Arial, sans-serif;
-    font-size: 11px
+    font-size: 11px;
+    line-height: 19px;
 }
 .fastyle .CodeMirror-dialog .button:last-of-type {
     border-radius: 0 3px 3px 0;

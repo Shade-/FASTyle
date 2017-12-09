@@ -63,7 +63,7 @@ if (isset($mybb->input['api'])) {
 
 	}
 
-	// Get stylesheet/template
+	// Get asset
 	if ($mybb->input['action'] == 'get') {
 
 		if ($mode == 'templates') {
@@ -122,7 +122,7 @@ if (isset($mybb->input['api'])) {
 
 	}
 
-	// Revert resource
+	// Revert asset
 	if ($mybb->input['action'] == 'revert') {
 
 		if ($mode == 'templates') {
@@ -207,7 +207,7 @@ if (isset($mybb->input['api'])) {
 
 	}
 
-	// Delete resource
+	// Delete asset
 	if ($mybb->input['action'] == 'delete') {
 
 		if ($mode == 'stylesheets') {
@@ -362,7 +362,7 @@ if (isset($mybb->input['api'])) {
 
 	}
 
-	// Add resource
+	// Add asset
 	if ($mybb->input['action'] == 'add') {
 
 		// Stylesheet
@@ -514,32 +514,35 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/css/css.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/codemirror/mark-selection.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/codemirror/search.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/mark-selection.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/search.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/comment.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/sublime.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/merge.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/tipsy/tipsy.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/swiper/js/swiper.min.js"></script>
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/editor.css" />
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/tipsy/tipsy.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/codemirror/lib/codemirror.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/codemirror/addon/fold/foldgutter.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/dialog.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/merge.css" />
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />';
+
+	}
+	
+	$page->extra_header .= '
+<script type="text/javascript" src="./jscripts/FASTyle/tipsy/tipsy.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/swiper/js/swiper.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.js"></script>
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/editor.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/tipsy/tipsy.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro" />
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.js"></script>';
-
-	}
+';
 
 	$page->output_header($lang->template_sets);
 
@@ -1073,7 +1076,7 @@ if ($tid or $sid) {
 		</div>
 	</div>
 	<div>
-		<div class="sidebar" id="sidebar" data-simplebar>
+		<div class="sidebar" id="sidebar">
 			$resourcelist
 			<ul class="nothing-found"><li>Nothing found</li></ul>
 		</div>
