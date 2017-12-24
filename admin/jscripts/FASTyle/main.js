@@ -1,4 +1,45 @@
-!function(t){var i=t(window);t.fn.visible=function(t,e,o){if(!(this.length<1)){var r=this.length>1?this.eq(0):this,n=r.get(0),f=i.width(),h=i.height(),o=o?o:"both",l=e===!0?n.offsetWidth*n.offsetHeight:!0;if("function"==typeof n.getBoundingClientRect){var g=n.getBoundingClientRect(),u=g.top>=0&&g.top<h,s=g.bottom>0&&g.bottom<=h,c=g.left>=0&&g.left<f,a=g.right>0&&g.right<=f,v=t?u||s:u&&s,b=t?c||a:c&&a;if("both"===o)return l&&v&&b;if("vertical"===o)return l&&v;if("horizontal"===o)return l&&b}else{var d=i.scrollTop(),p=d+h,w=i.scrollLeft(),m=w+f,y=r.offset(),z=y.top,B=z+r.height(),C=y.left,R=C+r.width(),j=t===!0?B:z,q=t===!0?z:B,H=t===!0?R:C,L=t===!0?C:R;if("both"===o)return!!l&&p>=q&&j>=d&&m>=L&&H>=w;if("vertical"===o)return!!l&&p>=q&&j>=d;if("horizontal"===o)return!!l&&m>=L&&H>=w}}}}(jQuery);
+! function(t) {
+	var i = t(window);
+	t.fn.visible = function(t, e, o) {
+		if (!(this.length < 1)) {
+			var r = this.length > 1 ? this.eq(0) : this,
+				n = r.get(0),
+				f = i.width(),
+				h = i.height(),
+				o = o ? o : "both",
+				l = e === !0 ? n.offsetWidth * n.offsetHeight : !0;
+			if ("function" == typeof n.getBoundingClientRect) {
+				var g = n.getBoundingClientRect(),
+					u = g.top >= 0 && g.top < h,
+					s = g.bottom > 0 && g.bottom <= h,
+					c = g.left >= 0 && g.left < f,
+					a = g.right > 0 && g.right <= f,
+					v = t ? u || s : u && s,
+					b = t ? c || a : c && a;
+				if ("both" === o) return l && v && b;
+				if ("vertical" === o) return l && v;
+				if ("horizontal" === o) return l && b
+			} else {
+				var d = i.scrollTop(),
+					p = d + h,
+					w = i.scrollLeft(),
+					m = w + f,
+					y = r.offset(),
+					z = y.top,
+					B = z + r.height(),
+					C = y.left,
+					R = C + r.width(),
+					j = t === !0 ? B : z,
+					q = t === !0 ? z : B,
+					H = t === !0 ? R : C,
+					L = t === !0 ? C : R;
+				if ("both" === o) return !!l && p >= q && j >= d && m >= L && H >= w;
+				if ("vertical" === o) return !!l && p >= q && j >= d;
+				if ("horizontal" === o) return !!l && m >= L && H >= w
+			}
+		}
+	}
+}(jQuery);
 
 var FASTyle = {};
 (function($, window, document) {
@@ -56,7 +97,7 @@ var FASTyle = {};
 			if (tid > 0) {
 				this.tid = tid;
 			}
-			
+
 			if (typeof CodeMirror === 'undefined') {
 				this.useEditor = 0;
 			}
@@ -112,7 +153,7 @@ var FASTyle = {};
 			this.dom.switcher = this.dom.mainContainer.find('.switcher .content .swiper-wrapper');
 
 			this.dom.mergeView = $('#mergeview');
-			
+
 			// SimpleBar for sidebar
 			this.dom.simpleBar = new SimpleBar(this.dom.sidebar[0]);
 
@@ -127,18 +168,18 @@ var FASTyle = {};
 				keyboard: true,
 				spaceBetween: 10
 			});
-			
+
 			// Sort stylesheets
 			this.dom.sidebar.find('[data-prefix="stylesheets"]').sortable({
 				animation: 150,
 				onSort: function() {
-					
+
 					var order = this.toArray();
-					
+
 					clearTimeout(FASTyle.orderTimeout);
-					
+
 					FASTyle.orderTimeout = setTimeout(() => {
-					
+
 						var params = {
 							module: 'style-fastyle',
 							api: 1,
@@ -147,11 +188,11 @@ var FASTyle = {};
 							tid: FASTyle.tid,
 							disporder: order
 						}
-						
+
 						FASTyle.sendRequest('post', 'index.php', params, () => {});
-					
+
 					}, 3000);
-					
+
 				}
 			});
 
@@ -159,9 +200,9 @@ var FASTyle = {};
 			this.dom.switcher.on('click', '.delete', function(e) {
 
 				e.preventDefault();
-				
+
 				if (!FASTyle.quickMode && $(this).closest('[data-title]').hasClass('not-saved')) {
-					
+
 					if (window.confirm(FASTyle.lang.confirm.closeTab) != true) {
 						return false;
 					}
@@ -195,7 +236,7 @@ var FASTyle = {};
 				gravity: 'n',
 				opacity: 1
 			});
-			
+
 			// Tooltips for icon buttons
 			this.dom.bar.find('.add, .quickmode').tipsy({
 				gravity: 's',
@@ -434,7 +475,7 @@ var FASTyle = {};
 				}
 
 				if (!FASTyle.quickMode && ['revert', 'delete'].indexOf(mode) > -1) {
-					
+
 					if (window.confirm(FASTyle.lang.confirm[mode].replace('{1}', FASTyle.currentResource.title)) != true) {
 						return false;
 					}
@@ -522,7 +563,7 @@ var FASTyle = {};
 						if (FASTyle.diffMode) {
 							FASTyle.loadNormalEditor();
 						}
-						
+
 						// Reset the not-saved marker
 						FASTyle.dom.mainContainer.find('[data-title="' + data.title + '"]').removeClass('not-saved');
 
@@ -623,34 +664,34 @@ var FASTyle = {};
 			}
 
 			// Delete template group
-/*
-			this.dom.sidebar.on('click', '.deletegroup', function(e) {
+			/*
+						this.dom.sidebar.on('click', '.deletegroup', function(e) {
 
-				e.preventDefault();
+							e.preventDefault();
 
-				if (!FASTyle.quickMode) {
+							if (!FASTyle.quickMode) {
 
-					var confirm = window.confirm(FASTyle.lang.confirm.group);
-					if (confirm != true) {
-						return false;
-					}
+								var confirm = window.confirm(FASTyle.lang.confirm.group);
+								if (confirm != true) {
+									return false;
+								}
 
-				}
+							}
 
-				var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
+							var tab = FASTyle.dom.sidebar.find('[data-title="' + FASTyle.currentResource.title + '"]');
 
-				var data = {
-					'module': 'style-fastyle',
-					'api': 1,
-					'my_post_key': FASTyle.postKey,
-					'action': 'deletegroup',
-					'gid': parseInt($(this).parent('[data-gid]').data('gid'))
-				};
+							var data = {
+								'module': 'style-fastyle',
+								'api': 1,
+								'my_post_key': FASTyle.postKey,
+								'action': 'deletegroup',
+								'gid': parseInt($(this).parent('[data-gid]').data('gid'))
+							};
 
-				return FASTyle.sendRequest('post', 'index.php', data);
+							return FASTyle.sendRequest('post', 'index.php', data);
 
-			});
-*/
+						});
+			*/
 
 			// Save templates/stylesheets with AJAX
 			var form = $('#fastyle_editor');
@@ -897,22 +938,22 @@ var FASTyle = {};
 						});
 
 					}
-					
+
 					// Remove this resource from cache (forcing a reload upon next loading)
 					FASTyle.removeResourceFromCache(name);
 
 					var loadNew = (tab.hasClass('active')) ? true : false;
 
 					tab.remove();
-					
+
 					// Remove any tooltip, which should disappear on blur (but the event doesn't fire if we close the tab)
 					$('.tipsy').remove();
-					
+
 					FASTyle.swiper.update();
-					
+
 					// Remove the not saved marker
 					FASTyle.dom.mainContainer.find('[data-title="' + name + '"]').removeClass('not-saved');
-					
+
 					// Switch to the first item if this is the active tab
 					if (loadNew) {
 						FASTyle.loadResource(FASTyle.dom.switcher.find('[data-title]:first-child').data('title'));

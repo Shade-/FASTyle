@@ -67,28 +67,28 @@ li.expanded.header:not(.search):before {
     content: "\6a";
 }
 .icon-down-open-big:before {
-  content: "\6b";
+    content: "\6b";
 }
 .icon-up-open-big:before {
-  content: "\6c";
+    content: "\6c";
 }
 .icon-left-open-big:before {
-  content: "\6d";
+    content: "\6d";
 }
 .icon-right-open-big:before {
-  content: "\6e";
+    content: "\6e";
 }
 .icon-js-square:before {
-  content: "\6f";
+    content: "\6f";
 }
 .icon-html5:before {
-  content: "\70";
+    content: "\70";
 }
 .icon-css3-alt:before {
-  content: "\71";
+    content: "\71";
 }
 .icon-cog:before {
-  content: "\72";
+    content: "\72";
 }
 li.header:before {
     margin-right: 5px;
@@ -110,16 +110,22 @@ li.header:before {
     height: 100%
 }
 .fastyle.full .sidebar {
+    height: -webkit-calc(100vh - 102px);
     height: calc(100vh - 102px);
 }
 .fastyle.full .CodeMirror {
+    height: -webkit-calc(100vh - 102px)!important;
     height: calc(100vh - 102px)!important;
 }
 .fastyle.full .CodeMirror-merge,
 .fastyle.full .CodeMirror-merge .CodeMirror {
+    height: -webkit-calc(100vh - 132px)!important;
     height: calc(100vh - 132px)!important;
 }
 .fastyle > * {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
     display: flex
 }
 .fastyle .form_row {
@@ -127,21 +133,28 @@ li.header:before {
     float: left;
     margin: 0;
     padding: 0 20px;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     background: #19213d;
 }
-.fastyle ul, .fastyle li {
+.fastyle ul,
+.fastyle li {
     width: 100%;
     padding: 0;
     margin: 0;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     list-style-type: none
 }
 /* Editor */
+
 .fastyle .sidebar {
+    -webkit-flex-basis: 20%;
+    -ms-flex-preferred-size: 20%;
     flex-basis: 20%;
     float: left;
     padding: 0;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     position: relative;
     height: 500px;
@@ -164,7 +177,8 @@ li.header:before {
 }
 .fastyle .sidebar ul li.active {
     color: #fff;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
+    -webkit-border-radius: 4px;
     border-radius: 4px;
     margin: 0 10px;
     padding: 10px 15px;
@@ -180,6 +194,7 @@ li.header:before {
     height: 7px;
     background: #deab3b;
     display: inline-block;
+    -webkit-border-radius: 999em;
     border-radius: 999em;
     position: absolute;
     top: 13px;
@@ -251,17 +266,28 @@ li.header:before {
     clear: both
 }
 /* Bar */
+
 .fastyle .bar {
     background: #19213d;
     color: #fff;
     width: 100%;
     padding: 12px 15px;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
 }
 .fastyle .bar > * {
+    display: -webkit-inline-box;
+    display: -webkit-inline-flex;
+    display: -ms-inline-flexbox;
     display: inline-flex;
     vertical-align: middle;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
     align-items: center;
+    -webkit-box-flex: 1;
+    -webkit-flex-grow: 1;
+    -ms-flex-positive: 1;
     flex-grow: 1;
 }
 .fastyle .bar .sidebar {
@@ -278,12 +304,18 @@ li.header:before {
 }
 .fastyle .bar .actions {
     padding: 0;
+    -webkit-box-pack: end;
+    -webkit-justify-content: flex-end;
+    -ms-flex-pack: end;
     justify-content: flex-end;
 }
 .fastyle .bar.top {
     min-height: 50px
 }
 .fastyle .bar.bottom {
+    -webkit-box-pack: end;
+    -webkit-justify-content: flex-end;
+    -ms-flex-pack: end;
     justify-content: flex-end;
     padding: 0;
 }
@@ -293,6 +325,7 @@ li.header:before {
 .fastyle .button {
     padding: 5px 8px;
     background: rgb(51, 61, 93);
+    -webkit-border-radius: 3px;
     border-radius: 3px;
     margin: 0 4px;
     display: inline-block;
@@ -341,8 +374,10 @@ li.header:before {
     background: #aba657
 }
 /* Switcher */
+
 .fastyle .switcher {
     padding: 0;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     background: #272f4a;
     border-bottom: 1px solid #394365;
@@ -363,6 +398,7 @@ li.header:before {
 }
 .fastyle .switcher .content {
     overflow: hidden;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     width: 80%;
     white-space: nowrap;
@@ -373,12 +409,14 @@ li.header:before {
 }
 .fastyle .switcher .content > div > div {
     padding: 10px 8px 10px 25px;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    -webkit-border-radius: 3px;
     border-radius: 3px;
 }
 .fastyle .switcher .content > div > div.active {
@@ -396,7 +434,6 @@ li.header:before {
 .fastyle .switcher .content > div > div:only-child .delete {
     display: none
 }
-
 /* Inputs */
 
 .fastyle input[type="textbox"] {
@@ -408,17 +445,20 @@ li.header:before {
     color: #fff;
     outline: none;
     width: 100%;
+    -webkit-box-sizing: border-box;
     box-sizing: border-box;
 }
 .fastyle .actions input[type="textbox"] {
     width: auto;
     padding: 4px 8px 3px;
+    -webkit-border-radius: 3px 0 0 3px;
     border-radius: 3px 0 0 3px;
     margin-left: 5px;
     line-height: 1;
 }
 .fastyle .actions input[type="textbox"] + span {
     margin-left: 0!important;
+    -webkit-border-radius: 0 3px 3px 0!important;
     border-radius: 0 3px 3px 0!important
 }
 /* CodeMirror overlay */
@@ -431,6 +471,7 @@ li.header:before {
     top: 0;
     left: 0;
     z-index: 9999;
+    -webkit-border-radius: 6px;
     border-radius: 6px
 }
 /* CodeMirror search dialog */
@@ -440,6 +481,7 @@ li.header:before {
     vertical-align: top;
     background: #d6d6d6;
     margin: 0;
+    -webkit-border-radius: 3px 0 0 3px;
     border-radius: 3px 0 0 3px;
     color: #515d6b;
     font-family: 'Lucida Grande', Tahoma, Verdana, Arial, sans-serif;
@@ -447,6 +489,7 @@ li.header:before {
     line-height: 19px;
 }
 .fastyle .CodeMirror-dialog .button:last-of-type {
+    -webkit-border-radius: 0 3px 3px 0;
     border-radius: 0 3px 3px 0;
     border-left: 1px solid #7f8b9a;
 }
@@ -457,12 +500,13 @@ li.header:before {
 .fastyle .button.next:before {
     line-height: 20px;
 }
-
 /* Misc */
+
 .fastyle .delete {
     color: #d04750
 }
 .fastyle textarea {
+    -webkit-border-radius: 0;
     border-radius: 0;
     border: none;
     -webkit-appearance: none;
@@ -483,6 +527,8 @@ li.header:before {
     font-weight: 400;
     color: #676767;
     opacity: 1;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    -webkit-border-radius: 3px;
     border-radius: 3px;
     padding-left: 55px;
     position: relative;
@@ -503,6 +549,7 @@ li.header:before {
     color: #fff;
     width: 30px;
     height: 30px;
+    -webkit-border-radius: 999em;
     border-radius: 999em;
     line-height: 30px;
     font-size: 16px;

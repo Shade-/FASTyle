@@ -45,7 +45,7 @@ $sid = (int) $mybb->input['sid'];
 
 // API endpoint
 if (isset($mybb->input['api'])) {
-	
+
 	if ($mybb->request_method == 'post' and !verify_post_check($mybb->get_input('my_post_key', true))) {
 		fastyle_message($lang->fastyle_error_post_verify, 'error');
 	}
@@ -497,13 +497,13 @@ if (isset($mybb->input['api'])) {
 		fastyle_message($data);
 
 	}
-	
+
 	if ($mybb->input['action'] == 'saveorder') {
-		
+
 		if (!is_array($mybb->input['disporder'])) {
 			fastyle_message($lang->error_no_display_order, 'error');
 		}
-		
+
 		$file_stylesheets = $theme['stylesheets'];
 
 		$stylesheets = [];
@@ -563,7 +563,7 @@ if (isset($mybb->input['api'])) {
 			}
 
 		}
-		
+
 		$mybb->input['disporder'] = array_flip($mybb->input['disporder']);
 
 		$orders = [];
@@ -571,13 +571,13 @@ if (isset($mybb->input['api'])) {
 		foreach ($theme_stylesheets as $stylesheet => $properties) {
 
 			if (is_array($properties)) {
-				
+
 				$order = (int) $mybb->input['disporder'][$properties['sid']];
 
 				$orders[$properties['name']] = $order;
-				
+
 			}
-			
+
 		}
 
 		asort($orders, SORT_NUMERIC);
@@ -595,14 +595,14 @@ if (isset($mybb->input['api'])) {
 		if ($theme['def'] == 1) {
 			$cache->update_default_theme();
 		}
-		
+
 		unset($theme_cache);
 
 		// Normalize for consistency
 		update_theme_stylesheet_list($theme['tid'], false, true);
-		
+
 		fastyle_message($lang->fastyle_success_order_saved);
-		
+
 	}
 
 }
@@ -613,7 +613,7 @@ if ($theme['properties']['templateset']) {
 }
 
 if ($tid or $sid) {
-	
+
 	$breadcrumb_label = (!isset($theme_cache[$tid])) ? $lang->sprintf($lang->fastyle_breadcrumb_editing_template_set, 1) : $lang->sprintf($lang->fastyle_breadcrumb_editing_theme, $theme_cache[$tid]['name']);
 
 	$page->add_breadcrumb_item($breadcrumb_label, "index.php?module=style-fastyle&amp;tid={$tid}");
@@ -644,7 +644,7 @@ if ($tid or $sid) {
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />';
 
 	//}
-	
+
 	$page->extra_header .= fastyle_build_global_styles();
 
 	$page->output_header($lang->template_sets);
@@ -982,7 +982,7 @@ if ($tid or $sid) {
 		$resourcelist .= '</ul>';
 
 	}
-	
+
 	// Templates
 	$resourcelist .= "<li class='header icon'>Templates</li>";
 	$resourcelist .= "<ul>";
@@ -1116,13 +1116,13 @@ if ($tid or $sid) {
 				}
 
 			}
-			
+
 			if (!empty($folders)) {
-				
+
 				foreach ((array) $folders as $folder) {
 					$resourcelist .= $folder;
 				}
-				
+
 			}
 
 			// If this directory is not empty, add its files and subdirs
@@ -1262,7 +1262,7 @@ function fastyle_build_theme_list($parent = 0, $depth = 0)
 	if (!is_array($theme_cache[$parent])) {
 		return;
 	}
-	
+
 	$depth++;
 
 	foreach ($theme_cache[$parent] as $theme) {
