@@ -45,6 +45,10 @@ $sid = (int) $mybb->input['sid'];
 
 // API endpoint
 if (isset($mybb->input['api'])) {
+	
+	if ($mybb->request_method == 'post' and !verify_post_check($mybb->get_input('my_post_key', true))) {
+		fastyle_message($lang->fastyle_error_post_verify, 'error');
+	}
 
 	$title = $db->escape_string($mybb->get_input('title'));
 
@@ -298,6 +302,7 @@ if (isset($mybb->input['api'])) {
 	}
 
 	// Delete template group
+/*
 	if ($mybb->input['action'] == 'deletegroup') {
 
 		$gid = $mybb->get_input('gid', MyBB::INPUT_INT);
@@ -318,6 +323,7 @@ if (isset($mybb->input['api'])) {
 		fastyle_message($lang->success_template_group_deleted);
 
 	}
+*/
 
 	// Diff mode
 	if ($mybb->input['action'] == 'diff') {
@@ -347,6 +353,7 @@ if (isset($mybb->input['api'])) {
 	}
 
 	// Add template group
+/*
 	if ($mybb->input['action'] == 'addgroup') {
 
 		if (!trim($mybb->get_input('title'))) {
@@ -361,6 +368,7 @@ if (isset($mybb->input['api'])) {
 		fastyle_message($lang->success_template_set_saved);
 
 	}
+*/
 
 	// Add asset
 	if ($mybb->input['action'] == 'add') {
@@ -489,6 +497,113 @@ if (isset($mybb->input['api'])) {
 		fastyle_message($data);
 
 	}
+	
+	if ($mybb->input['action'] == 'saveorder') {
+		
+		if (!is_array($mybb->input['disporder'])) {
+			fastyle_message($lang->error_no_display_order, 'error');
+		}
+		
+		$file_stylesheets = $theme['stylesheets'];
+
+		$stylesheets = [];
+		$inherited_load = [];
+
+		foreach ($file_stylesheets as $file => $action_stylesheet) {
+
+			if ($file == 'inherited' or !is_array($action_stylesheet)) {
+				continue;
+			}
+
+			foreach ($action_stylesheet as $action => $style) {
+
+				foreach ($style as $stylesheet) {
+
+					$stylesheets[$stylesheet]['applied_to'][$file][] = $action;
+
+					if (is_array($file_stylesheets['inherited'][$file."_".$action]) and in_array($stylesheet, array_keys($file_stylesheets['inherited'][$file."_".$action]))) {
+
+						$stylesheets[$stylesheet]['inherited'] = $file_stylesheets['inherited'][$file."_".$action];
+
+						foreach ($file_stylesheets['inherited'][$file."_".$action] as $value) {
+							$inherited_load[] = $value;
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
+		$inherited_load[] = $tid;
+		$inherited_load = array_unique($inherited_load);
+
+		$inherited_themes = [];
+		$theme_stylesheets = [];
+
+		if (count($inherited_load) > 0) {
+
+			$query = $db->simple_select("themes", "tid, name", "tid IN (".implode(",", $inherited_load).")");
+
+			while ($inherited_theme = $db->fetch_array($query)) {
+				$inherited_themes[$inherited_theme['tid']] = $inherited_theme['name'];
+			}
+
+			$query = $db->simple_select("themestylesheets", "*", "", ['order_by' => 'sid DESC, tid', 'order_dir' => 'desc']);
+			while ($theme_stylesheet = $db->fetch_array($query)) {
+
+				if (!isset($theme_stylesheets[$theme_stylesheet['name']]) && in_array($theme_stylesheet['tid'], $inherited_load)) {
+					$theme_stylesheets[$theme_stylesheet['name']] = $theme_stylesheet;
+				}
+
+				$theme_stylesheets[$theme_stylesheet['sid']] = $theme_stylesheet['name'];
+
+			}
+
+		}
+		
+		$mybb->input['disporder'] = array_flip($mybb->input['disporder']);
+
+		$orders = [];
+
+		foreach ($theme_stylesheets as $stylesheet => $properties) {
+
+			if (is_array($properties)) {
+				
+				$order = (int) $mybb->input['disporder'][$properties['sid']];
+
+				$orders[$properties['name']] = $order;
+				
+			}
+			
+		}
+
+		asort($orders, SORT_NUMERIC);
+
+		// Save the orders in the theme properties
+		$properties = (array) $theme['properties'];
+		$properties['disporder'] = $orders;
+
+		$update_array = [
+			"properties" => $db->escape_string(my_serialize($properties))
+		];
+
+		$db->update_query("themes", $update_array, "tid = '{$theme['tid']}'");
+
+		if ($theme['def'] == 1) {
+			$cache->update_default_theme();
+		}
+		
+		unset($theme_cache);
+
+		// Normalize for consistency
+		update_theme_stylesheet_list($theme['tid'], false, true);
+		
+		fastyle_message($lang->fastyle_success_order_saved);
+		
+	}
 
 }
 
@@ -498,15 +613,12 @@ if ($theme['properties']['templateset']) {
 }
 
 if ($tid or $sid) {
+	
+	$breadcrumb_label = (!isset($theme_cache[$tid])) ? $lang->sprintf($lang->fastyle_breadcrumb_editing_template_set, 1) : $lang->sprintf($lang->fastyle_breadcrumb_editing_theme, $theme_cache[$tid]['name']);
 
-	/*if (!isset($theme_cache[$tid])) {
-		flash_message($lang->error_invalid_input, 'error');
-		admin_redirect("index.php?module=style-fastyle");
-	}*/
+	$page->add_breadcrumb_item($breadcrumb_label, "index.php?module=style-fastyle&amp;tid={$tid}");
 
-	$page->add_breadcrumb_item($lang->sprintf($lang->fastyle_breadcrumb_editing_theme, $theme_cache[$tid]['name']), "index.php?module=style-fastyle&amp;tid={$tid}");
-
-	if ($admin_options['codepress'] != 0) {
+	//if ($admin_options['codepress'] != 0) { // Force CodeMirror for everyone, although it should also work without it
 
 		$page->extra_header .= '
 <script type="text/javascript" src="./jscripts/codemirror/lib/codemirror.js"></script>
@@ -531,18 +643,9 @@ if ($tid or $sid) {
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/merge.css" />
 <link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/codemirror/material.css" />';
 
-	}
+	//}
 	
-	$page->extra_header .= '
-<script type="text/javascript" src="./jscripts/FASTyle/tipsy/tipsy.js"></script>
-<script type="text/javascript" src="./jscripts/FASTyle/swiper/js/swiper.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.js"></script>
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/editor.css" />
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/tipsy/tipsy.css" />
-<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro" />
-';
+	$page->extra_header .= fastyle_build_global_styles();
 
 	$page->output_header($lang->template_sets);
 
@@ -872,7 +975,7 @@ if ($tid or $sid) {
 				$attached_to = $lang->attached_to_all_pages;
 			}
 
-			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}'>{$inherited}{$filename}</li>";
+			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}' data-id='{$style['sid']}'>{$inherited}{$filename}</li>";
 
 		}
 
@@ -900,7 +1003,7 @@ if ($tid or $sid) {
 			$title = str_replace(' Templates', '', $group['title']);
 
 			// We can delete this group
-			$deletegroup = (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="delete icon-cancel"></i>' : '';
+			$deletegroup = /* (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="delete icon-cancel"></i>' :  */'';
 
 			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
 
@@ -1050,7 +1153,7 @@ if ($tid or $sid) {
 <div class="fastyle">
 	<div class="bar switcher">
 		<div class="sidebar">
-			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" placeholder="Search asset" /></li></ul>
+			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" placeholder="{$lang->fastyle_search_asset}" /></li></ul>
 		</div>
 		<div class="content">
 			<div class="swiper-wrapper">
@@ -1066,19 +1169,19 @@ if ($tid or $sid) {
 			<span class="attachedto meta"></span>
 		</div>
 		<div class="actions">
-			<span class="button diff" data-mode="diff">Diff</span>
-			<span class="button revert" data-mode="revert">Revert</span>
-			<span class="button delete" data-mode="delete">Delete</span>
-			<input type="submit" class="button visible" name="continue" value="Save" />
-			<input type="textbox" name="title" /><span class="button add visible" data-mode="add"><i class="icon-plus"></i></span>
-			<span class="button quickmode visible"><i class="icon-flash"></i></span>
+			<span class="button diff" data-mode="diff">{$lang->fastyle_diff}</span>
+			<span class="button revert" data-mode="revert">{$lang->fastyle_revert}</span>
+			<span class="button delete" data-mode="delete">{$lang->fastyle_delete}</span>
+			<input type="submit" class="button visible" name="continue" value="{$lang->fastyle_save}" />
+			<input type="textbox" name="title" /><span class="button add visible" data-mode="add" title="{$lang->fastyle_add_asset}"><i class="icon-plus"></i></span>
+			<span class="button quickmode visible" title="{$lang->fastyle_quick_mode}"><i class="icon-flash"></i></span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>
 	<div>
 		<div class="sidebar" id="sidebar">
 			$resourcelist
-			<ul class="nothing-found"><li>Nothing found</li></ul>
+			<ul class="nothing-found"><li>{$lang->fastyle_nothing_found}</li></ul>
 		</div>
 		<div class="form_row">
 			$textarea
@@ -1113,7 +1216,6 @@ if (!$mybb->input['action']) {
 	if ($not_processed) {
 
 		$table = new Table;
-		$table->construct_header('Other sets');
 
 		foreach ($not_processed as $set) {
 
@@ -1122,7 +1224,7 @@ if (!$mybb->input['action']) {
 
 		}
 
-		$table->output($lang->themes);
+		$table->output($lang->fastyle_other_sets);
 
 	}
 
@@ -1160,6 +1262,8 @@ function fastyle_build_theme_list($parent = 0, $depth = 0)
 	if (!is_array($theme_cache[$parent])) {
 		return;
 	}
+	
+	$depth++;
 
 	foreach ($theme_cache[$parent] as $theme) {
 
@@ -1181,8 +1285,23 @@ function fastyle_build_theme_list($parent = 0, $depth = 0)
 		unset ($not_processed[$theme['properties']['templateset']]);
 
 		// Fetch & build any child themes
-		fastyle_build_theme_list($theme['tid'], ++$depth);
+		fastyle_build_theme_list($theme['tid'], $depth);
 
 	}
 
+}
+
+function fastyle_build_global_styles()
+{
+	return '
+<script type="text/javascript" src="./jscripts/FASTyle/tipsy/tipsy.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/sortable/jquery.fn.sortable.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/swiper/js/swiper.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.js"></script>
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/editor.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/tipsy/tipsy.css" />
+<link rel="stylesheet" type="text/css" href="./jscripts/FASTyle/swiper/css/swiper.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro" />
+';
 }

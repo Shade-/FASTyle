@@ -87,6 +87,9 @@ li.expanded.header:not(.search):before {
 .icon-css3-alt:before {
   content: "\71";
 }
+.icon-cog:before {
+  content: "\72";
+}
 li.header:before {
     margin-right: 5px;
     position: relative;
@@ -127,6 +130,14 @@ li.header:before {
     box-sizing: border-box;
     background: #19213d;
 }
+.fastyle ul, .fastyle li {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    list-style-type: none
+}
+/* Editor */
 .fastyle .sidebar {
     flex-basis: 20%;
     float: left;
@@ -136,13 +147,6 @@ li.header:before {
     height: 500px;
     background: #19213d;
     overflow-y: auto;
-}
-.fastyle .sidebar ul {
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
-    list-style-type: none
 }
 .fastyle .sidebar ul li {
     margin: 0;
@@ -155,7 +159,8 @@ li.header:before {
     color: #607588;
     font-size: 10px;
     position: relative;
-    font-weight: 500
+    width: auto;
+    font-weight: 500;
 }
 .fastyle .sidebar ul li.active {
     color: #fff;

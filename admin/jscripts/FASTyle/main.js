@@ -19,13 +19,15 @@ var FASTyle = {};
 		useEditor: 1,
 		useLocalStorage: 1,
 		currentEditorStatus: {},
+		orderTimeout: null,
 		swiper: null,
 		lang: {
 			confirm: {
 				'delete': 'Are you sure you want to delete {1}?',
 				'revert': 'Are you sure you want to revert {1}?',
 				'group': 'Are you sure you want to delete this whole template group?',
-				'enableQuickMode': 'Quick mode allows you to perform actions without confirmation dialogs. Are you sure you want to enable quick mode?'
+				'enableQuickMode': 'Quick mode allows you to perform actions without confirmation dialogs. Are you sure you want to enable quick mode?',
+				'closeTab': 'This asset has unsaved changes. Would you really like to close it? Changes will be lost.'
 			},
 			identical: 'This resource is identical to its original counterpart.',
 			lastEditedPrefix: 'Last edited: ',
@@ -53,6 +55,10 @@ var FASTyle = {};
 			// Theme ID
 			if (tid > 0) {
 				this.tid = tid;
+			}
+			
+			if (typeof CodeMirror === 'undefined') {
+				this.useEditor = 0;
 			}
 
 			// Notification defaults
@@ -121,11 +127,46 @@ var FASTyle = {};
 				keyboard: true,
 				spaceBetween: 10
 			});
+			
+			// Sort stylesheets
+			this.dom.sidebar.find('[data-prefix="stylesheets"]').sortable({
+				animation: 150,
+				onSort: function() {
+					
+					var order = this.toArray();
+					
+					clearTimeout(FASTyle.orderTimeout);
+					
+					FASTyle.orderTimeout = setTimeout(() => {
+					
+						var params = {
+							module: 'style-fastyle',
+							api: 1,
+							my_post_key: FASTyle.postKey,
+							action: 'saveorder',
+							tid: FASTyle.tid,
+							disporder: order
+						}
+						
+						FASTyle.sendRequest('post', 'index.php', params, () => {});
+					
+					}, 3000);
+					
+				}
+			});
 
-			// Switcher close tabs handler
+			// Close tabs in switcher
 			this.dom.switcher.on('click', '.delete', function(e) {
 
 				e.preventDefault();
+				
+				if (!FASTyle.quickMode && $(this).closest('[data-title]').hasClass('not-saved')) {
+					
+					if (window.confirm(FASTyle.lang.confirm.closeTab) != true) {
+						return false;
+					}
+
+				}
 
 				// Save the current resource's status
 				FASTyle.saveCurrentResource();
@@ -152,6 +193,12 @@ var FASTyle = {};
 			this.dom.switcher.find('.swiper-slide').tipsy({
 				live: true,
 				gravity: 'n',
+				opacity: 1
+			});
+			
+			// Tooltips for icon buttons
+			this.dom.bar.find('.add, .quickmode').tipsy({
+				gravity: 's',
 				opacity: 1
 			});
 
@@ -387,9 +434,8 @@ var FASTyle = {};
 				}
 
 				if (!FASTyle.quickMode && ['revert', 'delete'].indexOf(mode) > -1) {
-
-					var confirm = window.confirm(FASTyle.lang.confirm[mode].replace('{1}', FASTyle.currentResource.title));
-					if (confirm != true) {
+					
+					if (window.confirm(FASTyle.lang.confirm[mode].replace('{1}', FASTyle.currentResource.title)) != true) {
 						return false;
 					}
 
@@ -398,7 +444,6 @@ var FASTyle = {};
 				var data = {
 					module: 'style-fastyle',
 					api: 1,
-					ajax: 1,
 					my_post_key: FASTyle.postKey,
 					title: FASTyle.currentResource.title
 				};
@@ -477,6 +522,9 @@ var FASTyle = {};
 						if (FASTyle.diffMode) {
 							FASTyle.loadNormalEditor();
 						}
+						
+						// Reset the not-saved marker
+						FASTyle.dom.mainContainer.find('[data-title="' + data.title + '"]').removeClass('not-saved');
 
 					}
 
@@ -575,6 +623,7 @@ var FASTyle = {};
 			}
 
 			// Delete template group
+/*
 			this.dom.sidebar.on('click', '.deletegroup', function(e) {
 
 				e.preventDefault();
@@ -601,6 +650,7 @@ var FASTyle = {};
 				return FASTyle.sendRequest('post', 'index.php', data);
 
 			});
+*/
 
 			// Save templates/stylesheets with AJAX
 			var form = $('#fastyle_editor');
