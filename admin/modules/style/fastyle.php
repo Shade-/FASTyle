@@ -46,10 +46,6 @@ $sid = (int) $mybb->input['sid'];
 // API endpoint
 if (isset($mybb->input['api'])) {
 
-	if ($mybb->request_method == 'post' and !verify_post_check($mybb->get_input('my_post_key', true))) {
-		fastyle_message($lang->fastyle_error_post_verify, 'error');
-	}
-
 	$title = $db->escape_string($mybb->get_input('title'));
 
 	switch (get_extension($mybb->get_input('title'))) {
