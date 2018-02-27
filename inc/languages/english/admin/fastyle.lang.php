@@ -8,6 +8,8 @@ $l['fastyle_other_sets'] = "Orphaned or global template sets";
 // Misc
 $l['fastyle_search_asset'] = "Search asset";
 $l['fastyle_add_asset'] = "Add asset";
+$l['fastyle_twigify'] = "Twigify";
+$l['fastyle_psr2'] = "PSR-2";
 $l['fastyle_delete'] = "Delete";
 $l['fastyle_revert'] = "Revert";
 $l['fastyle_diff'] = "Diff";

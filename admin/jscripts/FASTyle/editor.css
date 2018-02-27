@@ -78,17 +78,20 @@ li.expanded.header:not(.search):before {
 .icon-right-open-big:before {
     content: "\6e";
 }
-.icon-js-square:before {
-    content: "\6f";
+.icon-book-open:before {
+  content: "\74";
 }
-.icon-html5:before {
-    content: "\70";
+.icon-menu:before {
+  content: "\6f";
 }
-.icon-css3-alt:before {
-    content: "\71";
+.icon-left-thin:before {
+  content: "\70";
 }
-.icon-cog:before {
-    content: "\72";
+.icon-align-justify:before {
+  content: "\71";
+}
+.icon-link:before {
+  content: "\72";
 }
 li.header:before {
     margin-right: 5px;
@@ -100,7 +103,8 @@ li.header:before {
     width: 100%!important
 }
 .fastyle {
-    position: relative
+    position: relative;
+    overflow: hidden
 }
 .fastyle.full {
     position: fixed;
@@ -110,12 +114,11 @@ li.header:before {
     height: 100%
 }
 .fastyle.full .sidebar {
-    height: -webkit-calc(100vh - 102px);
-    height: calc(100vh - 102px);
+    height: 100vh;
 }
 .fastyle.full .CodeMirror {
-    height: -webkit-calc(100vh - 102px)!important;
-    height: calc(100vh - 102px)!important;
+    height: -webkit-calc(100vh - 126px)!important;
+    height: calc(100vh - 126px)!important;
 }
 .fastyle.full .CodeMirror-merge,
 .fastyle.full .CodeMirror-merge .CodeMirror {
@@ -129,10 +132,10 @@ li.header:before {
     display: flex
 }
 .fastyle .form_row {
-    width: 80%;
+    width: 100%;
     float: left;
     margin: 0;
-    padding: 0 20px;
+    padding: 0 20px 20px;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     background: #19213d;
@@ -149,17 +152,44 @@ li.header:before {
 /* Editor */
 
 .fastyle .sidebar {
-    -webkit-flex-basis: 20%;
-    -ms-flex-preferred-size: 20%;
-    flex-basis: 20%;
-    float: left;
     padding: 0;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     position: relative;
     height: 500px;
-    background: #19213d;
+    background: #29314e;
     overflow-y: auto;
+    left: -30%;
+    top: 0;
+    opacity: 0;
+    min-width: 30%;
+    position: absolute;
+    z-index: 10000000;
+    box-shadow: 15px 0 15px -5px rgba(0,0,0,.2);
+    padding: 0;
+    box-sizing: border-box;
+    transition: .3s all ease;
+}
+.fastyle .sidebar.open {
+	left: 0;
+	opacity: 1
+}
+.fastyle .sidebar ul.search {
+    position: absolute;
+    z-index: 1;
+}
+.fastyle .sidebar ul.search > li {
+    padding: 0
+}
+.fastyle .sidebar ul.search + ul {
+    padding-top: 55px;
+}
+.fastyle .sidebar .search {
+    padding: 12px;
+    background: #2a324e;
+}
+.fastyle .sidebar input[name="search"] + .button {
+    padding: 10px 8px 9px;
 }
 .fastyle .sidebar ul li {
     margin: 0;
@@ -223,6 +253,12 @@ li.header:before {
 .fastyle .sidebar ul li[status="original"].active {
     color: #7a98f7
 }
+.fastyle .sidebar ul li[data-converted="true"]:after,
+.fastyle .sidebar ul li[converted="true"]:after {
+    display: block;
+    content: "Twig";
+    font-size: 9px;
+}
 .fastyle .sidebar ul li .icon-attention {
     color: #adaf7b
 }
@@ -238,7 +274,7 @@ li.header:before {
 .fastyle .sidebar li.header {
     padding: 12px;
     margin: 0;
-    background: #19213d;
+    background: #29314e;
     color: #7e8c98;
     font-size: 9px;
     text-transform: uppercase;
@@ -264,6 +300,16 @@ li.header:before {
     content: "";
     display: block;
     clear: both
+}
+/* Split view */
+.fastyle.split #leftview,
+.fastyle.split #rightview {
+    width: 50%!important;
+    float: left
+}
+.fastyle.split .switcher .side .splitview,
+.fastyle:not(.split) .switcher .side .uniview {
+    color: #8cb3ff
 }
 /* Bar */
 
@@ -376,7 +422,7 @@ li.header:before {
 /* Switcher */
 
 .fastyle .switcher {
-    padding: 0;
+    padding: 10px 0;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     background: #272f4a;
@@ -389,12 +435,25 @@ li.header:before {
 .fastyle .switcher .sidebar .search {
     padding: 10px 12px;
 }
+.fastyle .bar .swiper-button-prev {
+    left: 13%;
+}
 .fastyle .bar .swiper-button-prev,
 .fastyle .bar .swiper-button-next {
-    background: none
+    background: none;
 }
-.fastyle .bar .swiper-button-prev {
-    left: 20%;
+.fastyle .switcher .side {
+    width: 10%;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+.fastyle .switcher .side span {
+    font-size: 18px;
+    margin: 0 6px;
+    cursor: pointer
+}
+.fastyle .switcher .side .uniview {
+    margin-left: 24px
 }
 .fastyle .switcher .content {
     overflow: hidden;
@@ -423,6 +482,32 @@ li.header:before {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
 }
+.fastyle .switcher .content .linked.left,
+.fastyle .switcher .content .linked.left + .linked {
+    border-radius: 3px 0 0 3px;
+    margin-right: 0!important;
+    border: 1px solid rgba(255,255,255,.1);
+    padding: 9px 20px 9px 25px;
+    border-right: none;
+}
+.fastyle .switcher .content .linked.left + .linked {
+    border-radius: 0 3px 3px 0;
+    border-left: none;
+    border-right: 1px solid rgba(255,255,255,.1);
+    margin-right: 10px!important;
+}
+.fastyle .switcher .content .linked.left:after {
+    font-family: "fastyle";
+    content: "\72";
+    position: absolute;
+    right: 0;
+    top: 1px;
+    font-size: 11px;
+    height: 33px;
+    width: 15px;
+    text-align: center;
+    line-height: 33px;
+}
 .fastyle .switcher .delete {
     position: absolute;
     top: 12px;
@@ -444,9 +529,10 @@ li.header:before {
     background: rgba(255, 255, 255, .1);
     color: #fff;
     outline: none;
-    width: 100%;
+    width: 70%;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
+    float: right;
 }
 .fastyle .actions input[type="textbox"] {
     width: auto;

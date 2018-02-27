@@ -59,8 +59,8 @@ var FASTyle = {};
 		resourcesList: {},
 		useEditor: 1,
 		useLocalStorage: 1,
-		currentEditorStatus: {},
 		orderTimeout: null,
+		splitMode: {},
 		swiper: null,
 		lang: {
 			confirm: {
@@ -152,7 +152,10 @@ var FASTyle = {};
 			this.dom.bar = this.dom.mainContainer.find('.bar:not(.switcher)');
 			this.dom.switcher = this.dom.mainContainer.find('.switcher .content .swiper-wrapper');
 
-			this.dom.mergeView = $('#mergeview');
+			this.dom.leftview = $('#leftview');
+			this.dom.rightview = $('#rightview');
+			
+			this.dom.instances = {};
 
 			// SimpleBar for sidebar
 			this.dom.simpleBar = new SimpleBar(this.dom.sidebar[0]);
@@ -168,6 +171,13 @@ var FASTyle = {};
 				keyboard: true,
 				spaceBetween: 10
 			});
+			
+			// Define mixed Twig+HTML
+			if (this.useEditor) {
+				CodeMirror.defineMode("htmltwig", function(config, parserConfig) {
+				  return CodeMirror.overlayMode(CodeMirror.getMode(config, parserConfig.backdrop || "text/html"), CodeMirror.getMode(config, "twig"));
+				});
+			}
 
 			// Sort stylesheets
 			this.dom.sidebar.find('[data-prefix="stylesheets"]').sortable({
@@ -208,12 +218,16 @@ var FASTyle = {};
 					}
 
 				}
+				
+				var name = $(this).closest('[data-title]').data('title');
+				
+				FASTyle.destroySplitview(name);
 
 				// Save the current resource's status
 				FASTyle.saveCurrentResource();
 
 				// Load the new one
-				FASTyle.switcher.remove($(this).closest('[data-title]').data('title'));
+				FASTyle.switcher.remove(name);
 
 				return false;
 
@@ -226,19 +240,15 @@ var FASTyle = {};
 
 			this.resourcesList['ungrouped'] = [];
 
-			this.dom.sidebar.find('li i.icon-attention').tipsy({
-				gravity: 's',
-				opacity: 1
-			});
-
-			this.dom.switcher.find('.swiper-slide').tipsy({
+			// Tooltips
+			this.dom.mainContainer.find('[tooltip-n]').tipsy({
 				live: true,
 				gravity: 'n',
 				opacity: 1
 			});
-
-			// Tooltips for icon buttons
-			this.dom.bar.find('.add, .quickmode').tipsy({
+			
+			this.dom.mainContainer.find('[tooltip-s]').tipsy({
+				live: true,
 				gravity: 's',
 				opacity: 1
 			});
@@ -303,29 +313,42 @@ var FASTyle = {};
 			if (typeof Storage === 'undefined') {
 				this.useLocalStorage = 0;
 			}
-
-			// Load the editor
-			this.loadNormalEditor();
-
+				
 			// Load the previous editor state
 			var currentStorage = this.readLocalStorage();
 
-			try {
-				this.loadResource(currentStorage[this.sid].title);
-			} catch (e) {
-				// No previous state known
-			}
+			// Load the editor
+			$.when(this.loadNormalEditor()).then(() => {
+	
+				try {
+					this.loadResource(currentStorage[this.sid].title);
+				} catch (e) {
+					// No previous state known
+				}
+			
+			});
 
 			// Mark tabs as not saved when edited (just for textareas: the editor handler must be attached every time it's initialized)
 			if (!this.useEditor) {
 
-				this.dom.textarea.on('keydown', function(e) {
+				this.dom.textarea.on('keydown', (e) => {
+					
 					if (e.which !== 0 && e.charCode !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-						FASTyle.dom.mainContainer.find('[data-title].active').addClass('not-saved');
+						this.dom.mainContainer.find('[data-title].active').addClass('not-saved');
 					}
+					
 				});
 
 			}
+			
+			// Toggle sidebar
+			this.dom.mainContainer.find('.toggler').on('click', (e) => {this.toggleSidebar()});
+			
+			// Open split view
+			this.dom.mainContainer.find('.splitview').on('click', (e) => {this.openSplitview()});
+			
+			// Close split view
+			this.dom.mainContainer.find('.uniview').on('click', (e) => {this.destroySplitview()});
 
 			// Load resource
 			this.dom.sidebar.on('click', 'ul [data-title]', function(e) {
@@ -334,6 +357,8 @@ var FASTyle = {};
 
 				// Save the current resource's status
 				FASTyle.saveCurrentResource();
+				
+				FASTyle.toggleSidebar();
 
 				// Load the new one
 				return FASTyle.loadResource($(this).data('title'));
@@ -347,6 +372,8 @@ var FASTyle = {};
 
 				// Save the current resource's status
 				FASTyle.saveCurrentResource();
+				
+				FASTyle.closeSidebar();
 
 				// Load the new one
 				return FASTyle.loadResource($(this).data('title'));
@@ -410,7 +437,7 @@ var FASTyle = {};
 				FASTyle.dom.mainContainer.toggleClass('full');
 
 				if (FASTyle.useEditor) {
-					FASTyle.dom.editor.refresh();
+					FASTyle.dom.currentInstance.refresh();
 				}
 
 				// Remember this editor state across page loads
@@ -439,7 +466,7 @@ var FASTyle = {};
 
 			})
 
-			// Revert/delete/add/diff
+			// Revert/delete/add/diff/twigify
 			this.dom.bar.find('.actions span').on('click', function(e) {
 
 				e.preventDefault();
@@ -472,6 +499,12 @@ var FASTyle = {};
 						return FASTyle.loadDiffMode(FASTyle.currentResource.original);
 					}
 
+				}
+				else if (mode == 'twigify') {
+					return FASTyle.dom.currentInstance.setValue(FASTyle.twigify(FASTyle.dom.currentInstance.getValue()));
+				}
+				else if (mode == 'psr2') {
+					return FASTyle.dom.currentInstance.setValue(FASTyle.psr2(FASTyle.dom.currentInstance.getValue()));
 				}
 
 				if (!FASTyle.quickMode && ['revert', 'delete'].indexOf(mode) > -1) {
@@ -628,7 +661,7 @@ var FASTyle = {};
 					FASTyle.switching = true;
 
 					if (tab.hasClass('active')) {
-						return (FASTyle.useEditor) ? FASTyle.dom.editor.setValue(response.content) : FASTyle.dom.textarea.val(response.content);
+						return (FASTyle.useEditor) ? FASTyle.dom.currentInstance.setValue(response.content) : FASTyle.dom.textarea.val(response.content);
 					}
 
 				});
@@ -726,25 +759,77 @@ var FASTyle = {};
 
 		},
 
-		loadResource: function(name) {
+		loadResource: function(name, openingCachedSplitMode) {
 
 			name = name.trim();
 
-			if (name == this.currentResource.title) {
+			if (name == this.currentResource.title || (this.exists(this.dom.instances.right) && [this.dom.instances.left.title, this.dom.instances.right.title].indexOf(name) > -1)) {
 				return false;
 			}
 
 			var t = this.resources[name];
 
 			// Launch the spinner
-			$('.CodeMirror .overlay').show();
+			var overlay = $(this.dom.currentInstance.getWrapperElement()).find('.overlay');
+			
+			overlay.show();
+
+			if (this.exists(this.dom.instances.right) && !this.exists(this.dom.instances.right.title)) {
+				this.addToSplitMode(name);
+			}
+				
+			// Split mode?
+			var open = instanceToFocus = '';
+			
+			if (!openingCachedSplitMode) {
+					
+				// Is the right instance already occupied by another resource?
+				if (this.exists(this.dom.instances.right) && this.exists(this.dom.instances.right.title) && this.dom.instances.right.title != name) {
+					this.closeSplitview();
+				}
+				
+				$.each(this.splitMode, (left, right) => {
+					
+					if ([left, right].indexOf(name) > -1) {
+						
+						open = (name == left) ? right : left;
+						
+						instanceToFocus = (name == left) ? 'left' : 'right';
+						
+						return this.openSplitview();
+						
+					}
+					
+				});
+				
+			}
+			
+			if (instanceToFocus) {
+				this.dom.currentInstance = this.dom.instances[instanceToFocus];
+			}
+			
+			// Split mode load function
+			var splitLoad = () => {
+					
+				if (open) {
+					
+					// Choose the opposite instance to load this resource in
+					var focus = (name == this.dom.instances.left.title) ? 'right' : 'left';
+					
+					this.dom.currentInstance = this.dom.instances[focus];
+					
+					return this.loadResource(open, true);
+					
+				}
+				
+			};
 
 			if (typeof t !== 'undefined')  {
 
 				// Stop the spinner
-				$('.CodeMirror .overlay').hide();
+				overlay.hide();
 
-				return this.loadResourceInDOM(name, t.content, t.dateline);
+				return $.when(this.loadResourceInDOM(name, t.content, t.dateline)).then(splitLoad);
 
 			} else {
 
@@ -760,14 +845,14 @@ var FASTyle = {};
 				return this.sendRequest('post', 'index.php', data, (response) => {
 
 					// Stop the spinner
-					$('.CodeMirror .overlay').hide();
+					overlay.hide();
 
 					if (response.error) {
 						return false;
 					}
 
-					FASTyle.addToResourceCache(name, response.content, response.dateline);
-					FASTyle.loadResourceInDOM(name, response.content, response.dateline);
+					this.addToResourceCache(name, response.content, response.dateline);
+					return $.when(this.loadResourceInDOM(name, response.content, response.dateline)).then(splitLoad);
 
 				});
 
@@ -776,35 +861,38 @@ var FASTyle = {};
 		},
 
 		loadResourceInDOM: function(name, content, dateline) {
+			
+			var deferred = new $.Deferred();
 
 			this.switching = 1;
 
 			// Set this resource internally
-			this.setCurrentResource(name, dateline);
-
-			this.markAsActive(name);
+			this.setCurrentResource(name);
 
 			// Switch resource in editor/textarea
 			if (this.useEditor) {
 
-				// Return to normal view
+				// Return to normal view if previously we were in diff mode
 				if (this.diffMode) {
 					this.loadNormalEditor();
 				}
 
-				// Switch mode if we have to
-				var ext = this.getExtension(name);
-				var newMode = (ext == 'css') ? 'text/css' : (ext == 'js') ? 'text/javascript' : 'text/html';
+				// Set the current instance title
+				this.dom.currentInstance.title = this.currentResource.title;
 
-				if (this.dom.editor.getOption('mode') != newMode) {
-					this.dom.editor.setOption('mode', newMode);
+				// Switch mode if we have to
+				var newMode = this.chooseMode(name);
+
+				if (this.dom.currentInstance.getOption('mode') != newMode) {
+					this.dom.currentInstance.setOption('mode', newMode);
 				}
 
-				this.dom.editor.setValue(content);
-				this.dom.editor.focus();
-				this.dom.editor.clearHistory();
+				this.dom.currentInstance.setValue(content);
+				this.dom.currentInstance.clearHistory();
 
 				this.applyEditorStatus();
+				
+				this.dom.currentInstance.focus();
 
 			} else {
 
@@ -812,17 +900,27 @@ var FASTyle = {};
 				this.dom.textarea.focus();
 
 			}
-
-			// Remember tab
-			return this.addToLocalStorage({
+			
+			this.addToLocalStorage({
 				title: name
 			});
 
+			// Remember tab
+			return deferred.resolve().promise();
+
+		},
+		
+		addToSplitMode: function(name) {
+			return (this.splitMode[this.currentResource.title] = name);
+		},
+		
+		removeFromSplitMode: function(name) {
+			return delete this.splitMode[name];
 		},
 
 		markAsActive: function(name) {
 
-			if (!name.length) {
+			if (!name) {
 				return false;
 			}
 
@@ -860,18 +958,30 @@ var FASTyle = {};
 			return tab.addClass('active');
 
 		},
+		
+		toggleSidebar: function() {
+			return this.dom.sidebar.toggleClass('open');
+		},
+		
+		closeSidebar: function() {
+			return this.dom.sidebar.removeClass('open');
+		},
 
 		switcher: {
 
 			add: function(name, active) {
 
-				if (!name.length) return false;
+				if (!name) {
+					return false;
+				}
 
-				// Remove any other active tabs
+				// Remove all the active tabs
 				FASTyle.dom.switcher.find('.active').removeClass('active');
 
-				// Load the button in the switcher
+				// Load button in the switcher
 				var tab = FASTyle.dom.switcher.find('[data-title="' + name + '"]');
+					
+				var split = FASTyle.findInSplitMode(name);
 
 				if (!tab.length) {
 
@@ -895,15 +1005,47 @@ var FASTyle = {};
 					});
 
 					var className = (active) ? ' active' : '';
+					var html = '<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '" tooltip-n><i class="delete icon-cancel"></i>' + name + '</div>';
+					
+					// Choose where to place this tab
+					if (!$.isEmptyObject(split)) {
+						
+						FASTyle.dom.switcher.find(FASTyle.buildSelector(split.left)).after(html).addClass('active linked left');
+						FASTyle.dom.switcher.find(FASTyle.buildSelector(split.right)).addClass('linked');
+						
+					}
+					else {
+						FASTyle.dom.switcher.prepend(html);
+					}
 
-					// Add the tab to the DOM
-					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i>' + name + '</div>');
-					FASTyle.swiper.update();
-
-					return true;
+					return FASTyle.swiper.update();
 
 				} else {
-					return tab.addClass('active');
+					
+					// Split mode, rearrange tabs
+					if (!$.isEmptyObject(split)) {
+						
+						var opposite = FASTyle.dom.switcher.find(FASTyle.buildSelector(split.opposite));
+						
+						if (!opposite.length) {
+							return FASTyle.switcher.add(split.opposite);
+						}
+						
+						var left = FASTyle.dom.switcher.find(FASTyle.buildSelector(split.left));
+						var right = FASTyle.dom.switcher.find(FASTyle.buildSelector(split.right));
+						
+						left.addClass('active linked left');
+						right.addClass('active linked');
+						
+						right.insertAfter(left);
+						
+						return FASTyle.swiper.update();
+						
+					}
+					else {
+						return tab.addClass('active');
+					}
+					
 				}
 
 			},
@@ -997,7 +1139,7 @@ var FASTyle = {};
 				return false;
 			}
 
-			this.currentResource = this.resources[name];
+			return (this.currentResource = this.resources[name]);
 
 		},
 
@@ -1006,6 +1148,10 @@ var FASTyle = {};
 		},
 
 		addToResourceCache: function(name, content, dateline) {
+			
+			if (!this.exists(name)) {
+				return false;
+			}
 
 			name = name.trim();
 
@@ -1037,15 +1183,19 @@ var FASTyle = {};
 			return delete this.resources[name];
 
 		},
+		
+		buildSelector: function(name) {
+			return '[data-title="' + name + '"]';
+		},
 
 		saveEditorStatus: function() {
 
 			try {
 
-				this.resources[this.currentResource.title].history = this.dom.editor.getHistory();
-				this.resources[this.currentResource.title].scrollInfo = this.dom.editor.getScrollInfo();
-				this.resources[this.currentResource.title].cursorPosition = this.dom.editor.getCursor();
-				this.resources[this.currentResource.title].selections = this.dom.editor.listSelections();
+				this.resources[this.currentResource.title].history = this.dom.currentInstance.getHistory();
+				this.resources[this.currentResource.title].scrollInfo = this.dom.currentInstance.getScrollInfo();
+				this.resources[this.currentResource.title].cursorPosition = this.dom.currentInstance.getCursor();
+				this.resources[this.currentResource.title].selections = this.dom.currentInstance.listSelections();
 
 			} catch (e) {
 				// currentResource == undefined or resources[currentResource] == undefined
@@ -1061,23 +1211,23 @@ var FASTyle = {};
 
 				// Edit history
 				if (resourceOptions.history) {
-					this.dom.editor.setHistory(resourceOptions.history);
+					this.dom.currentInstance.setHistory(resourceOptions.history);
 				}
 
 				// Scrolling position and editor dimensions
 				if (resourceOptions.scrollInfo) {
-					this.dom.editor.scrollTo(resourceOptions.scrollInfo.left, resourceOptions.scrollInfo.top);
-					this.dom.editor.setSize(resourceOptions.scrollInfo.clientWidth, resourceOptions.scrollInfo.clientHeight);
+					this.dom.currentInstance.scrollTo(resourceOptions.scrollInfo.left, resourceOptions.scrollInfo.top);
+					this.dom.currentInstance.setSize(resourceOptions.scrollInfo.clientWidth, resourceOptions.scrollInfo.clientHeight);
 				}
 
 				// Cursor position
 				if (resourceOptions.cursorPosition) {
-					this.dom.editor.setCursor(resourceOptions.cursorPosition);
+					this.dom.currentInstance.setCursor(resourceOptions.cursorPosition);
 				}
 
 				// Selections
 				if (resourceOptions.selections) {
-					this.dom.editor.setSelections(resourceOptions.selections);
+					this.dom.currentInstance.setSelections(resourceOptions.selections);
 				}
 
 				// Diff mode
@@ -1107,12 +1257,11 @@ var FASTyle = {};
 			this.saveEditorStatus();
 
 			// Destroy the current CodeMirror instance
-			this.dom.editor.toTextArea();
+			this.dom.currentInstance.toTextArea();
 
 			this.dom.textarea.hide();
 
-			var ext = this.getExtension(this.currentResource.title);
-			var mode = (ext == 'css') ? 'text/css' : (ext == 'js') ? 'text/javascript' : 'text/html';
+			var mode = this.chooseMode(this.currentResource.title);
 
 			// Save the original value to the cache
 			try {
@@ -1123,9 +1272,12 @@ var FASTyle = {};
 			} catch (e) {
 				// currentResource == undefined
 			}
+			
+			// Empty the alternative view panel
+			this.dom.rightview.empty();
 
 			// Load the merge view instance
-			this.dom.editor = CodeMirror.MergeView(this.dom.mergeView[0], {
+			this.dom.currentInstance = CodeMirror.mergeview(this.dom.rightview[0], {
 				orig: original,
 				value: this.dom.textarea.val(),
 				connect: 'align',
@@ -1134,7 +1286,7 @@ var FASTyle = {};
 				collapseIdentical: true,
 				foldGutter: true,
 				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-				indentWithTabs: true,
+// 				indentWithTabs: true,
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
@@ -1145,16 +1297,16 @@ var FASTyle = {};
 			this.applyEditorStatus();
 
 			// Add the labels
-			this.dom.mergeView.prepend('<div class="label"><div><span class="button current">' + this.lang.current + '</span></div><div><span class="button original">' + this.lang.original + '</span></div></div>');
+			this.dom.rightview.prepend('<div class="label"><div><span class="button current">' + this.lang.current + '</span></div><div><span class="button original">' + this.lang.original + '</span></div></div>');
 
 			this.dom.textarea.parents('form').on('submit', function() {
 				return FASTyle.dom.textarea.val(FASTyle.getEditorContent());
 			});
 
-			this.dom.editor.on('changes', function(a, b, event) {
+			this.dom.currentInstance.on('changes', function(a, b, event) {
 
 				return (!FASTyle.switching) ?
-					FASTyle.dom.mainContainer.find('[data-title].active').addClass('not-saved') :
+					FASTyle.dom.mainContainer.find('[data-title="' + FASTyle.currentResource.title + '"]').addClass('not-saved') :
 					(FASTyle.switching = 0);
 
 			});
@@ -1168,44 +1320,57 @@ var FASTyle = {};
 		},
 
 		loadNormalEditor: function() {
+			
+			var deferred = new $.Deferred();
 
 			if (!this.useEditor) {
-				return false;
+				return deferred.resolve().promise();
+			}
+
+			this.saveEditorStatus();
+			
+			this.dom.leftview.empty();
+			
+			// Open split view by appending a new textarea
+			if ($('#editor').length == 0) {
+				this.dom.textarea = $('<textarea id="editor" name="editor" value="">').appendTo(this.dom.leftview);
 			}
 
 			// Populate textarea with the current editor value
 			this.dom.textarea.val(this.getEditorContent());
 
-			this.saveEditorStatus();
-
-			var mode = 'text/html';
-			if (typeof this.currentResource.title !== 'undefined') {
-
-				var ext = this.getExtension(this.currentResource.title);
-				mode = (ext == 'css') ? 'text/css' : (ext == 'js') ? 'text/javascript' : 'text/html';
-
-			}
-
-			// Destroy the diff view
-			this.dom.mergeView.empty();
+			var mode = this.chooseMode(this.currentResource.title);
 
 			// Load the standard editor from our textarea
-			this.dom.editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+			this.dom.instances.left = CodeMirror.fromTextArea(document.getElementById("editor"), {
 				lineNumbers: true,
 				lineWrapping: true,
 				foldGutter: true,
 				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-				indentWithTabs: true,
+// 				indentWithTabs: true,
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
 				keyMap: "sublime"
 			});
-
-			this.dom.editor.on('changes', function(a, b, event) {
+			
+			this.dom.currentInstance = this.dom.instances.left;
+			this.dom.instances.left.on('focus', function() {
+				
+				FASTyle.setCurrentResource(FASTyle.dom.instances.left.title);
+				FASTyle.markAsActive(FASTyle.dom.instances.left.title);
+				
+				// Mark the instance we're using
+				FASTyle.instanceInUse = 'left';
+				
+				return (FASTyle.dom.currentInstance = FASTyle.dom.instances.left);
+				
+			});
+			
+			this.dom.instances.left.on('changes', function(a, b, event) {
 
 				return (!FASTyle.switching) ?
-					FASTyle.dom.mainContainer.find('[data-title].active').addClass('not-saved') :
+					FASTyle.dom.mainContainer.find('[data-title="' + FASTyle.dom.instances.left.title + '"]').addClass('not-saved') :
 					(FASTyle.switching = 0);
 
 			});
@@ -1215,15 +1380,176 @@ var FASTyle = {};
 			this.diffMode = 0;
 
 			// Load overlay
-			this.spinner.spin();
-			$('<div class="overlay" />').append(this.spinner.el).hide().prependTo('.CodeMirror');
+			this.addOverlay();
 
 			this.addToLocalStorage({
 				diffMode: 0
 			});
 
-			return this.dom.bar.find('.diff').removeClass('active');
+			this.dom.bar.find('.diff').removeClass('active');
+			
+			return deferred.resolve().promise();
 
+		},
+		
+		openSplitview: function() {
+			
+			var deferred = new $.Deferred();
+			
+			if (!this.useEditor || this.exists(this.dom.instances.right)) {
+				return deferred.resolve().promise();
+			}
+			
+			this.dom.mainContainer.addClass('split');
+			
+			// Refresh the left panel to fit to the new sizing
+			if (this.exists(this.dom.instances.left)) {
+				this.dom.instances.left.refresh();
+			}
+			
+			// Open split view by appending a new textarea
+			if ($('#rightInstance').length == 0) {
+				this.dom.rightview.append('<textarea id="rightInstance" name="rightInstance" value="">');
+			}
+
+			var mode = this.chooseMode(this.currentResource.title);
+
+			// Load the standard editor from our textarea
+			this.dom.instances.right = CodeMirror.fromTextArea(document.getElementById("rightInstance"), {
+				lineNumbers: true,
+				lineWrapping: true,
+				foldGutter: true,
+				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+// 				indentWithTabs: true,
+				indentUnit: 4,
+				mode: mode,
+				theme: "material",
+				keyMap: "sublime"
+			});
+			
+			this.dom.currentInstance = this.dom.instances.right;
+			this.dom.instances.right.on('focus', function() {
+				
+				FASTyle.setCurrentResource(FASTyle.dom.instances.right.title);
+				FASTyle.markAsActive(FASTyle.dom.instances.right.title);
+				
+				// Mark the instance we're using
+				FASTyle.instanceInUse = 'right';
+				
+				return (FASTyle.dom.currentInstance = FASTyle.dom.instances.right);
+				
+			});
+
+			this.dom.instances.right.on('changes', function(a, b, event) {
+
+				return (!FASTyle.switching) ?
+					FASTyle.dom.mainContainer.find('[data-title="' + FASTyle.dom.instances.right.title + '"]').addClass('not-saved') :
+					(FASTyle.switching = 0);
+
+			});
+			
+			this.addOverlay();
+			
+			return deferred.resolve().promise();
+			
+		},
+		
+		closeSplitview: function() {
+			
+			var deferred = $.Deferred();
+			
+			if (!this.useEditor || !this.exists(this.dom.instances.right)) {
+				return deferred.resolve().promise();
+			}
+			
+			this.dom.mainContainer.removeClass('split');
+			
+			// 1. Save
+			$.each(this.dom.instances, (k, v) => {
+				return this.addToResourceCache(v.title, v.getValue());
+			});
+			
+			// Cache the last focused instance locally before it gets wiped
+			var name = (this.dom.instances[this.instanceInUse].title) ? this.dom.instances[this.instanceInUse].title : this.currentResource.title;
+			var t = this.resources[name];
+			
+			// Revert the current instance to the left panel
+			this.dom.currentInstance = this.dom.instances.left;
+			
+			// 2. Destroy
+			this.dom.instances.right.toTextArea();
+			delete this.dom.instances.right;
+			
+			this.dom.rightview.empty();
+			
+			this.dom.instances.left.refresh();
+			
+			return deferred.resolve().promise();
+			
+		},
+		
+		destroySplitview: function(name) {
+			
+			if (!this.exists(this.dom.instances.right) || (name && this.findInSplitMode(name).left)) {
+				return false;
+			}
+				
+			this.removeFromSplitMode(this.dom.instances.left.title);
+			
+			this.dom.switcher.find('[data-title="' + this.dom.instances.left.title + '"], [data-title="' + this.dom.instances.right.title + '"]').removeClass('linked left');
+			
+			this.setCurrentResource(this.dom.instances.left.title);
+			this.markAsActive(this.dom.instances.left.title);
+			this.syncBarStatus();
+			
+			return this.closeSplitview();
+			
+		},
+		
+		findInSplitMode: function(name) {
+			
+			var obj = {};
+			
+			$.each(this.splitMode, (left, right) => {
+				
+				if ([left, right].indexOf(name) > -1) {
+					
+					var current = (name == left) ? left : right;
+					var opposite = (current == left) ? right : left;
+					
+					return (obj = {
+						left: left,
+						right: right,
+						current: current,
+						opposite: opposite
+					});
+					
+				}
+				
+			});
+			
+			return obj;
+			
+		},
+		
+		twigify: function(content) {
+			
+			content = content.replace(/\{\$([^}]+)\}/g, "{{ $1 }}");
+			content = content.replace(/\{\{([^->]*)->([^->]*)\}\}/g, "{{$1.$2}}");
+			content = content.replace(/\['([^\'\]]+)'\]/g, ".$1");
+			
+			return content;
+			
+		},
+		
+		psr2: function(content) {
+			
+			content = content.replace(/(if|while|for|foreach|switch|else)\s*(\(([^{]*?)\)|)(\n*)(\t*)\{/g, "$1 $2 {");
+			content = content.replace(/^\s*$/g, "");
+			content = content.replace(/\t/g, "    ");
+			
+			return content;
+			
 		},
 
 		save: function(e) {
@@ -1328,11 +1654,11 @@ var FASTyle = {};
 				params.stylesheet = content;
 
 			}
-			// Scripts
-			else if (ext == 'js') {
+			// Files
+			else if (['js', 'php', 'twig'].indexOf(ext) > -1) {
 
 				params.module = 'style-fastyle';
-				params.action = 'edit_javascript';
+				params.action = 'edit_file';
 				params.content = content;
 				params.api = 1;
 
@@ -1393,7 +1719,7 @@ var FASTyle = {};
 		},
 
 		getEditorContent: function() {
-			return (this.useEditor && typeof this.dom.editor !== 'undefined') ? this.dom.editor.getValue() : this.dom.textarea.val();
+			return (this.useEditor && typeof this.dom.currentInstance !== 'undefined') ? this.dom.currentInstance.getValue() : this.dom.textarea.val();
 		},
 
 		findResourceGroup: function(title) {
@@ -1453,6 +1779,16 @@ var FASTyle = {};
 
 			return (index > 0) ? index - 1 : index;
 
+		},
+		
+		addOverlay: function() {
+			
+			this.spinner.spin();
+			
+			this.dom.mainContainer.find('.overlay').remove();
+			
+			return $('<div class="overlay" />').append(this.spinner.el).hide().prependTo('.CodeMirror');
+			
 		},
 
 		removeItemFromArray: function(array, value) {
@@ -1616,6 +1952,21 @@ var FASTyle = {};
 
 			return (ext == name) ? '' : ext;
 
+		},
+		
+		chooseMode: function(name) {
+			
+			if (typeof name === 'undefined') {
+				return 'text/html';
+			}
+			
+			var ext = this.getExtension(name);
+			return (ext == 'css') ? 'text/css'
+				: (ext == 'js') ? 'text/javascript'
+				: (ext == 'twig') ? 'htmltwig'
+				: (ext == 'php') ? 'application/x-httpd-php'
+				: 'text/html';
+			
 		},
 
 		message: function(message, error) {

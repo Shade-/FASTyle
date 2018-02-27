@@ -47,11 +47,14 @@ $sid = (int) $mybb->input['sid'];
 if (isset($mybb->input['api'])) {
 
 	$title = $db->escape_string($mybb->get_input('title'));
+	$extension = get_extension($mybb->get_input('title'));
 
-	switch (get_extension($mybb->get_input('title'))) {
+	switch ($extension) {
 
 		case 'js':
-			$mode = 'javascripts';
+		case 'twig':
+		case 'php':
+			$mode = 'files';
 			break;
 
 		case 'css':
@@ -62,6 +65,12 @@ if (isset($mybb->input['api'])) {
 			$mode = 'templates';
 
 	}
+	
+	$pathprefix = ($extension == 'js') ? MYBB_ROOT . 'jscripts/'
+				: ($extension == 'twig') ? MYBB_ROOT . 'inc/views/base/'
+				: MYBB_ROOT . DIRECTORY_SEPARATOR;
+
+	$rpathprefix = str_replace(MYBB_ROOT, '', $pathprefix);
 
 	// Get asset
 	if ($mybb->input['action'] == 'get') {
@@ -78,9 +87,9 @@ if (isset($mybb->input['api'])) {
 			$dateline = $template['dateline'];
 
 		}
-		else if ($mode == 'javascripts') {
+		else if ($mode == 'files') {
 
-			$path = MYBB_ROOT . 'jscripts/' . $mybb->get_input('title');
+			$path = $pathprefix . $mybb->get_input('title');
 
 			if (!is_readable($path)) {
 				fastyle_message($lang->fastyle_error_could_not_fetch_file, 'error');
@@ -153,13 +162,13 @@ if (isset($mybb->input['api'])) {
 			fastyle_message(['message' => $lang->success_template_reverted, 'tid' => $template['tid'], 'content' => $template['template']]);
 
 		}
-		else if ($mode == 'javascripts') {
+		else if ($mode == 'files') {
 
-			$mybb->input['content'] = \fetch_remote_file('https://github.com/mybb/mybb/raw/' . urlencode('mybb_' . $mybb->version_code) . DIRECTORY_SEPARATOR . urlencode('jscripts/' . $mybb->get_input('title')));
+			$mybb->input['content'] = \fetch_remote_file('https://github.com/mybb/mybb/raw/' . urlencode('mybb_' . $mybb->version_code) . DIRECTORY_SEPARATOR . urlencode($rpathprefix . $mybb->get_input('title')));
 
 			if ($mybb->input['content'] != 'Not Found') {
 
-				$mybb->input['action'] = 'edit_javascript';
+				$mybb->input['action'] = 'edit_file';
 				$revert = 1;
 
 			}
@@ -171,8 +180,8 @@ if (isset($mybb->input['api'])) {
 
 	}
 
-	// Edit script
-	if ($mybb->get_input('action') == 'edit_javascript' && $mode == 'javascripts') {
+	// Edit file
+	if ($mybb->get_input('action') == 'edit_file' && $mode == 'files') {
 
 		$content = $mybb->get_input('content');
 
@@ -182,11 +191,9 @@ if (isset($mybb->input['api'])) {
 			fastyle_message($lang->fastyle_error_characters_not_allowed, 'error');
 		}
 
-		$folder = MYBB_ROOT . 'jscripts';
+		if (is_writable($pathprefix)) {
 
-		if (is_writable($folder)) {
-
-			if (file_put_contents($folder . DIRECTORY_SEPARATOR . $title, $content) === false) {
+			if (file_put_contents($pathprefix . $title, $content) === false) {
 				fastyle_message($lang->fastyle_error_could_not_write_to_file, 'error');
 			}
 
@@ -245,13 +252,11 @@ if (isset($mybb->input['api'])) {
 			fastyle_message($lang->success_stylesheet_deleted);
 
 		}
-		else if ($mode == 'javascripts') {
+		else if ($mode == 'files') {
 
-			$folder = MYBB_ROOT . 'jscripts';
+			if (is_writable($pathprefix)) {
 
-			if (is_writable($folder)) {
-
-				$filename = $folder . DIRECTORY_SEPARATOR . $mybb->get_input('title');
+				$filename = $pathprefix . $mybb->get_input('title');
 				$path = dirname($filename);
 
 				@unlink($filename);
@@ -330,8 +335,8 @@ if (isset($mybb->input['api'])) {
 			$content = $db->fetch_field($query, 'template');
 
 		}
-		else if ($mode == 'javascripts') {
-			$content = \fetch_remote_file('https://github.com/mybb/mybb/raw/' . urlencode('mybb_' . $mybb->version_code) . DIRECTORY_SEPARATOR . urlencode('jscripts/' . $mybb->get_input('title')));
+		else if ($mode == 'files') {
+			$content = \fetch_remote_file('https://github.com/mybb/mybb/raw/' . urlencode('mybb_' . $mybb->version_code) . DIRECTORY_SEPARATOR . urlencode($rpathprefix . $mybb->get_input('title')));
 		}
 		else {
 
@@ -406,20 +411,18 @@ if (isset($mybb->input['api'])) {
 			fastyle_message($lang->sprintf($lang->fastyle_success_saved, $title));
 
 		}
-		// JavaScript
-		else if ($mode == 'javascripts') {
+		// Files
+		else if ($mode == 'files') {
 
 			// Remove special characters
 			$title = preg_replace('#([^a-zA-Z0-9-_\.\/]+)#i', '', $mybb->get_input('title'));
 			if (!$title or $title == ".css") {
-				fastyle_message('The script title contains invalid characters. You can only use letters, numbers and underscore.', 'error');
+				fastyle_message('The file title contains invalid characters. You can only use letters, numbers and underscore.', 'error');
 			}
 
-			$folder = MYBB_ROOT . 'jscripts';
+			if (is_writable($pathprefix)) {
 
-			if (is_writable($folder)) {
-
-				$filename = $folder . DIRECTORY_SEPARATOR . $title;
+				$filename = $pathprefix . $title;
 
 				if (file_exists($filename)) {
 					fastyle_message($title . ' already exists', 'error');
@@ -631,6 +634,10 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/search.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/comment.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/sublime.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/twig.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/overlay.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/c-like.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/php.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/merge.js"></script>
 <link rel="stylesheet" type="text/css" href="./jscripts/codemirror/lib/codemirror.css" />
@@ -735,7 +742,7 @@ if ($tid or $sid) {
 
 	}
 
-	$resourcelist = '<ul>';
+	$resourceList = '<ul>';
 
 	// Stylesheets
 	if ($tid) {
@@ -824,8 +831,8 @@ if ($tid or $sid) {
 
 		}
 
-		$resourcelist .= '<li class="header icon">Stylesheets</li>';
-		$resourcelist .= '<ul data-prefix="stylesheets">';
+		$resourceList .= '<li class="header icon">Stylesheets</li>';
+		$resourceList .= '<ul data-prefix="stylesheets">';
 
 		foreach ($ordered_stylesheets as $filename => $style) {
 
@@ -881,7 +888,7 @@ if ($tid or $sid) {
 
 				}
 
-				$inherited .= "'></i>";
+				$inherited .= "' tooltip-s></i>";
 
 			}
 			else {
@@ -971,23 +978,23 @@ if ($tid or $sid) {
 				$attached_to = $lang->attached_to_all_pages;
 			}
 
-			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}' data-id='{$style['sid']}'>{$inherited}{$filename}</li>";
+			$resourceList .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}' data-id='{$style['sid']}'>{$inherited}{$filename}</li>";
 
 		}
 
-		$resourcelist .= '</ul>';
+		$resourceList .= '</ul>';
 
 	}
 
 	// Templates
-	$resourcelist .= "<li class='header icon'>Templates</li>";
-	$resourcelist .= "<ul>";
+	$resourceList .= "<li class='header icon'>Templates</li>";
+	$resourceList .= "<ul>";
 
 	// Global templates
 	if ($sid == -1 and !empty($template_groups[-1]['templates'])) {
 
 		foreach ($template_groups[-1]['templates'] as $template) {
-			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-status='original'>{$template['title']}</li>";
+			$resourceList .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-status='original'>{$template['title']}</li>";
 		}
 
 	}
@@ -1001,7 +1008,7 @@ if ($tid or $sid) {
 			// We can delete this group
 			$deletegroup = /* (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="delete icon-cancel"></i>' :  */'';
 
-			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
+			$resourceList .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
 
 			// Templates for this group exist
 			if (isset($group['templates']) and count($group['templates']) > 0) {
@@ -1009,7 +1016,7 @@ if ($tid or $sid) {
 				$templates = $group['templates'];
 				ksort($templates);
 
-				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'>";
+				$resourceList .= "<ul data-type='templates' data-prefix='{$prefix}'>";
 
 				foreach ($templates as $template) {
 
@@ -1022,31 +1029,45 @@ if ($tid or $sid) {
 						$originalOrModified = ' data-status="original"';
 					}
 
-					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}</li>";
+					$resourceList .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}</li>";
 
 				}
 
-				$resourcelist .= '</ul>';
+				$resourceList .= '</ul>';
 
 			}
 			// No templates in this group
 			else {
-				$resourcelist .= "<ul data-type='templates' data-prefix='{$prefix}'><li>{$lang->fastyle_no_templates_available}</li></ul>";
+				$resourceList .= "<ul data-type='templates' data-prefix='{$prefix}'><li>{$lang->fastyle_no_templates_available}</li></ul>";
 			}
 
-			$resourcelist .= '</li>';
+			$resourceList .= '</li>';
 
 		}
 
 	}
 
-	$resourcelist .= '</ul>';
+	$resourceList .= '</ul>';
+	
+	// Twig
+	$resourceList .= "<li class='header icon'>Twigplates</li>";
+	$resourceList .= "<ul data-prefix='twig'>";
+	
+	build_file_list(MYBB_ROOT . 'inc/views/base');
+	
+	$resourceList .= "</ul>";
+	
+	// PHP
+	$resourceList .= "<li class='header icon'>PHP</li>";
+	$resourceList .= "<ul data-prefix='php'>";
+	
+	build_file_list(MYBB_ROOT);
+	
+	$resourceList .= "</ul>";
 
 	// JavaScripts
-	$resourcelist .= "<li class='header icon'>JavaScripts</li>";
-	$resourcelist .= "<ul data-prefix='javascripts'>";
-
-	$folder = MYBB_ROOT . 'jscripts';
+	$resourceList .= "<li class='header icon'>JavaScripts</li>";
+	$resourceList .= "<ul data-prefix='javascripts'>";
 
 	$originalList = [
 		'jeditable/jeditable.min.js',
@@ -1076,71 +1097,10 @@ if ($tid or $sid) {
 		'thread.js',
 		'usercp.js'
 	];
-
-	function build_scripts_list($folder = '') {
-
-		global $originalList, $resourcelist, $folders;
-
-		if (is_readable($folder)) {
-
-			$files = scandir($folder);
-
-			// . and ..
-			unset($files[0], $files[1]);
-
-			foreach ($files as $key => $file) {
-
-				$relative = str_replace(MYBB_ROOT . 'jscripts' . DIRECTORY_SEPARATOR, '', realpath($folder . DIRECTORY_SEPARATOR . $file));
-
-				// Determine this file status
-				$status = (in_array($relative, $originalList)) ? 'modified' : 'original';
-
-				// File or folder? Folders are grouped on top of a group
-				$path = $folder . DIRECTORY_SEPARATOR . $file;
-				if (is_dir($path)) {
-
-					$folders[] = "<li class='header icon'>{$file}</li>";
-					$folders[] = "<ul>";
-
-					build_scripts_list($path);
-
-					$folders[] = "</ul>";
-
-				}
-				else if (get_extension($file) == 'js') {
-					$_files[] = "<li data-title='{$relative}' data-status='{$status}'>{$file}</li>";
-				}
-
-			}
-
-			if (!empty($folders)) {
-
-				foreach ((array) $folders as $folder) {
-					$resourcelist .= $folder;
-				}
-
-			}
-
-			// If this directory is not empty, add its files and subdirs
-			if (!empty($_files)) {
-
-				foreach ((array) $_files as $file) {
-					$resourcelist .= $file;
-				}
-
-			}
-
-			$folders = $_files = [];
-
-		}
-
-	}
-
-	if (is_dir($folder)) {
-		build_scripts_list($folder);
-	}
-
-	$resourcelist .= "</ul>";
+	
+	build_file_list(MYBB_ROOT . 'jscripts');
+	
+	$resourceList .= "</ul>";
 
 	$form = new Form("index.php", "post", "fastyle_editor");
 
@@ -1148,8 +1108,10 @@ if ($tid or $sid) {
 	echo <<<HTML
 <div class="fastyle">
 	<div class="bar switcher">
-		<div class="sidebar">
-			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" placeholder="{$lang->fastyle_search_asset}" /></li></ul>
+		<div class="side">
+			<span class="toggler icon-menu"></span>
+			<span class="uniview active icon-align-justify" title="Single page view" tooltip-n></span>
+			<span class="splitview icon-book-open" title="Split view" tooltip-n></span>
 		</div>
 		<div class="content">
 			<div class="swiper-wrapper">
@@ -1165,23 +1127,28 @@ if ($tid or $sid) {
 			<span class="attachedto meta"></span>
 		</div>
 		<div class="actions">
+			<span class="button twigify visible" data-mode="twigify">{$lang->fastyle_twigify}</span>
+			<span class="button psr2 visible" data-mode="psr2">{$lang->fastyle_psr2}</span>
 			<span class="button diff" data-mode="diff">{$lang->fastyle_diff}</span>
 			<span class="button revert" data-mode="revert">{$lang->fastyle_revert}</span>
 			<span class="button delete" data-mode="delete">{$lang->fastyle_delete}</span>
 			<input type="submit" class="button visible" name="continue" value="{$lang->fastyle_save}" />
-			<input type="textbox" name="title" /><span class="button add visible" data-mode="add" title="{$lang->fastyle_add_asset}"><i class="icon-plus"></i></span>
-			<span class="button quickmode visible" title="{$lang->fastyle_quick_mode}"><i class="icon-flash"></i></span>
+			<input type="textbox" name="title" /><span class="button add visible" data-mode="add" title="{$lang->fastyle_add_asset}" tooltip-s><i class="icon-plus"></i></span>
+			<span class="button quickmode visible" title="{$lang->fastyle_quick_mode}" tooltip-s><i class="icon-flash"></i></span>
 			<i class="icon-resize-full fullpage"></i>
 		</div>
 	</div>
 	<div>
 		<div class="sidebar" id="sidebar">
-			$resourcelist
+			<ul class="search"><li><input type="textbox" name="search" autocomplete="off" placeholder="{$lang->fastyle_search_asset}" /><span class="button toggler icon-left-thin"></span></li></ul>
+			$resourceList
 			<ul class="nothing-found"><li>{$lang->fastyle_nothing_found}</li></ul>
 		</div>
 		<div class="form_row">
-			$textarea
-			<div id="mergeview"></div>
+			<div id="leftview">
+				$textarea
+			</div>
+			<div id="rightview"></div>
 		</div>
 	</div>
 </div>
@@ -1300,4 +1267,79 @@ function fastyle_build_global_styles()
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simplebar@latest/dist/simplebar.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro" />
 ';
+}
+
+function build_file_list($folder = '', $format = true) {
+
+	global $originalList, $resourceList, $folders;
+	static $unformatted;
+	
+	$originalList = (array) $originalList;
+
+	if (is_dir($folder) and is_readable($folder)) {
+
+		$files = scandir($folder);
+
+		// . and ..
+		unset($files[0], $files[1]);
+
+		foreach ($files as $key => $file) {
+			
+			if (strpos($folder, 'jscripts') !== false) {
+				$relative = str_replace(MYBB_ROOT . 'jscripts' . DIRECTORY_SEPARATOR, '', realpath($folder . DIRECTORY_SEPARATOR . $file));
+			}
+			else if (strpos($folder, 'views/base') !== false) {
+				$relative = str_replace(MYBB_ROOT . 'inc/views/base' . DIRECTORY_SEPARATOR, '', realpath($folder . DIRECTORY_SEPARATOR . $file));
+			}
+			else {
+				$relative = str_replace(MYBB_ROOT, '', realpath($folder . DIRECTORY_SEPARATOR . $file));
+			}
+
+			// Determine this file status
+			$status = (in_array($relative, $originalList)) ? 'modified' : 'original';
+
+			// File or folder? Folders are grouped on top of a group
+			$path = $folder . DIRECTORY_SEPARATOR . $file;
+			if (is_dir($path)) {
+
+				$folders[] = "<li class='header icon'>{$file}</li>";
+				$folders[] = "<ul>";
+
+				build_file_list($path);
+
+				$folders[] = "</ul>";
+
+			}
+			else if (in_array(get_extension($file), ['js', 'php', 'twig', 'php'])) {
+				$unformatted[] = $file;
+				$_files[] = "<li data-title='{$relative}' data-status='{$status}'>{$file}</li>";
+			}
+
+		}
+
+		if (!empty($folders)) {
+
+			foreach ((array) $folders as $folder) {
+				$resourceList .= $folder;
+			}
+
+		}
+
+		// If this directory is not empty, add its files and subdirs
+		if (!empty($_files)) {
+
+			foreach ((array) $_files as $file) {
+				$resourceList .= $file;
+			}
+
+		}
+
+		$folders = $_files = [];
+
+	}
+	
+	if ($format == false) {
+		return $unformatted;
+	}
+
 }
