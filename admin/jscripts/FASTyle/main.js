@@ -1537,6 +1537,7 @@ var FASTyle = {};
 			content = content.replace(/\{\$([^}]+)\}/g, "{{ $1 }}");
 			content = content.replace(/\{\{([^->]*)->([^->]*)\}\}/g, "{{$1.$2}}");
 			content = content.replace(/\['([^\'\]]+)'\]/g, ".$1");
+			content = content.replace(/\t/g, "    ");
 			
 			return content;
 			
@@ -1545,8 +1546,11 @@ var FASTyle = {};
 		psr2: function(content) {
 			
 			content = content.replace(/(if|while|for|foreach|switch|else)\s*(\(([^{]*?)\)|)(\n*)(\t*)\{/g, "$1 $2 {");
+			content = content.replace(/\}(\n|\t|\s)*else([^{])*\{/g, "} else$1{");
 			content = content.replace(/^\s*$/g, "");
 			content = content.replace(/\t/g, "    ");
+			content = content.replace(/else(\s*)if/g, "elseif");
+			content = content.replace(/else(\s*)\{/g, "else {");
 			
 			return content;
 			
