@@ -1538,9 +1538,9 @@ var FASTyle = {};
 			content = content.replace(/\{\{([^->]*)->([^->]*)\}\}/g, "{{$1.$2}}");
 			content = content.replace(/\['([^\'\]]+)'\]/g, ".$1");
 			content = content.replace(/\t/g, "    ");
-			content = content.replace("&&", "and");
-			content = content.replace("||", "or");
-			content = content.replace(/^\s*$/g, "");
+			content = content.replace(/\&\&/g, "and");
+			content = content.replace(/\|\|/g, "or");
+			content = content.replace(/^\s*$/gm, "");
 			
 			return content;
 			
@@ -1550,10 +1550,10 @@ var FASTyle = {};
 			
 			content = content.replace(/\}(\n|\t|\s)*else([^{]*)\{/g, "} else$2{");
 			content = content.replace(/(if|while|for|foreach|switch|else)\s*(\(([^{]*?)\)|)(\n*)(\t*)\{/g, "$1 $2 {");
-			content = content.replace(/^\s*$/g, "");
 			content = content.replace(/\t/g, "    ");
 			content = content.replace(/else(\s*)if/g, "elseif");
 			content = content.replace(/else(\s*)\{/g, "else {");
+			content = content.replace(/^\s*$/gm, "");
 			
 			return content;
 			
