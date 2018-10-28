@@ -147,7 +147,8 @@ li.header:before {
     margin: 0;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    list-style-type: none
+    list-style-type: none;
+    overflow-y: scroll
 }
 /* Editor */
 
@@ -158,7 +159,7 @@ li.header:before {
     position: relative;
     height: 500px;
     background: #29314e;
-    overflow-y: auto;
+    overflow-y: scroll;
     left: -30%;
     top: 0;
     opacity: 0;
