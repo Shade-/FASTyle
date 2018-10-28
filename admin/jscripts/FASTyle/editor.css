@@ -144,7 +144,8 @@ li.header:before {
     margin: 0;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    list-style-type: none
+    list-style-type: none;
+    overflow: scroll
 }
 /* Editor */
 
@@ -159,7 +160,7 @@ li.header:before {
     position: relative;
     height: 500px;
     background: #19213d;
-    overflow-y: auto;
+    overflow-y: scroll
 }
 .fastyle .sidebar ul li {
     margin: 0;
