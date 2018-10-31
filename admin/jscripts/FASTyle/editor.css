@@ -159,9 +159,9 @@ li.header:before {
     position: relative;
     height: 500px;
     background: #19213d;
-    overflow-y: scroll
+    overflow-y: auto
 }
-.fastyle .sidebar ul {
+.fastyle .sidebar .simplebar-content {
 	overflow-y: scroll!important
 }
 .fastyle .sidebar ul li {
