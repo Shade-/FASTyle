@@ -2,7 +2,7 @@
 
 > **MyBB compatible versions**  1.8.*  
 > **Minimum PHP version required**  5.4  
-> **Version** 2.0  
+> **Version** 2.1  
 
 ![](https://i.imgur.com/j8EgyNi.png)
 

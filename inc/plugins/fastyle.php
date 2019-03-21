@@ -4,7 +4,7 @@
  * An all-in-one utility to improve and speed up stylesheets, settings and templates management.
  *
  * @package FASTyle
- * @author  Shade <legend_k@live.it>
+ * @author  Shade <shad3-@outlook.com>
  * @license http://opensource.org/licenses/mit-license.php MIT license
  * @version 2.0
  */
@@ -24,7 +24,7 @@ function fastyle_info()
 		'description' => 'An all-in-one utility to improve and speed up stylesheets, settings and templates management.',
 		'author' => 'Shade',
 		'authorsite' => 'https://www.mybboost.com',
-		'version' => '2.0',
+		'version' => '2.1',
 		'codename' => 'fastyle',
 		'compatibility' => '18*'
 	];

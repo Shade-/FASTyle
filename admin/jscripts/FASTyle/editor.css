@@ -159,10 +159,10 @@ li.header:before {
     position: relative;
     height: 500px;
     background: #19213d;
-    overflow-y: auto
+    overflow: scroll;
 }
 .fastyle .sidebar .simplebar-content {
-	overflow-y: scroll!important
+    overflow: scroll!important
 }
 .fastyle .sidebar ul li {
     margin: 0;
@@ -252,10 +252,10 @@ li.header:before {
     margin: 0 0 0 5px
 }
 .fastyle .sidebar li.header+ul {
-    display: none
+    display: none!important
 }
 .fastyle .sidebar li.header.expanded+ul {
-    display: block
+    display: block!important
 }
 .fastyle .sidebar li+ul .header {
     padding-left: 23px

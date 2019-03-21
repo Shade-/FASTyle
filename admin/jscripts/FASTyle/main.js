@@ -232,7 +232,7 @@ var FASTyle = {};
 			});
 
 			this.dom.switcher.find('.swiper-slide').tipsy({
-				live: true,
+				live: '.swiper-slide',
 				gravity: 'n',
 				opacity: 1
 			});
@@ -1138,7 +1138,9 @@ var FASTyle = {};
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
-				keyMap: "sublime"
+				keyMap: "sublime",
+				autoCloseTags: true,
+				autoCloseBrackets: true
 			}).editor();
 
 			// Reapply the previous editor status
@@ -1199,7 +1201,9 @@ var FASTyle = {};
 				indentUnit: 4,
 				mode: mode,
 				theme: "material",
-				keyMap: "sublime"
+				keyMap: "sublime",
+				autoCloseTags: true,
+				autoCloseBrackets: true
 			});
 
 			this.dom.editor.on('changes', function(a, b, event) {
