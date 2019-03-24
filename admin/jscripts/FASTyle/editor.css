@@ -565,3 +565,46 @@ li.header:before {
 .jGrowl-notification.ui-state-error:before {
     background: #c34156
 }
+
+
+
+/* width */
+
+*::-webkit-scrollbar {
+    width: 10px;
+}
+
+
+/* Track */
+
+*::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+
+/* Handle */
+
+*::-webkit-scrollbar-thumb {
+    background: rgb(110, 94, 148);
+}
+
+
+/* Handle on hover */
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgb(52, 37, 92);
+}
+
+
+/* Fixed overflow */
+
+#sidebar,
+.sidebar,
+body {
+    overflow: hidden !important;
+}
+
+.CodeMirror-vscrollbar {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
