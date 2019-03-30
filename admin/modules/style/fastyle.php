@@ -622,15 +622,17 @@ if ($tid or $sid) {
 <script type="text/javascript" src="./jscripts/codemirror/mode/javascript/javascript.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/css/css.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/mode/htmlmixed/htmlmixed.js"></script>
-<script type="text/javascript" src="./jscripts/codemirror/addon/dialog/dialog.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/search/searchcursor.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldcode.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/xml-fold.js"></script>
 <script type="text/javascript" src="./jscripts/codemirror/addon/fold/foldgutter.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/dialog.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/mark-selection.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/search.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/comment.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/sublime.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/closetag.js"></script>
+<script type="text/javascript" src="./jscripts/FASTyle/codemirror/closebrackets.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
 <script type="text/javascript" src="./jscripts/FASTyle/codemirror/merge.js"></script>
 <link rel="stylesheet" type="text/css" href="./jscripts/codemirror/lib/codemirror.css" />
@@ -971,7 +973,7 @@ if ($tid or $sid) {
 				$attached_to = $lang->attached_to_all_pages;
 			}
 
-			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}' data-id='{$style['sid']}'>{$inherited}{$filename}</li>";
+			$resourcelist .= "<li data-title='{$filename}'{$modified} data-attachedto='{$attached_to}' data-id='{$style['sid']}'><i class='fab fa-css3-alt'></i> {$inherited}{$filename}</li>";
 
 		}
 
@@ -987,7 +989,7 @@ if ($tid or $sid) {
 	if ($sid == -1 and !empty($template_groups[-1]['templates'])) {
 
 		foreach ($template_groups[-1]['templates'] as $template) {
-			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-status='original'>{$template['title']}</li>";
+			$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}' data-status='original'><i class='fas fa-file-code'></i> {$template['title']}</li>";
 		}
 
 	}
@@ -1001,7 +1003,7 @@ if ($tid or $sid) {
 			// We can delete this group
 			$deletegroup = /* (isset($group['isdefault']) && !$group['isdefault']) ? '<i class="delete icon-cancel"></i>' :  */'';
 
-			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'>{$title}{$deletegroup}</li>";
+			$resourcelist .= "<li class='header icon' data-gid='{$group['gid']}'><i class='fas fa-folder-open'></i> {$title}{$deletegroup}</li>";
 
 			// Templates for this group exist
 			if (isset($group['templates']) and count($group['templates']) > 0) {
@@ -1022,7 +1024,7 @@ if ($tid or $sid) {
 						$originalOrModified = ' data-status="original"';
 					}
 
-					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}>{$template['title']}</li>";
+					$resourcelist .= "<li data-tid='{$template['tid']}' data-title='{$template['title']}'{$originalOrModified}><i class='far fa-file'></i> {$template['title']}</li>";
 
 				}
 
@@ -1099,7 +1101,7 @@ if ($tid or $sid) {
 				$path = $folder . DIRECTORY_SEPARATOR . $file;
 				if (is_dir($path)) {
 
-					$folders[] = "<li class='header icon'>{$file}</li>";
+					$folders[] = "<li class='header icon'><i class='fas fa-folder-open'></i> {$file}</li>";
 					$folders[] = "<ul>";
 
 					build_scripts_list($path);
@@ -1108,7 +1110,7 @@ if ($tid or $sid) {
 
 				}
 				else if (get_extension($file) == 'js') {
-					$_files[] = "<li data-title='{$relative}' data-status='{$status}'>{$file}</li>";
+					$_files[] = "<li data-title='{$relative}' data-status='{$status}'><i class='fab fa-js-square'></i> {$file}</li>";
 				}
 
 			}
@@ -1146,44 +1148,44 @@ if ($tid or $sid) {
 
 	$textarea = $form->generate_text_area('editor', '', ['id' => 'editor', 'style' => 'width: 100%; height: 500px']);
 	echo <<<HTML
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
 <div class="fastyle">
-	<div class="bar switcher">
-		<div class="sidebar">
-			<ul><li class="search"><input type="textbox" name="search" autocomplete="off" placeholder="{$lang->fastyle_search_asset}" /></li></ul>
-		</div>
-		<div class="content">
-			<div class="swiper-wrapper">
-		    </div>
-		</div>
-	    <div class="icon-left-open-big swiper-button-prev"></div>
-	    <div class="icon-right-open-big swiper-button-next"></div>
+	<div class="sidebar" id="sidebar">
+	    <ul><li class="search"><input type="textbox" name="search" autocomplete="off" placeholder="{$lang->fastyle_search_asset}" /></li></ul>
+		$resourcelist
+		<ul class="nothing-found"><li>{$lang->fastyle_nothing_found}</li></ul>
 	</div>
-	<div class="bar top">
-		<div class="label">
-			<span class="title"></span>
-			<span class="dateline meta"></span>
-			<span class="attachedto meta"></span>
-		</div>
-		<div class="actions">
-			<span class="button diff" data-mode="diff">{$lang->fastyle_diff}</span>
-			<span class="button revert" data-mode="revert">{$lang->fastyle_revert}</span>
-			<span class="button delete" data-mode="delete">{$lang->fastyle_delete}</span>
-			<input type="submit" class="button visible" name="continue" value="{$lang->fastyle_save}" />
-			<input type="textbox" name="title" /><span class="button add visible" data-mode="add" title="{$lang->fastyle_add_asset}"><i class="icon-plus"></i></span>
-			<span class="button quickmode visible" title="{$lang->fastyle_quick_mode}"><i class="icon-flash"></i></span>
-			<i class="icon-resize-full fullpage"></i>
-		</div>
-	</div>
-	<div>
-		<div class="sidebar" id="sidebar">
-			$resourcelist
-			<ul class="nothing-found"><li>{$lang->fastyle_nothing_found}</li></ul>
-		</div>
-		<div class="form_row">
-			$textarea
-			<div id="mergeview"></div>
-		</div>
-	</div>
+	<div class="content">
+    	<div class="bar switcher">
+    		<div class="content">
+    			<div class="swiper-wrapper"></div>
+    		</div>
+    	    <div class="icon-left-open-big swiper-button-prev"></div>
+    	    <div class="icon-right-open-big swiper-button-next"></div>
+    	</div>
+    	<div class="bar top">
+    		<div class="label">
+    			<span class="title"></span>
+    			<span class="dateline meta"></span>
+    			<span class="attachedto meta"></span>
+    		</div>
+    		<div class="actions">
+    			<span class="button diff" data-mode="diff">{$lang->fastyle_diff}</span>
+    			<span class="button revert" data-mode="revert">{$lang->fastyle_revert}</span>
+    			<span class="button delete" data-mode="delete">{$lang->fastyle_delete}</span>
+    			<input type="submit" class="button visible" name="continue" value="{$lang->fastyle_save}" />
+    			<input type="textbox" name="title" /><span class="button add visible" data-mode="add" title="{$lang->fastyle_add_asset}"><i class="fas fa-plus"></i></span>
+    			<span class="button quickmode visible" title="{$lang->fastyle_quick_mode}"><i class="fas fa-tachometer-alt"></i></span>
+    			<i class="fas fa-expand fullpage"></i>
+    		</div>
+    	</div>
+    	<div>
+    		<div class="form_row">
+    			$textarea
+    			<div id="mergeview"></div>
+    		</div>
+    	</div>
+    </div>
 </div>
 HTML;
 

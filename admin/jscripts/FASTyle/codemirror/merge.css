@@ -98,13 +98,13 @@
 }
 .CodeMirror-merge-r-inserted,
 .CodeMirror-merge-l-inserted {
-    background: #aace76;
+    background: #b8de81;
     color: #424242;
 }
 .CodeMirror-merge-r-deleted,
 .CodeMirror-merge-l-deleted {
-    background: #ce7676;
-    color: #424242;
+    background: #d48383;
+    color: #313131;
 }
 .CodeMirror-merge-r-chunk {
     background: rgba(255, 255, 255, 0.05)
@@ -226,6 +226,6 @@
 }
 .cm-s-material .CodeMirror-merge-r-deleted.cm-error,
 .cm-s-material .CodeMirror-merge-r-deleted.cm-tag {
-    color: #424242;
-    background: #ce7676;
+    color: #313131;
+    background: #d38383;
 }

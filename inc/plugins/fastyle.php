@@ -6,7 +6,7 @@
  * @package FASTyle
  * @author  Shade <shad3-@outlook.com>
  * @license http://opensource.org/licenses/mit-license.php MIT license
- * @version 2.0
+ * @version 2.2
  */
 
 if (!defined('IN_MYBB')) {
@@ -24,7 +24,7 @@ function fastyle_info()
 		'description' => 'An all-in-one utility to improve and speed up stylesheets, settings and templates management.',
 		'author' => 'Shade',
 		'authorsite' => 'https://www.mybboost.com',
-		'version' => '2.1',
+		'version' => '2.2',
 		'codename' => 'fastyle',
 		'compatibility' => '18*'
 	];

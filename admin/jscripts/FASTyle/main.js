@@ -414,7 +414,7 @@ var FASTyle = {};
 				}
 
 				// Remember this editor state across page loads
-				var active = ($(this).hasClass('icon-resize-full')) ? 1 : 0;
+				var active = ($(this).hasClass('fa-expand')) ? 1 : 0;
 
 				FASTyle.addToLocalStorage({
 					fullPage: active
@@ -422,7 +422,7 @@ var FASTyle = {};
 
 				FASTyle.swiper.update();
 
-				return (active) ? $(this).removeClass('icon-resize-full').addClass('icon-resize-small') : $(this).removeClass('icon-resize-small').addClass('icon-resize-full');
+				return (active) ? $(this).removeClass('fa-expand').addClass('fa-compress') : $(this).removeClass('fa-compress').addClass('fa-expand');
 
 			});
 
@@ -897,7 +897,7 @@ var FASTyle = {};
 					var className = (active) ? ' active' : '';
 
 					// Add the tab to the DOM
-					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete icon-cancel"></i>' + name + '</div>');
+					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete fas fa-times"></i>' + name + '</div>');
 					FASTyle.swiper.update();
 
 					return true;
