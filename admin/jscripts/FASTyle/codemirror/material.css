@@ -1,13 +1,13 @@
 .cm-s-material.CodeMirror {
-    background-color: #455463;
+    background-color: #2d3c46;
     color: rgba(233, 237, 237, 1);
     line-height: 1.8;
     font-family: 'Source Code Pro', monospace;
 }
 .cm-s-material .CodeMirror-gutters {
-    background: #455463;
+    background: #2d3c46;
     color: #535d7d;
-    border-right: 10px solid #455463;
+    border-right: 10px solid #2d3c46;
 }
 .cm-s-material .CodeMirror-guttermarker,
 .cm-s-material .CodeMirror-guttermarker-subtle,

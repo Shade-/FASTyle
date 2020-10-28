@@ -226,7 +226,7 @@ var FASTyle = {};
 
 			this.resourcesList['ungrouped'] = [];
 
-			this.dom.sidebar.find('li i.icon-attention').tipsy({
+			this.dom.sidebar.find('li i.fa-exclamation-triangle').tipsy({
 				gravity: 's',
 				opacity: 1
 			});
@@ -897,7 +897,7 @@ var FASTyle = {};
 					var className = (active) ? ' active' : '';
 
 					// Add the tab to the DOM
-					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><i class="delete fas fa-times"></i>' + name + '</div>');
+					FASTyle.dom.switcher.prepend('<div data-title="' + name + '" title="' + name + '" class="swiper-slide' + className + '"><a><i class="delete fas fa-times"></i>' + name + '</a></div>');
 					FASTyle.swiper.update();
 
 					return true;
@@ -1246,7 +1246,7 @@ var FASTyle = {};
 
 			if (!FASTyle.dom.mainContainer.hasClass('full')) {
 
-				// Set up the container to be as much similar to the container 
+				// Set up the container to be as much similar to the container
 				var spinnerContainer = $('<div />').css({
 					width: saveButton.outerWidth(true),
 					height: saveButton.outerHeight(true),

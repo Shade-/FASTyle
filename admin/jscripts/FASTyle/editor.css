@@ -1,84 +1,36 @@
-@charset "UTF-8";
-@font-face {
-    font-family: "fastyle";
-    src: url("fonts/fastyle.eot");
-    src: url("fonts/fastyle.eot?#iefix") format("embedded-opentype"), url("fonts/fastyle.woff") format("woff"), url("fonts/fastyle.ttf") format("truetype"), url("fonts/fastyle.svg#fastyle") format("svg");
-    font-weight: normal;
-    font-style: normal
-}
-[data-icon]:before {
-    font-family: "fastyle" !important;
-    content: attr(data-icon);
-    font-style: normal !important;
-    font-weight: normal !important;
-    font-variant: normal !important;
-    text-transform: none !important;
-    speak: none;
+.jGrowl-notification:before,
+li.header:not(.search):before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
     line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale
-}
-[class^="icon-"]:before,
-[class*=" icon-"]:before,
-.icon:before,
-.jGrowl-notification:before {
-    font-family: "fastyle" !important;
-    font-style: normal !important;
-    font-weight: normal !important;
-    font-variant: normal !important;
-    text-transform: none !important;
-    speak: none;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale
 }
 .jGrowl-notification.ui-state-error:before {
-    content: "\61"
+    content: "\f00d"
 }
-.icon-right-open:before,
-li.header:not(.search):before {
-    content: "\65"
-}
-.icon-down-open:before,
-li.expanded.header:not(.search):before {
-    content: "\64"
-}
-.icon-attach:before {
-    content: "\67"
-}
-.icon-attention:before {
-    content: "\68"
-}
-.icon-check:before,
 .jGrowl-notification.ui-state-highlight:before {
-    content: "\69"
+    content: "\f00c"
 }
-.icon-down-open-big:before {
-    content: "\6b";
+li.header:not(.search):before {
+    content: "\f054"
 }
-.icon-up-open-big:before {
-    content: "\6c";
-}
-.icon-left-open-big:before {
-    content: "\6d";
-}
-.icon-right-open-big:before {
-    content: "\6e";
-}
-.icon-cog:before {
-    content: "\72";
+li.expanded.header:not(.search):before {
+    content: "\f078"
 }
 li.header:before {
-    margin-right: 5px;
-    position: relative;
-    top: 1px
+    margin-right: 10px;
+    font-size: 8px;
+    width: 10px;
+    text-align: center;
 }
 .CodeMirror {
     height: 500px!important;
     width: 100%!important
 }
 .fastyle {
-    position: relative
+    position: relative;
+    background: #3d4c56;
+    -webkit-border-radius: 10px;
+            border-radius: 10px;
 }
 .fastyle > .content {
     width: 80%;
@@ -89,27 +41,28 @@ li.header:before {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%
+    height: 100%;
+    -webkit-border-radius: 0;
+            border-radius: 0
 }
 .fastyle.full .sidebar {
-    height: 100vh;
     height: 100vh
 }
 .fastyle.full .CodeMirror {
-    height: -webkit-calc(100vh - 95px)!important;
-    height: calc(100vh - 95px)!important
+    height: -webkit-calc(100vh - 85px)!important;
+    height: calc(100vh - 85px)!important
 }
 .fastyle.full .CodeMirror-merge,
 .fastyle.full .CodeMirror-merge .CodeMirror {
-    height: -webkit-calc(100vh - 125px)!important;
-    height: calc(100vh - 125px)!important;
+    height: -webkit-calc(100vh - 115px)!important;
+    height: calc(100vh - 115px)!important;
 }
 .fastyle .form_row {
     margin: 0;
     padding: 0 20px;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    background: #455463;
+    background: #2d3b46;
 }
 .fastyle ul,
 .fastyle li {
@@ -131,43 +84,96 @@ li.header:before {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     position: relative;
-    background: #afbac4;
     overflow-y: auto;
     width: 20%;
-    height: 595px
+    height: 585px;
+    -webkit-border-radius: 10px;
+            border-radius: 10px;
+}
+.fastyle.full .sidebar {
+    -webkit-border-radius: 0;
+            border-radius: 0
 }
 .fastyle .sidebar .simplebar-content {
     overflow-y: scroll!important
 }
+.fastyle .sidebar ul.search + ul {
+    margin-top: 50px;
+}
 .fastyle .sidebar ul li {
     margin: 0;
-    display: block;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
     cursor: pointer;
-    padding: 10px 25px;
+    padding: 10px 25px 10px 30px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #546a80;
-    font-size: 10px;
+    color: #a5afb5;
+    font-size: 11px;
     position: relative;
     width: auto;
     font-weight: 500;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+        -ms-flex-align: center;
+            align-items: center;
+}
+.fastyle .sidebar ul li.tier-0 {
+    margin-left: -15px
+}
+.fastyle .sidebar ul li.tier-1 {
+    margin-left: 0px
+}
+.fastyle .sidebar ul li.tier-2 {
+    margin-left: 20px
+}
+.fastyle .sidebar ul li.tier-3 {
+    margin-left: 40px
+}
+.fastyle .sidebar ul li.tier-4 {
+    margin-left: 60px
 }
 .fastyle .sidebar ul li.active {
     color: #ffffff;
     font-weight: bold;
-    background: rgb(69, 84, 99);
-    -webkit-border-radius: 4px 0 0 4px;
-    border-radius: 4px 0 0 4px;
-    margin: 0 0 0 10px;
-    padding: 10px 25px 10px 15px;
+    background: #2d3c46;
+    -webkit-border-radius: 6px 0 0 6px;
+            border-radius: 6px 0 0 6px;
+    margin-left: 15px;
+    padding-left: 15px
+}
+.fastyle .sidebar ul li.active.tier-0 {
+    margin-left: 0
+}
+.fastyle .sidebar ul li.active.tier-2 {
+    margin-left: 35px
+}
+.fastyle .sidebar ul li.active.tier-3 {
+    margin-left: 55px
+}
+.fastyle .sidebar ul li.active.tier-4 {
+    margin-left: 75px
+}
+.fastyle .sidebar .subgroup {
+    text-transform: uppercase;
+    font-weight: 700;
+    opacity: 0.8;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+    padding-left: 25px;
+    font-size: 9px;
+}
+.fastyle .sidebar ul li i {
+    padding-right: 10px;
+    color: #707f8a;
 }
 .fastyle .switcher .content > div > div.not-saved,
 .fastyle .sidebar ul li.not-saved {
     font-style: italic
 }
-.fastyle .sidebar ul li.not-saved:after,
-.fastyle .switcher .content > div > div.not-saved:after {
+.fastyle .sidebar ul li.not-saved:after, .fastyle .switcher .content > div > div.not-saved a:after {
     content: '';
     width: 7px;
     height: 7px;
@@ -177,7 +183,7 @@ li.header:before {
     border-radius: 999em;
     position: absolute;
     top: 13px;
-    right: 20px;
+    right: 10px;
 }
 .fastyle .switcher .content > div > div.not-saved {
     padding-right: 25px
@@ -188,24 +194,19 @@ li.header:before {
 }
 .fastyle .sidebar ul li[data-status="modified"],
 .fastyle .sidebar ul li[status="modified"] {
-    color: #d5fb9e;
-}
-.fastyle .sidebar ul li[data-status="modified"].active,
-.fastyle .sidebar ul li[status="modified"].active {
-    color: #aed379;
+    color: #c3de82;
 }
 .fastyle .sidebar ul li[data-status="original"],
 .fastyle .sidebar ul li[status="original"] {
-    color: #485ea5
+    color: #75b9e8;
 }
-.fastyle .sidebar ul li[data-status="original"].active,
-.fastyle .sidebar ul li[status="original"].active {
-    color: #7a98f7
-}
-.fastyle .sidebar ul li .icon-attention {
+.fastyle .sidebar ul li .fa-exclamation-triangle {
     color: #fff230;
+    float: right;
+    font-size: 11px;
+    margin: 0 0 0 5px
 }
-.fastyle .sidebar ul li.active .icon-attention {
+.fastyle .sidebar ul li.active .fa-exclamation-triangle {
     color: #fff077
 }
 .fastyle .sidebar ul li .action {
@@ -218,11 +219,6 @@ li.header:before {
     padding: 10px;
     margin: 0
 }
-.fastyle .sidebar li i[class*="icon-"] {
-    float: right;
-    font-size: 11px;
-    margin: 0 0 0 5px
-}
 .fastyle .sidebar li.header+ul {
     display: none!important
 }
@@ -230,7 +226,7 @@ li.header:before {
     display: block!important
 }
 .fastyle .sidebar li+ul .header {
-    padding-left: 23px
+    padding-left: 15px
 }
 .fastyle .sidebar li+ul ul {
     padding-left: 20px;
@@ -243,12 +239,15 @@ li.header:before {
 /* Bar */
 
 .fastyle .bar {
-    background: #455463;
+    background: #2d3b46;
     color: #fff;
     width: 100%;
     padding: 12px 15px;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
     display: flex
 }
 .fastyle .bar > * {
@@ -289,6 +288,8 @@ li.header:before {
 }
 .fastyle .bar.top {
     min-height: 50px;
+    -webkit-border-radius: 10px 10px 0 0;
+            border-radius: 10px 10px 0 0;
 }
 .fastyle .bar.bottom {
     -webkit-box-pack: end;
@@ -308,7 +309,7 @@ li.header:before {
     margin: 0 4px;
     display: inline-block;
     cursor: pointer;
-    color: #455463;
+    color: #2d3b46;
     border: none;
     font-size: 12px;
     outline: none;
@@ -353,20 +354,70 @@ li.header:before {
 /* Switcher */
 
 .fastyle .switcher {
-    padding: 10px 0 0 0;
+    padding: 0;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-    background: #ced5db;
+    background: #3d4c56;
     position: relative;
-    color: #455463;
+    height: 45px;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: end;
+    -webkit-align-items: flex-end;
+        -ms-flex-align: end;
+            align-items: flex-end;
+    -webkit-border-radius: 10px;
+            border-radius: 10px;
 }
-.fastyle .switcher .sidebar .search {
-    padding: 0 12px;
+.fastyle.full .switcher {
+    -webkit-border-radius: 0;
+            border-radius: 0
+}
+.fastyle .sidebar .search {
+    position: absolute;
+    width: 100%;
+    background: #3d4c56;
+    z-index: 999;
+    height: 45px;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+        -ms-flex-align: center;
+            align-items: center;
+    top: 0;
+    left: 0;
+}
+.fastyle.full .sidebar .search {
+    position: fixed;
+    width: 20%
+}
+.fastyle .sidebar .search li {
+    width: 100%;
+    padding: 0 15px;
+}
+.fastyle .sidebar .search li input[type="textbox"] {
+    background: #2d3c46;
 }
 .fastyle .bar .swiper-button-prev,
 .fastyle .bar .swiper-button-next {
-    background: none;
-    top: calc(50% + 4px);
+    background: #3d4d56;
+    top: 50%;
+}
+.fastyle .bar .swiper-button-prev {
+    -webkit-box-shadow: 15px 0 15px -5px #3d4d56, -10px 0 0 #3d4d56;
+            box-shadow: 15px 0 15px -5px #3d4d56, -10px 0 0 #3d4d56;
+}
+.fastyle .bar .swiper-button-next {
+    right: 0;
+    -webkit-box-shadow: -15px 0 15px -5px #3d4d56;
+            box-shadow: -15px 0 15px -5px #3d4d56;
+    -webkit-border-radius: 0 10px 0 0;
+            border-radius: 0 10px 0 0;
 }
 .fastyle .switcher .content {
     overflow: hidden;
@@ -374,31 +425,68 @@ li.header:before {
     box-sizing: border-box;
     width: 100%;
     white-space: nowrap;
-    margin: 0 50px
+    padding: 0 50px;
 }
 .fastyle .switcher .swiper-wrapper {
-    height: auto
+    height: auto;
 }
 .fastyle .switcher .content > div > div {
     padding: 10px 10px 10px 25px;
-    color: rgb(84, 106, 128);
+    color: #a5afb5;
     cursor: pointer;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    -webkit-border-radius: 3px 3px 0 0;
-    border-radius: 3px 3px 0 0;
 }
 .fastyle .switcher .content > div > div.active {
-    background: rgb(69, 84, 99);
+    background: #2d3b46;
     color: #fff;
+    -webkit-border-radius: 10px 10px 0 0;
+            border-radius: 10px 10px 0 0;
+}
+.fastyle .switcher .content > div > div a {
+    max-width: 100%;
+    overflow: hidden;
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: inherit;
+
+}
+.fastyle .switcher .content > div > div.active:before,
+.fastyle .switcher .content > div > div.active a:before,
+.fastyle .switcher .content > div > div.active:after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0
+}
+.fastyle .switcher .content > div > div.active:before,
+.fastyle .switcher .content > div > div.active a:before {
+    width: 20px;
+    height: 20px;
+    -webkit-border-radius: 10px;
+            border-radius: 10px;
+    background: #3d4c56;
+    left: -20px;
+    z-index: -1;
+}
+.fastyle .switcher .content > div > div.active a:before {
+    left: 100%
+}
+.fastyle .switcher .content > div > div.active:after {
+    background: #2d3b46;
+    width: -webkit-calc(100% + 16px);
+    width: calc(100% + 16px);
+    height: 10px;
+    left: -8px;
+    z-index: -2
 }
 .fastyle .switcher .delete {
     position: absolute;
     top: 13px;
-    left: 11px;
+    left: 10px;
     font-size: 10px;
 }
 .fastyle .switcher .content > div > div:only-child {
@@ -410,16 +498,18 @@ li.header:before {
 /* Inputs */
 
 .fastyle input[type="textbox"] {
-    padding: 8px 12px;
+    padding: 6px 12px;
     margin: 0;
     -webkit-appearance: none;
-    border: 1px solid rgba(255, 255, 255, .2);
-    background: rgba(255, 255, 255, .2);
+    border: none;
+    background: rgba(0, 0, 0, .2);
     color: #fff;
     outline: none;
     width: 100%;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
+    -webkit-border-radius: 6px;
+            border-radius: 6px;
 }
 .fastyle .actions input[type="textbox"] {
     width: auto;
