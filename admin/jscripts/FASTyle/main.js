@@ -696,13 +696,13 @@ var FASTyle = {};
 			// Save templates/stylesheets with AJAX
 			var form = $('#fastyle_editor');
 			if (form.length) {
-				form.submit(function(e) {
+				form.on('submit', function(e) {
 					return FASTyle.save.call(this, e);
 				});
 			}
 
 			// Add shortcuts
-			$(window).bind('keydown', function(event) {
+			$(window).on('keydown', function(event) {
 
 				// CTRL/CMD
 				if (event.ctrlKey || event.metaKey) {
