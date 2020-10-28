@@ -159,7 +159,7 @@ function fastyle_apply_core_edits($apply = false)
         ],
     ];
 
-    $result = $PL->edit_core('fastyle', 'admin/modules/style/themes.php', $edits, $apply);
+    $result = $PL->edit_core('fastyle', $mybb->config['admin_dir'] . '/modules/style/themes.php', $edits, $apply);
 
     if ($result !== true) {
         $errors[] = $result;
@@ -175,11 +175,11 @@ function fastyle_apply_core_edits($apply = false)
 
 function fastyle_revert_core_edits($apply = false)
 {
-    global $PL;
+    global $PL, $mybb;
 
     $PL or require_once PLUGINLIBRARY;
 
-    return $PL->edit_core('fastyle', 'admin/modules/style/themes.php', [], $apply);
+    return $PL->edit_core('fastyle', $mybb->config['admin_dir'] . '/modules/style/themes.php', [], $apply);
 }
 
 // Hooks
