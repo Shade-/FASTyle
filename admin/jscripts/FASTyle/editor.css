@@ -514,15 +514,15 @@ li.header:before {
 .fastyle .actions input[type="textbox"] {
     width: auto;
     padding: 4px 8px 3px;
-    -webkit-border-radius: 3px 0 0 3px;
-    border-radius: 3px 0 0 3px;
+    -webkit-border-radius: 6px 0 0 6px;
+    border-radius: 6px 0 0 6px;
     margin-left: 5px;
     line-height: 1;
 }
 .fastyle .actions input[type="textbox"] + span {
     margin-left: 0!important;
-    -webkit-border-radius: 0 3px 3px 0!important;
-    border-radius: 0 3px 3px 0!important
+    -webkit-border-radius: 0 6px 6px 0!important;
+    border-radius: 0 6px 6px 0!important
 }
 /* CodeMirror overlay */
 
@@ -544,16 +544,16 @@ li.header:before {
     vertical-align: top;
     background: #d6d6d6;
     margin: 0;
-    -webkit-border-radius: 3px 0 0 3px;
-    border-radius: 3px 0 0 3px;
+    -webkit-border-radius: 6px 0 0 6px;
+    border-radius: 6px 0 0 6px;
     color: #515d6b;
     font-family: 'Lucida Grande', Tahoma, Verdana, Arial, sans-serif;
     font-size: 11px;
     line-height: 19px;
 }
 .fastyle .CodeMirror-dialog .button:last-of-type {
-    -webkit-border-radius: 0 3px 3px 0;
-    border-radius: 0 3px 3px 0;
+    -webkit-border-radius: 0 6px 6px 0;
+    border-radius: 0 6px 6px 0;
     border-left: 1px solid #7f8b9a;
 }
 .fastyle .CodeMirror-dialog div:last-child {
@@ -562,6 +562,8 @@ li.header:before {
 .fastyle .button.prev:before,
 .fastyle .button.next:before {
     line-height: 20px;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
 }
 /* Misc */
 

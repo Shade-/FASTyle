@@ -110,7 +110,7 @@
 	}
 
 	var queryDialog =
-		'<div><input type="text" style="width: 10em" class="CodeMirror-search-field" placeholder="Search plain or /regex/" /> <span class="prev icon-left-open-big button"></span><span class="next icon-right-open-big button"></span></div>' +
+		'<div><input type="text" style="width: 10em" class="CodeMirror-search-field" placeholder="Search plain or /regex/" /> <span class="prev fas fa-chevron-left button"></span><span class="next fas fa-chevron-right button"></span></div>' +
 		'<div><input type="text" style="width: 10em" class="CodeMirror-search-replace" placeholder="Replacement" /> <span class="button replace">Replace</span><span class="button replace all">All</span></div>';
 
 	function startSearch(cm, state, query) {
@@ -176,7 +176,7 @@
 				}
 			});
 
-			// Custom handler to close the dialog when the dialog loses focus (not the input). Requires closeOnBlur == false. 
+			// Custom handler to close the dialog when the dialog loses focus (not the input). Requires closeOnBlur == false.
 			$(document).mouseup(function(e) {
 				var container = $(".CodeMirror-dialog");
 
