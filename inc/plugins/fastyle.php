@@ -5,7 +5,7 @@
  *
  * @package FASTyle
  * @author  Shade <shad3-@outlook.com>
- * @license http://opensource.org/licenses/mit-license.php MIT license
+ * @license MIT https://opensource.org/licenses/MIT
  * @version 2.3
  */
 
