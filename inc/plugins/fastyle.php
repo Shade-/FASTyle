@@ -211,7 +211,7 @@ function fastyle_ad()
 	$plugins = $cache->read('shade_plugins');
 	if (!in_array($mybb->user['uid'], (array) $plugins['FASTyle']['ad_shown'])) {
 
-		flash_message('Thank you for using FASTyle! You might also be interested in other great plugins on <a href="https://www.mybboost.com">MyBBoost</a>, where you can also get support for FASTyle itself.<br /><small>This message will not be shown again to you.</small>', 'success');
+		flash_message('Thank you for downloading FASTyle! You might also be interested in other great plugins at <a href="https://www.mybboost.com">MyBBoost</a>.<br /><small>This message will not be shown again to you.</small>', 'success');
 
 		$plugins['FASTyle']['ad_shown'][] = $mybb->user['uid'];
 		$cache->update('shade_plugins', $plugins);
